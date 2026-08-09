@@ -81,3 +81,13 @@
 - 14개 분기와 6개월 Forecast가 각각 한 줄을 유지하는가?
 - 모든 선택 상태에서 데이터, 색상, 요약이 함께 갱신되는가?
 - 콘솔 오류가 없는가?
+
+## 10. Counterpoint Weekly 적용
+
+- 화면 순서는 `페이지 제목 → Executive Summary → Reporting Week → OEM × Region 매트릭스 → Total/Region 선택 → 58:42 차트`다.
+- Executive Summary는 현재 주차 데이터에서 생성한 2개 불릿만 사용한다.
+- `Total`은 전체 시장 추이와 Region 누적 구성을, 개별 Region은 해당 지역 추이와 Vendor 누적 구성을 표시한다.
+- 차트 kicker는 `12px / 16px`, 500 굵기, 파란색을 사용하고 제목은 `20px / 28px`, 700 굵기를 사용한다.
+- 선형 차트 축과 범례, 누적 차트 구성값과 기간 라벨은 화면상 `12px / 16px`를 유지하고 Total은 `14px / 18px`, 600 굵기로 표시한다.
+- 차트 표면은 `#f7f9fc`, 모서리는 `8px`, 좌우 비율은 `58fr 42fr`를 사용한다.
+- Matrix의 지역 열은 해당 Region 차트로 이동한다. Vendor 행은 Vendor 필터 데이터가 추가되기 전까지 차트 필터로 사용하지 않는다.
