@@ -1,43 +1,41 @@
 .counterpoint-weekly.cp-report {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   max-width: none;
   padding: 0 16px 36px;
   background: var(--mi-color-surface);
 }
 
 .counterpoint-weekly .dashboard-page-header {
+  order: 1;
   gap: var(--mi-space-8);
   padding: 2px 0 var(--mi-space-6);
 }
 
 .counterpoint-weekly .cp-report-control-row {
+  order: 2;
   padding: var(--mi-space-4) 0;
 }
 
-.counterpoint-weekly .cp-report-summary,
-.counterpoint-weekly .cp-report-overview,
-.counterpoint-weekly .cp-report-region-section {
-  margin-top: var(--mi-space-6);
-}
-
 .counterpoint-weekly .cp-report-summary {
-  padding: var(--mi-space-4);
-  border: var(--mi-border);
-  border-radius: var(--mi-radius-md);
-  background: var(--mi-color-surface);
+  display: none;
 }
 
 .counterpoint-weekly .cp-report-overview {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--mi-space-6);
+  display: contents;
 }
 
 .counterpoint-weekly .cp-report-overview-matrix {
-  grid-column: 1 / -1;
+  order: 3;
+  margin-top: var(--mi-space-6);
   padding: var(--mi-space-4);
   border: var(--mi-border);
 }
 
-.counterpoint-weekly .cp-report-overview > .cp-report-section,
+.counterpoint-weekly .cp-report-overview-charts {
+  display: none;
+}
+
 .counterpoint-weekly .cp-report-chart-card,
 .counterpoint-weekly .cp-report-region-section {
   border-color: var(--mi-color-line);
@@ -45,8 +43,9 @@
   background: var(--mi-color-surface);
 }
 
-.counterpoint-weekly .cp-report-overview > .cp-report-section {
-  min-width: 0;
+.counterpoint-weekly .cp-report-region-section {
+  order: 4;
+  margin-top: var(--mi-space-6);
 }
 
 .counterpoint-weekly .cp-report-region-toolbar {
@@ -54,9 +53,19 @@
   background: var(--mi-color-surface-soft);
 }
 
+.counterpoint-weekly .cp-report-region-charts {
+  grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
+}
+
+.counterpoint-weekly .dashboard-mock-badge,
+.counterpoint-weekly .dashboard-page-meta a,
 .counterpoint-weekly .cp-report-footer {
-  margin-top: var(--mi-space-6);
-  padding-top: var(--mi-space-4);
+  display: none;
+}
+
+.portal-content:has(.counterpoint-weekly) .topbar,
+.portal-shell:has(.counterpoint-weekly) .nav-foot {
+  display: none;
 }
 
 .sigma.wide-dashboard .forecast-chart-row {
