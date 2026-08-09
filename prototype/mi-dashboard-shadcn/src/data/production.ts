@@ -10,9 +10,18 @@ export const vendors = [
 
 export type VendorKey = (typeof vendors)[number]["key"]
 
-export type QuarterlyProduction = { quarter: string } & Record<VendorKey, number>
+export type QuarterlyProduction = { quarter: string } & Record<
+  VendorKey,
+  number
+>
 
-const quarterlyFigures: Array<[string, number, number, number, number, number, number, number]> = [
+export type ForecastHistoryPoint = QuarterlyProduction & {
+  period: string
+}
+
+const quarterlyFigures: Array<
+  [string, number, number, number, number, number, number, number]
+> = [
   ["2024 Q1", 49, 57, 33, 24, 22, 20, 78],
   ["2024 Q2", 47, 54, 35, 25, 23, 21, 76],
   ["2024 Q3", 56, 60, 39, 28, 27, 24, 83],
@@ -40,3 +49,40 @@ export const cumulativeProduction: QuarterlyProduction[] = quarterlyFigures.map(
     return record
   }
 )
+
+const historyPeriods = [
+  "5개월 전",
+  "4개월 전",
+  "3개월 전",
+  "2개월 전",
+  "1개월 전",
+  "현재",
+]
+const revisionFactors = [0.91, 0.93, 0.95, 0.97, 0.985, 1]
+
+export function getForecastHistory(quarter: string): ForecastHistoryPoint[] {
+  const current =
+    cumulativeProduction.find((item) => item.quarter === quarter) ??
+    cumulativeProduction[0]
+
+  return revisionFactors.map((factor, periodIndex) => {
+    const point = {
+      quarter,
+      period: historyPeriods[periodIndex],
+    } as ForecastHistoryPoint
+
+    vendors.forEach((vendor, vendorIndex) => {
+      const vendorAdjustment =
+        (vendorIndex - 3) * 0.003 * (revisionFactors.length - 1 - periodIndex)
+      point[vendor.key] = Number(
+        (current[vendor.key] * (factor + vendorAdjustment)).toFixed(1)
+      )
+    })
+
+    return point
+  })
+}
+
+export function getProductionTotal(item: QuarterlyProduction) {
+  return vendors.reduce((total, vendor) => total + item[vendor.key], 0)
+}
