@@ -393,6 +393,10 @@
   left: 0;
 }
 
+.sigma.wide-dashboard:has(> .weekly-analysis-row) .dashboard-insights > div > span {
+  color: #171717;
+}
+
 .sigma.wide-dashboard .dashboard-insights.columns-1 {
   grid-template-columns: 1fr;
 }
@@ -651,22 +655,51 @@
 }
 
 .sigma.wide-dashboard .weekly-heatmap-wrap td.up {
-  color: var(--mi-color-up);
+  color: #171717;
 }
 
 .sigma.wide-dashboard .weekly-heatmap-wrap td.down {
   color: var(--mi-color-down);
 }
 
-.sigma.wide-dashboard .weekly-trend-head {
+.sigma.wide-dashboard .weekly-heatmap-metrics {
+  display: inline-flex;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid #dfe5ee;
+  border-radius: 5px;
+}
+
+.sigma.wide-dashboard .weekly-heatmap-metric {
+  min-height: 24px;
+  padding: 5px 7px;
+  cursor: pointer;
+  color: #777f89;
+  background: #fff;
+  border: 0;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.sigma.wide-dashboard .weekly-heatmap-metric + .weekly-heatmap-metric {
+  border-left: 1px solid #dfe5ee;
+}
+
+.sigma.wide-dashboard .weekly-heatmap-metric[aria-pressed="true"] {
+  color: #fff;
+  background: var(--mi-color-primary);
+}
+
+.sigma.wide-dashboard .weekly-cumulative-head {
   display: block;
 }
 
-.sigma.wide-dashboard .weekly-region-controls {
+.sigma.wide-dashboard .weekly-cumulative-head .weekly-region-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
+  justify-content: flex-start;
   margin-top: 12px;
 }
 
@@ -678,48 +711,16 @@
   line-height: 14px;
 }
 
-.sigma.wide-dashboard .weekly-region-all {
-  color: #777f89;
-  background: #f1f3f6;
-  border-radius: 5px;
-  padding: 5px 7px;
-  font-weight: 650;
-}
-
-.sigma.wide-dashboard .weekly-region-all.active {
-  color: #fff;
-  background: var(--mi-color-primary);
-}
-
-.sigma.wide-dashboard .weekly-region-control {
-  display: inline-flex;
-  overflow: hidden;
-  border: 1px solid #dfe5ee;
-  border-radius: 5px;
-  background: #fff;
-}
-
 .sigma.wide-dashboard .weekly-region-toggle {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 6px;
+  padding: 5px 7px;
   color: #414141;
   background: #fff;
+  border: 1px solid #dfe5ee;
+  border-radius: 5px;
   font-weight: 620;
-}
-
-.sigma.wide-dashboard .weekly-region-toggle i,
-.sigma.wide-dashboard .weekly-trend-legend i {
-  display: inline-block;
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 2px;
-}
-
-.sigma.wide-dashboard .weekly-region-toggle i {
-  background: var(--mi-color-primary);
 }
 
 .sigma.wide-dashboard .weekly-region-toggle.active {
@@ -727,21 +728,20 @@
   background: #f8fbff;
 }
 
-.sigma.wide-dashboard .weekly-region-control:has(.weekly-region-toggle[data-region="Total"]) .weekly-region-toggle i { background: var(--mi-color-primary-deep); }
-.sigma.wide-dashboard .weekly-region-control:has(.weekly-region-toggle[data-region="USA"]) .weekly-region-toggle i { background: var(--mi-chart-blue-2); }
-.sigma.wide-dashboard .weekly-region-control:has(.weekly-region-toggle[data-region="China"]) .weekly-region-toggle i { background: var(--mi-chart-blue-3); }
-.sigma.wide-dashboard .weekly-region-control:has(.weekly-region-toggle[data-region="Japan"]) .weekly-region-toggle i { background: var(--mi-chart-blue-4); }
-.sigma.wide-dashboard .weekly-region-control:has(.weekly-region-toggle[data-region="Europe"]) .weekly-region-toggle i { background: var(--mi-chart-blue-5); }
-.sigma.wide-dashboard .weekly-region-control:has(.weekly-region-toggle[data-region="India"]) .weekly-region-toggle i { background: var(--mi-chart-blue-6); }
-
-.sigma.wide-dashboard .weekly-region-only {
-  padding: 5px;
-  color: #2870c8;
-  background: #f8fbff;
-  border-left: 1px solid #e6ebf2;
-  font-size: 9px;
-  font-weight: 800;
+.sigma.wide-dashboard .weekly-region-toggle i {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
 }
+
+.sigma.wide-dashboard .weekly-region-toggle[data-region="Total"] i { background: var(--mi-color-primary-deep); }
+.sigma.wide-dashboard .weekly-region-toggle[data-region="USA"] i { background: var(--mi-chart-blue-1); }
+.sigma.wide-dashboard .weekly-region-toggle[data-region="China"] i { background: var(--mi-chart-blue-2); }
+.sigma.wide-dashboard .weekly-region-toggle[data-region="Japan"] i { background: var(--mi-chart-blue-3); }
+.sigma.wide-dashboard .weekly-region-toggle[data-region="Europe"] i { background: var(--mi-chart-blue-5); }
+.sigma.wide-dashboard .weekly-region-toggle[data-region="India"] i { background: var(--mi-chart-blue-7); }
 
 .sigma.wide-dashboard .weekly-region-controls button:focus-visible {
   position: relative;
@@ -750,55 +750,96 @@
   outline-offset: -2px;
 }
 
-.sigma.wide-dashboard .weekly-trend-plot {
+.sigma.wide-dashboard .weekly-cumulative-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px;
+  gap: 12px;
   min-width: 0;
   margin-top: 10px;
 }
 
-.sigma.wide-dashboard .weekly-trend-svg {
+.sigma.wide-dashboard .weekly-cumulative-svg {
   width: 100%;
   height: auto;
   overflow: visible;
 }
 
-.sigma.wide-dashboard .weekly-trend-grid {
+.sigma.wide-dashboard .weekly-cumulative-grid {
   stroke: #e8edf3;
   stroke-width: 1;
 }
 
-.sigma.wide-dashboard .weekly-trend-axis {
+.sigma.wide-dashboard .weekly-cumulative-axis {
   stroke: #cbd7e6;
   stroke-width: 1;
 }
 
-.sigma.wide-dashboard .weekly-trend-axis-label {
+.sigma.wide-dashboard .weekly-cumulative-year {
   fill: #777f89;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 16px;
+  font-weight: 400;
 }
 
-.sigma.wide-dashboard .weekly-trend-line {
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.sigma.wide-dashboard .weekly-cumulative-total {
+  fill: #242424;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
 }
 
-.sigma.wide-dashboard .weekly-trend-legend {
+.sigma.wide-dashboard .weekly-cumulative-segment-label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.sigma.wide-dashboard .weekly-cumulative-segment-label.light { fill: #fff; }
+.sigma.wide-dashboard .weekly-cumulative-segment-label.dark { fill: #171717; }
+
+.sigma.wide-dashboard .weekly-cumulative-legend {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 6px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 22px 0 0 10px;
+  border-left: 1px solid #e1e6ee;
   color: #666;
   font-size: 12px;
   line-height: 16px;
+  font-weight: 400;
 }
 
-.sigma.wide-dashboard .weekly-trend-legend span {
-  display: inline-flex;
+.portal-nav .nav-provider > span {
+  color: #171717;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
+}
+
+.portal-nav .nav-series button {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.sigma.wide-dashboard .weekly-cumulative-legend span {
+  display: flex;
   align-items: center;
   gap: 5px;
+  min-width: 0;
 }
 
-.sigma.wide-dashboard .weekly-trend-legend em {
+.sigma.wide-dashboard .weekly-cumulative-legend i {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.sigma.wide-dashboard .weekly-cumulative-legend em {
+  overflow: hidden;
   font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

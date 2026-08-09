@@ -84,13 +84,9 @@
 
 ## 10. Counterpoint Weekly 적용
 
-- 화면 순서는 `페이지 제목 → Executive Summary → Reporting Week → OEM × Region 매트릭스 → Total/Region 선택 → 58:42 차트`다.
-- Executive Summary는 현재 주차 데이터에서 생성한 2개 불릿만 사용한다.
-- `Total`은 전체 시장 추이와 Region 누적 구성을, 개별 Region은 해당 지역 추이와 Vendor 누적 구성을 표시한다.
-- 차트 kicker는 `12px / 16px`, 500 굵기, 파란색을 사용하고 제목은 `20px / 28px`, 700 굵기를 사용한다.
-- 선형 차트 축과 범례, 누적 차트 구성값과 기간 라벨은 화면상 `12px / 16px`를 유지하고 Total은 `14px / 18px`, 600 굵기로 표시한다.
-- 차트 표면은 `#f7f9fc`, 모서리는 `8px`, 좌우 차트는 같은 폭과 같은 plot 비율을 사용한다.
-- OEM × Region 매트릭스는 `760px` 이내로 왼쪽 정렬하고 셀 텍스트는 범례와 같은 `12px / 16px`를 사용한다.
-- Weekly 누적 막대는 Sigma와 같이 Y축 숫자를 생략하고, 표시 가능한 구성값은 막대 내부에 배치하며 범례는 오른쪽 세로형으로 둔다.
-- Total과 Region 전환 시 카드·plot 높이는 고정하고 선형 차트와 누적 막대의 baseline을 같은 Y좌표에 둔다.
-- Matrix의 지역 열은 해당 Region 차트로 이동한다. Vendor 행은 Vendor 필터 데이터가 추가되기 전까지 차트 필터로 사용하지 않는다.
+- 화면 순서는 `페이지 제목 → Executive Summary → 58:42 분석 행 → Sigma 형식 상세 차트`다. 가로 스크롤은 금지하고 세로 스크롤은 허용한다.
+- Executive Summary는 현재 주차 데이터에 맞는 2개 불릿으로 구성하며, 보고서 문장 종결은 `~함`, `~임`, `~필요` 형식을 사용한다.
+- 왼쪽 패널은 Vendor × Region 히트맵이며 `YoY (%)`와 `WoW (%)`를 전환한다. 음수는 빨간색, 0과 양수는 검정색으로 표시한다.
+- 오른쪽 패널은 `Total`, `USA`, `China`, `Japan`, `Europe`, `India` 중 하나만 선택한다.
+- 오른쪽 패널은 4개 연도의 누적 스택 막대 4개를 표시한다. `Total`은 Region별로, 개별 국가는 Vendor별로 분할한다.
+- 누적 차트 타이포그래피는 Total 라벨 `14px`, 막대 내부 구성값·연도·범례 `12px`를 사용하며 모두 Sigma 시각 문법을 따른다. Y축 숫자는 표시하지 않고 오른쪽 세로 범례를 사용한다.
