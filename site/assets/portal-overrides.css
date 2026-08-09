@@ -97,6 +97,7 @@
 .sigma.wide-dashboard .sigma-summary-list {
   display: grid;
   gap: 3px;
+  font-weight: 400;
 }
 
 .sigma.wide-dashboard .sigma-summary-list > span {
@@ -105,12 +106,29 @@
   padding-left: 12px;
   font-size: 16px;
   line-height: 24px;
+  font-weight: 400;
 }
 
 .sigma.wide-dashboard .forecast-side-legend em,
 .sigma.wide-dashboard .forecast-side-legend b {
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.sigma.wide-dashboard .sigma-summary-list strong,
+.sigma.wide-dashboard .sigma-summary-list b {
+  font-weight: 600;
+}
+
+.sigma.wide-dashboard .dashboard-insights > div > span,
+.sigma.wide-dashboard .dashboard-page-meta a,
+.sigma.wide-dashboard .history-scale span {
+  font-weight: 500;
+}
+
+.sigma.wide-dashboard .history-scale b {
+  font-weight: 600;
 }
 
 .sigma.wide-dashboard .sigma-summary-list > span::before {
