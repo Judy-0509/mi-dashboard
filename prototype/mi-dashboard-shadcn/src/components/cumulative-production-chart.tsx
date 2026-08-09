@@ -21,6 +21,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   cumulativeProduction,
+  dashboardMeta,
   getForecastHistory,
   getProductionTotal,
   vendors,
@@ -42,7 +43,7 @@ type ChartSelection = {
 }
 
 const defaultSelection: ChartSelection = {
-  quarter: "2026 Q3",
+  quarter: dashboardMeta.focusQuarter,
   vendor: "transsion",
 }
 
@@ -77,7 +78,8 @@ export function CumulativeProductionChart() {
             Forecast
           </p>
           <CardTitle className="mt-1 text-xl font-semibold tracking-tight">
-            2024 Q1–2027 Q2 분기 누적 생산량
+            {dashboardMeta.firstQuarter}–{dashboardMeta.lastQuarter} 분기 누적
+            생산량
           </CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             단위: Mu / 분기 누적

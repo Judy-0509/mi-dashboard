@@ -1,0 +1,150 @@
+{
+  "asOf": "2026-08-10",
+  "focusQuarter": "2026 Q3",
+  "executiveSummary": [
+    "2026 Q3 현재 누적 Forecast는 484.0Mu로, 6개월 전 대비 +22.7Mu (+4.9%) 조정됨",
+    "업체별로는 Transsion +9.8Mu가 가장 큰 상향, OPPO -3.8Mu가 가장 큰 하향임"
+  ],
+  "quarterlyProduction": [
+    {
+      "quarter": "2024 Q1",
+      "apple": 49,
+      "samsung": 57,
+      "xiaomi": 33,
+      "oppo": 24,
+      "vivo": 22,
+      "transsion": 20,
+      "others": 78
+    },
+    {
+      "quarter": "2024 Q2",
+      "apple": 47,
+      "samsung": 54,
+      "xiaomi": 35,
+      "oppo": 25,
+      "vivo": 23,
+      "transsion": 21,
+      "others": 76
+    },
+    {
+      "quarter": "2024 Q3",
+      "apple": 56,
+      "samsung": 60,
+      "xiaomi": 39,
+      "oppo": 28,
+      "vivo": 27,
+      "transsion": 24,
+      "others": 83
+    },
+    {
+      "quarter": "2024 Q4",
+      "apple": 75,
+      "samsung": 69,
+      "xiaomi": 42,
+      "oppo": 30,
+      "vivo": 30,
+      "transsion": 27,
+      "others": 89
+    },
+    {
+      "quarter": "2025 Q1",
+      "apple": 53,
+      "samsung": 59,
+      "xiaomi": 37,
+      "oppo": 26,
+      "vivo": 25,
+      "transsion": 23,
+      "others": 81
+    },
+    {
+      "quarter": "2025 Q2",
+      "apple": 51,
+      "samsung": 57,
+      "xiaomi": 39,
+      "oppo": 28,
+      "vivo": 27,
+      "transsion": 25,
+      "others": 79
+    },
+    {
+      "quarter": "2025 Q3",
+      "apple": 60,
+      "samsung": 63,
+      "xiaomi": 43,
+      "oppo": 31,
+      "vivo": 30,
+      "transsion": 28,
+      "others": 86
+    },
+    {
+      "quarter": "2025 Q4",
+      "apple": 80,
+      "samsung": 72,
+      "xiaomi": 46,
+      "oppo": 34,
+      "vivo": 33,
+      "transsion": 31,
+      "others": 94
+    },
+    {
+      "quarter": "2026 Q1",
+      "apple": 57,
+      "samsung": 62,
+      "xiaomi": 41,
+      "oppo": 29,
+      "vivo": 28,
+      "transsion": 26,
+      "others": 84
+    },
+    {
+      "quarter": "2026 Q2",
+      "apple": 55,
+      "samsung": 60,
+      "xiaomi": 43,
+      "oppo": 31,
+      "vivo": 30,
+      "transsion": 29,
+      "others": 82
+    },
+    {
+      "quarter": "2026 Q3",
+      "apple": 64,
+      "samsung": 66,
+      "xiaomi": 47,
+      "oppo": 34,
+      "vivo": 33,
+      "transsion": 32,
+      "others": 90
+    },
+    {
+      "quarter": "2026 Q4",
+      "apple": 84,
+      "samsung": 75,
+      "xiaomi": 50,
+      "oppo": 37,
+      "vivo": 36,
+      "transsion": 35,
+      "others": 98
+    },
+    {
+      "quarter": "2027 Q1",
+      "apple": 61,
+      "samsung": 65,
+      "xiaomi": 45,
+      "oppo": 32,
+      "vivo": 31,
+      "transsion": 30,
+      "others": 87
+    },
+    {
+      "quarter": "2027 Q2",
+      "apple": 59,
+      "samsung": 63,
+      "xiaomi": 47,
+      "oppo": 34,
+      "vivo": 33,
+      "transsion": 32,
+      "others": 85
+    }
+  ]
+}
