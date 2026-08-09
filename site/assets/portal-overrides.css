@@ -206,17 +206,63 @@
 .counterpoint-weekly .cp-report-stacked-chart {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 108px;
-  grid-template-rows: 62px minmax(0, 1fr);
+  grid-template-rows: 62px 22px 22px minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .counterpoint-weekly .cp-report-stacked-chart .cp-report-chart-head {
   grid-column: 1 / -1;
   grid-row: 1;
+  gap: 16px;
+}
+
+.counterpoint-weekly .cp-report-stacked-chart .cp-report-chart-head h3 {
+  min-width: 0;
+  max-width: calc(100% - 112px);
+}
+
+.counterpoint-weekly .cp-report-stacked-chart .cp-weekly-stack-description {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  margin: 0;
+  padding: 0 16px;
+  overflow: hidden;
+  color: var(--mi-color-muted);
+  font-size: 12px;
+  line-height: 22px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.counterpoint-weekly .cp-report-stacked-chart .cp-weekly-stack-info {
+  display: flex;
+  grid-column: 1 / -1;
+  grid-row: 3;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0 16px;
+  color: #555;
+  font-size: 12px;
+  line-height: 22px;
+}
+
+.counterpoint-weekly .cp-report-stacked-chart .cp-weekly-stack-info-label {
+  font-weight: 500;
+}
+
+.counterpoint-weekly .cp-report-stacked-chart .cp-weekly-stack-info-value {
+  color: #0d0d0d;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .counterpoint-weekly .cp-report-stacked-chart .cp-report-legend {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 4;
   align-content: center;
   flex-direction: column;
   gap: 8px;
@@ -230,6 +276,13 @@
 .counterpoint-weekly .cp-report-stacked-chart [hidden],
 .counterpoint-weekly .cp-report-stacked-chart svg > g:nth-child(-n + 5) > text {
   display: none;
+}
+
+.counterpoint-weekly .cp-report-stacked-chart .cp-report-plot--compact {
+  grid-row: 4;
+  min-height: 0;
+  height: 100%;
+  aspect-ratio: auto;
 }
 
 .counterpoint-weekly #cp-matrix thead th[role="button"] {

@@ -75,6 +75,47 @@ function ensureContextControls(main) {
   }
 }
 
+function ensureStackedCardHierarchy(main) {
+  for (const card of main.querySelectorAll(".cp-report-stacked-chart")) {
+    const head = card.querySelector(":scope > .cp-report-chart-head h3");
+    if (!head) continue;
+
+    const overview = Boolean(card.closest("#cp-overall"));
+    const context = overview ? "Total" : activeContext;
+    head.textContent = overview
+      ? "Region별 누적 판매 구성"
+      : `${context} Vendor별 누적 판매 구성`;
+
+    let description = card.querySelector(":scope > .cp-weekly-stack-description");
+    if (!description) {
+      description = document.createElement("p");
+      description.className = "cp-weekly-stack-description";
+      card.append(description);
+    }
+
+    let info = card.querySelector(":scope > .cp-weekly-stack-info");
+    if (!info) {
+      info = document.createElement("div");
+      info.className = "cp-weekly-stack-info";
+      info.innerHTML = "<span class=\"cp-weekly-stack-info-label\">누적 Total 범위</span><strong class=\"cp-weekly-stack-info-value\"></strong>";
+      card.append(info);
+    }
+
+    const week = main.querySelector(".cp-report-control-row select")?.value;
+    description.textContent = `${week ? `2026 W${week.padStart(2, "0")}` : "현재"} 기준 누적 판매량 · ${overview ? "지역별 시장 구성" : `${context} Vendor 구성`}`;
+
+    const values = [...card.querySelectorAll(".cp-report-total-label")]
+      .map((item) => Number(item.textContent.match(/[\d.]+/)?.[0]))
+      .filter(Number.isFinite);
+    const range = info.querySelector(".cp-weekly-stack-info-value");
+    if (range) {
+      range.textContent = values.length
+        ? `${Math.min(...values).toFixed(1)}–${Math.max(...values).toFixed(1)} Mu`
+        : "—";
+    }
+  }
+}
+
 function syncMatrix(main) {
   const table = main.querySelector("#cp-matrix table");
   if (!table?.tHead) return;
@@ -182,6 +223,7 @@ function sync() {
   wire(main);
   ensureSummary(main);
   ensureContextControls(main);
+  ensureStackedCardHierarchy(main);
   syncMatrix(main);
   layoutSmallLabels(main);
   alignChartBaselines(main);
