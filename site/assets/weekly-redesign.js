@@ -121,6 +121,28 @@ function layoutSmallLabels(main) {
   }
 }
 
+function alignChartBaselines(main) {
+  for (const container of main.querySelectorAll(".cp-report-overview-charts, .cp-report-region-charts")) {
+    if (!container.getClientRects().length) continue;
+
+    const cards = [...container.querySelectorAll(":scope > .cp-report-chart-card")];
+    const stacked = cards.find((card) => card.classList.contains("cp-report-stacked-chart"));
+    const line = cards.find((card) => !card.classList.contains("cp-report-stacked-chart"));
+    const lineSvg = line?.querySelector("svg");
+    if (!lineSvg || !stacked) continue;
+
+    lineSvg.style.transform = "";
+    const horizontalAxis = (card) => [...card.querySelectorAll(".cp-report-axis-line")]
+      .find((axis) => axis.getAttribute("x1") !== axis.getAttribute("x2"));
+    const lineAxis = horizontalAxis(line);
+    const stackAxis = horizontalAxis(stacked);
+    if (!lineAxis || !stackAxis) continue;
+
+    const delta = stackAxis.getBoundingClientRect().top - lineAxis.getBoundingClientRect().top;
+    lineSvg.style.transform = `translateY(${delta.toFixed(2)}px)`;
+  }
+}
+
 function wire(main) {
   if (wired.has(main)) return;
   wired.add(main);
@@ -162,6 +184,7 @@ function sync() {
   ensureContextControls(main);
   syncMatrix(main);
   layoutSmallLabels(main);
+  alignChartBaselines(main);
   const contextHeading = main.querySelector("#cp-regional-title");
   if (contextHeading) contextHeading.textContent = "분석 범위";
   main.dataset.weeklyContext = activeContext;
@@ -176,6 +199,7 @@ function schedule() {
 function syncAfterInteraction() {
   setTimeout(schedule);
   setTimeout(schedule, 80);
+  setTimeout(schedule, 160);
 }
 
 document.addEventListener("click", syncAfterInteraction);

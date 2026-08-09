@@ -143,6 +143,10 @@
   padding: 12px 16px 0;
 }
 
+.counterpoint-weekly .cp-report-chart-head > span {
+  display: none;
+}
+
 .counterpoint-weekly .cp-report-chart-head h3::before {
   display: block;
   margin-bottom: 2px;
@@ -163,6 +167,15 @@
 
 .counterpoint-weekly .cp-report-chart-card {
   background: #f7f9fc;
+}
+
+.counterpoint-weekly .cp-report-overview-charts > .cp-report-chart-card,
+.counterpoint-weekly .cp-report-region-charts > .cp-report-chart-card {
+  height: 299px;
+}
+
+.counterpoint-weekly .cp-report-chart-card:not(.cp-report-stacked-chart) svg {
+  transform-origin: center;
 }
 
 .counterpoint-weekly .cp-report-region-charts .cp-report-stacked-chart,
