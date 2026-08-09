@@ -206,8 +206,15 @@
 }
 
 @media (min-width: 1101px) {
+  .sigma.wide-dashboard {
+    max-width: none;
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+
   .sigma.wide-dashboard .production-layout {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
+    margin-top: 19px;
   }
 
   .sigma.wide-dashboard .vintage-chart {
@@ -220,22 +227,23 @@
   }
 
   .sigma.wide-dashboard .forecast-chart-row {
-    grid-template-columns: calc(42.857% - 1.714px) minmax(0, 1fr);
+    grid-template-columns: calc(59.184% + 4.816px) 96px;
     grid-template-areas: "chart legend";
+    justify-content: space-between;
     gap: 16px;
   }
 
   .sigma.wide-dashboard .forecast-side-legend {
     grid-area: legend;
     display: flex;
-    min-width: 118px;
-    padding: 28px 0 0 12px;
+    min-width: 96px;
+    padding: 28px 0 0 8px;
     border-left: 1px solid #e1e6ee;
   }
 
   .sigma.wide-dashboard .forecast-side-legend span {
     grid-template-columns: 8px minmax(0, 1fr) auto;
-    gap: 5px;
+    gap: 4px;
   }
 
 }
