@@ -66,9 +66,30 @@
 
 .counterpoint-weekly .cp-report-overview-matrix {
   order: 4;
+  width: min(100%, 760px);
+  justify-self: start;
   margin-top: var(--mi-space-6);
-  padding: var(--mi-space-4);
+  padding: var(--mi-space-3);
   border: var(--mi-border);
+}
+
+.counterpoint-weekly #cp-matrix .cp-report-sum-table {
+  table-layout: fixed;
+}
+
+.counterpoint-weekly #cp-matrix .cp-report-sum-table .matrix-label-column {
+  width: 22%;
+}
+
+.counterpoint-weekly #cp-matrix .cp-report-sum-table th,
+.counterpoint-weekly #cp-matrix .cp-report-sum-table td {
+  padding: 2px 5px;
+  font-size: var(--mi-type-legend-size);
+  line-height: var(--mi-type-legend-line);
+}
+
+.counterpoint-weekly #cp-matrix .cp-report-sum-table td {
+  font-weight: var(--mi-type-legend-weight);
 }
 
 .counterpoint-weekly .cp-report-overview-charts {
@@ -78,7 +99,7 @@
 .counterpoint-weekly[data-weekly-context="Total"] .cp-report-overview-charts {
   order: 6;
   display: grid;
-  grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .counterpoint-weekly[data-weekly-context="Total"] .cp-report-overview-charts > .cp-report-section-heading {
@@ -103,7 +124,7 @@
 }
 
 .counterpoint-weekly .cp-report-region-charts {
-  grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .counterpoint-weekly[data-weekly-context="Total"] .cp-report-region-charts {
@@ -146,21 +167,23 @@
 
 .counterpoint-weekly .cp-report-region-charts .cp-report-stacked-chart,
 .counterpoint-weekly .cp-report-overview-charts .cp-report-stacked-chart {
-  --cp-chart-number-size: 20px !important;
+  --cp-chart-number-size: 14px !important;
 }
 
 .counterpoint-weekly .cp-report-stacked-chart .cp-report-segment-label,
 .counterpoint-weekly .cp-report-stacked-chart .cp-report-small-label {
-  font-size: 17px !important;
+  font-size: 12px !important;
+  line-height: 16px;
   font-weight: 500;
 }
 
 .counterpoint-weekly .cp-report-stacked-chart .cp-report-plot--compact {
-  aspect-ratio: 900 / 340;
+  aspect-ratio: 900 / 320;
 }
 
-.counterpoint-weekly .cp-report-line-chart .cp-report-plot {
-  height: 190px;
+.counterpoint-weekly .cp-report-chart-card:not(.cp-report-stacked-chart) .cp-report-plot--compact {
+  aspect-ratio: 900 / 320;
+  padding: 0 18px 3px 8px;
 }
 
 .counterpoint-weekly #cp-matrix thead th[role="button"] {
