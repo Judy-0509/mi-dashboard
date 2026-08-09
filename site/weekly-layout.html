@@ -56,7 +56,7 @@
       .legend { padding:42px 0 0 8px; border-left:1px solid var(--line); }
       .legend i { display:block; width:74px; height:8px; margin-bottom:11px; background:#cfdae6; }
 
-      .matrix { height:166px; padding:38px 14px 12px; background:#fbfcfe; }
+      .matrix { height:166px; margin-bottom:10px; padding:38px 14px 12px; background:#fbfcfe; }
       .matrix-grid { display:grid; grid-template-columns:96px repeat(8,minmax(0,1fr)); gap:5px; height:110px; }
       .matrix-grid i { display:block; min-width:0; border:1px solid #cfdae6; background:#edf3f8; }
       .matrix-grid i:nth-child(9n+1) { border-style:dashed; background:#fff; }
@@ -77,6 +77,15 @@
         <section class="toolbar layer" data-layer="Reporting week / chart unit / matrix metric / actions">
           <div class="toolbar-row"><i></i><i></i><i></i><i></i></div>
         </section>
+        <section class="matrix layer" data-layer="Decision layer · OEM × Region matrix">
+          <div class="matrix-grid" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+        </section>
         <nav class="context-tabs layer" data-layer="Region context tabs" aria-label="Region context layer">
           <i></i><i></i><i></i><i></i><i></i><i></i>
         </nav>
@@ -94,15 +103,6 @@
               <div class="legend layer" data-layer="Legend" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
             </div>
           </aside>
-        </section>
-        <section class="matrix layer" data-layer="Optional decision layer · OEM × Region matrix">
-          <div class="matrix-grid" aria-hidden="true">
-            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-          </div>
         </section>
       </section>
     </main>
