@@ -104,8 +104,8 @@
   position: relative;
   display: block;
   padding-left: 12px;
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 400;
 }
 
@@ -121,10 +121,16 @@
   font-weight: 600;
 }
 
-.sigma.wide-dashboard .dashboard-insights > div > span,
 .sigma.wide-dashboard .dashboard-page-meta a,
 .sigma.wide-dashboard .history-scale span {
   font-weight: 500;
+}
+
+.sigma.wide-dashboard .dashboard-insights > div > span {
+  margin-bottom: 6px;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
 }
 
 .sigma.wide-dashboard .history-scale b {
