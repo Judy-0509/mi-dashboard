@@ -96,26 +96,27 @@ function syncMatrix(main) {
 
 function layoutSmallLabels(main) {
   for (const svg of main.querySelectorAll(".cp-report-stacked-chart svg")) {
-    const groups = new Map();
-    for (const label of svg.querySelectorAll(".cp-report-small-label")) {
+    svg.setAttribute("viewBox", "80 0 740 320");
+
+    for (const label of svg.querySelectorAll(".cp-report-segment-label, .cp-report-small-label")) {
       const rect = label.parentElement?.querySelector(".cp-report-bar-segment");
-      const baseX = rect
-        ? Number(rect.getAttribute("x")) + Number(rect.getAttribute("width")) + 9
-        : Number(label.getAttribute("x"));
-      const labels = groups.get(baseX) ?? [];
-      labels.push(label);
-      groups.set(baseX, labels);
+      if (!rect) continue;
+
+      const height = Number(rect.getAttribute("height"));
+      label.toggleAttribute("hidden", height < 16);
+      label.setAttribute("x", Number(rect.getAttribute("x")) + Number(rect.getAttribute("width")) / 2);
+      label.setAttribute("y", Number(rect.getAttribute("y")) + height / 2);
+      label.setAttribute("text-anchor", "middle");
+      label.setAttribute("dominant-baseline", "middle");
+      label.removeAttribute("transform");
     }
 
-    for (const [baseX, labels] of groups) {
-      labels
-        .sort((a, b) => Number(a.getAttribute("y")) - Number(b.getAttribute("y")))
-        .forEach((label, index) => {
-          const x = baseX + index % 2 * 42;
-          label.setAttribute("x", x);
-          const line = label.parentElement?.querySelector(".cp-report-label-callout");
-          line?.setAttribute("x2", x - 2);
-        });
+    for (const group of [...svg.children].slice(5, 9)) {
+      const labels = [...group.children].filter((item) => item.tagName === "text");
+      const total = labels.find((item) => item.classList.contains("cp-report-total-label"));
+      const year = labels.at(-1);
+      if (total) total.textContent = total.textContent.replace(/\s*MU$/, "Mu");
+      if (year) year.setAttribute("y", "316");
     }
   }
 }

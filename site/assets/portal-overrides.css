@@ -178,12 +178,45 @@
 }
 
 .counterpoint-weekly .cp-report-stacked-chart .cp-report-plot--compact {
-  aspect-ratio: 900 / 320;
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+  aspect-ratio: 740 / 320;
+  padding: 0 4px 3px 8px;
 }
 
 .counterpoint-weekly .cp-report-chart-card:not(.cp-report-stacked-chart) .cp-report-plot--compact {
   aspect-ratio: 900 / 320;
   padding: 0 18px 3px 8px;
+}
+
+.counterpoint-weekly .cp-report-stacked-chart {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 108px;
+  grid-template-rows: 62px minmax(0, 1fr);
+}
+
+.counterpoint-weekly .cp-report-stacked-chart .cp-report-chart-head {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.counterpoint-weekly .cp-report-stacked-chart .cp-report-legend {
+  grid-column: 2;
+  grid-row: 2;
+  align-content: center;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  margin: 10px 0;
+  padding: 0 10px;
+  border-left: 1px solid #e1e6ee;
+}
+
+.counterpoint-weekly .cp-report-stacked-chart .cp-report-label-callout,
+.counterpoint-weekly .cp-report-stacked-chart [hidden],
+.counterpoint-weekly .cp-report-stacked-chart svg > g:nth-child(-n + 5) > text {
+  display: none;
 }
 
 .counterpoint-weekly #cp-matrix thead th[role="button"] {
@@ -353,7 +386,7 @@
 }
 
 .counterpoint-weekly .cp-report-stacked-chart svg > g:has(> .cp-report-total-label) > g:first-child .cp-report-segment-label {
-  transform: translateY(-12px);
+  transform: none;
 }
 
 @media (min-width: 1101px) {
