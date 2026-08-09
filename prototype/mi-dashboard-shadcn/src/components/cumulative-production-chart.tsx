@@ -25,6 +25,7 @@ import {
   dashboardMeta,
   getForecastHistory,
   getProductionTotal,
+  productionYAxisDomain,
   vendors,
   type VendorKey,
 } from "@/data/production"
@@ -53,6 +54,7 @@ export function CumulativeProductionChart() {
     () => new Set(allVendorKeys)
   )
   const [selection, setSelection] = useState<ChartSelection>(defaultSelection)
+  const [hoveredQuarter, setHoveredQuarter] = useState<string | null>(null)
   const history = useMemo(
     () => getForecastHistory(selection.quarter),
     [selection.quarter]
@@ -72,8 +74,8 @@ export function CumulativeProductionChart() {
   }
 
   return (
-    <Card className="border-border shadow-none" id="overview">
-      <CardHeader className="flex flex-row items-start justify-between gap-8 border-b pb-5">
+    <Card className="border-border shadow-none" id="overview" size="sm">
+      <CardHeader className="flex flex-row items-start justify-between gap-8 border-b pb-3">
         <div>
           <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
             Forecast
@@ -95,8 +97,8 @@ export function CumulativeProductionChart() {
           필터 초기화
         </Button>
       </CardHeader>
-      <CardContent className="pt-5">
-        <div className="mb-5 flex items-start justify-between gap-6">
+      <CardContent className="pt-3">
+        <div className="mb-3 flex items-start justify-between gap-6">
           <ToggleGroup
             aria-label="업체 필터"
             className="flex flex-wrap gap-2"
@@ -124,12 +126,12 @@ export function CumulativeProductionChart() {
             {vendors.length}개 중 {visibleVendors.size}개 업체 표시
           </p>
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)_360px] gap-0 border-t pt-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_360px] gap-0 border-t pt-3">
           <section
             className="min-w-0 pe-6"
             aria-labelledby="production-chart-title"
           >
-            <div className="mb-3 flex h-16 items-center justify-between gap-4">
+            <div className="mb-2 flex h-11 items-center justify-between gap-4">
               <p id="production-chart-title" className="text-sm font-medium">
                 업체별 누적 생산량
               </p>
@@ -138,7 +140,7 @@ export function CumulativeProductionChart() {
                 막대를 클릭해 전망 변화 확인
               </p>
             </div>
-            <ChartContainer className="h-[430px] w-full" config={chartConfig}>
+            <ChartContainer className="h-[330px] w-full" config={chartConfig}>
               <BarChart
                 accessibilityLayer
                 barCategoryGap="8%"
@@ -152,10 +154,11 @@ export function CumulativeProductionChart() {
                   fontSize={9}
                   interval={0}
                   tickLine={false}
-                  tickMargin={10}
+                  tickMargin={6}
                 />
                 <YAxis
                   axisLine={false}
+                  domain={productionYAxisDomain}
                   tickFormatter={(value) => `${value}m`}
                   tickLine={false}
                   tickMargin={8}
@@ -173,25 +176,25 @@ export function CumulativeProductionChart() {
                     hide={!visibleVendors.has(vendor.key)}
                     isAnimationActive={false}
                     key={vendor.key}
-                    onClick={(item) =>
-                      setSelection({
-                        quarter: item.payload.quarter,
-                        vendor: vendor.key,
-                      })
-                    }
                     stackId="production"
                   >
                     {cumulativeProduction.map((item) => (
                       <Cell
-                        className="cursor-pointer transition-[filter,stroke] hover:stroke-foreground hover:stroke-2 hover:brightness-90"
-                        key={`${vendor.key}-${item.quarter}`}
-                        stroke={
-                          selection.quarter === item.quarter &&
-                          selection.vendor === vendor.key
-                            ? "var(--foreground)"
-                            : "transparent"
+                        className="cursor-pointer transition-opacity"
+                        fillOpacity={
+                          hoveredQuarter && hoveredQuarter !== item.quarter
+                            ? 0.25
+                            : 1
                         }
-                        strokeWidth={2}
+                        key={`${vendor.key}-${item.quarter}`}
+                        onClick={() =>
+                          setSelection({
+                            quarter: item.quarter,
+                            vendor: vendor.key,
+                          })
+                        }
+                        onMouseEnter={() => setHoveredQuarter(item.quarter)}
+                        onMouseLeave={() => setHoveredQuarter(null)}
                       />
                     ))}
                     <LabelList
@@ -213,7 +216,7 @@ export function CumulativeProductionChart() {
           </section>
 
           <aside className="border-s ps-6" aria-labelledby="history-title">
-            <div className="mb-3 h-16">
+            <div className="mb-2 h-11">
               <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
                 Forecast History
               </p>
@@ -232,7 +235,7 @@ export function CumulativeProductionChart() {
                 </p>
               </div>
             </div>
-            <ChartContainer className="h-[430px] w-full" config={chartConfig}>
+            <ChartContainer className="h-[330px] w-full" config={chartConfig}>
               <BarChart
                 accessibilityLayer
                 barCategoryGap="8%"
@@ -246,9 +249,9 @@ export function CumulativeProductionChart() {
                   fontSize={9}
                   interval={0}
                   tickLine={false}
-                  tickMargin={10}
+                  tickMargin={6}
                 />
-                <YAxis hide />
+                <YAxis domain={productionYAxisDomain} hide />
                 <ChartTooltip
                   content={<ChartTooltipContent />}
                   cursor={false}

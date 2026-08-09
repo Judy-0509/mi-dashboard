@@ -33,6 +33,16 @@ export const dashboardMeta = {
 
 export const executiveSummary = dashboardData.executiveSummary
 
+export function getProductionTotal(item: QuarterlyProduction) {
+  return vendors.reduce((total, vendor) => total + item[vendor.key], 0)
+}
+
+export const productionYAxisDomain = [
+  0,
+  Math.ceil(Math.max(...cumulativeProduction.map(getProductionTotal)) / 100) *
+    100,
+] as const
+
 const revisionFactors = [0.91, 0.93, 0.95, 0.97, 0.985, 1]
 
 function getHistoryPeriods(quarter: string) {
@@ -71,8 +81,4 @@ export function getForecastHistory(quarter: string): ForecastHistoryPoint[] {
 
     return point
   })
-}
-
-export function getProductionTotal(item: QuarterlyProduction) {
-  return vendors.reduce((total, vendor) => total + item[vendor.key], 0)
 }

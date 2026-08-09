@@ -4,11 +4,23 @@ import {
   cumulativeProduction,
   getForecastHistory,
   getProductionTotal,
+  productionYAxisDomain,
   vendors,
 } from "../src/data/production.ts"
+import {
+  getWeeklyCumulative,
+  getWeeklyHeatmap,
+  getWeeklyMetric,
+  weeklySelectedWeek,
+} from "../src/data/weekly.ts"
 import { normalizeRow, parseCsv } from "./update-dashboard-data.mjs"
 
 assert.equal(cumulativeProduction.length, 14)
+assert.equal(productionYAxisDomain[0], 0)
+assert.ok(
+  productionYAxisDomain[1] >=
+    Math.max(...cumulativeProduction.map(getProductionTotal))
+)
 
 for (const quarter of cumulativeProduction) {
   const history = getForecastHistory(quarter.quarter)
@@ -22,6 +34,7 @@ for (const quarter of cumulativeProduction) {
   assert.ok(
     totals.every((total, index) => index === 0 || total > totals[index - 1])
   )
+  assert.ok(totals.every((total) => total <= productionYAxisDomain[1]))
 }
 
 assert.deepEqual(
@@ -52,4 +65,29 @@ assert.deepEqual(csvRows.at(-1), {
   others: 17,
 })
 
-console.log("production data checks passed")
+const approximatelyEqual = (actual, expected, tolerance = 0.0005) =>
+  Math.abs(actual - expected) <= tolerance
+const weeklyTotal = getWeeklyCumulative("Total")
+
+assert.equal(getWeeklyHeatmap("yoy").length, 8)
+assert.ok(getWeeklyHeatmap("wow").every((row) => row.values.length === 6))
+assert.ok(
+  weeklyTotal.years.every((year, index) =>
+    approximatelyEqual(year.total, [251.088, 264.886, 275.938, 294.817][index])
+  )
+)
+assert.ok(
+  weeklyTotal.years
+    .at(-1)
+    .segments.every((segment, index) =>
+      approximatelyEqual(
+        segment.value,
+        [40.754, 117.686, 15.502, 60.128, 60.747][index]
+      )
+    )
+)
+assert.equal(getWeeklyMetric(weeklySelectedWeek, "Total", null, "yoy"), 6.8)
+assert.equal(getWeeklyMetric(weeklySelectedWeek, "Total", null, "wow"), -0.2)
+assert.equal(getWeeklyMetric(weeklySelectedWeek, "India", null, "yoy"), 9.3)
+
+console.log("production and weekly data checks passed")

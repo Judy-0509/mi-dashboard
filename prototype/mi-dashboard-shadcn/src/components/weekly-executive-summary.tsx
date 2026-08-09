@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { executiveSummary } from "@/data/production"
+import { weeklyExecutiveSummary } from "@/data/weekly"
 
-export function ExecutiveSummary() {
+export function WeeklyExecutiveSummary() {
   return (
     <Card className="my-4 border-border shadow-none" size="sm">
       <CardHeader className="pb-2">
@@ -11,13 +11,13 @@ export function ExecutiveSummary() {
       </CardHeader>
       <CardContent>
         <ul className="grid gap-2 text-sm leading-5 text-muted-foreground">
-          {executiveSummary.map((observation) => (
-            <li className="flex gap-3" key={observation}>
+          {weeklyExecutiveSummary.map((summary) => (
+            <li className="flex gap-3" key={summary}>
               <span
                 aria-hidden="true"
                 className="mt-2 size-1.5 shrink-0 bg-primary"
               />
-              <span>{observation}</span>
+              <span>{summary}</span>
             </li>
           ))}
         </ul>
