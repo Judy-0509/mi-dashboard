@@ -24,6 +24,15 @@ for (const quarter of cumulativeProduction) {
   )
 }
 
+assert.deepEqual(
+  getForecastHistory("2026 Q3").map((point) => point.period),
+  ["26-03월", "26-04월", "26-05월", "26-06월", "26-07월", "26-08월"]
+)
+assert.deepEqual(
+  getForecastHistory("2024 Q1").map((point) => point.period),
+  ["23-09월", "23-10월", "23-11월", "23-12월", "24-01월", "24-02월"]
+)
+
 const csvRows = parseCsv(
   [
     "quarter,apple,samsung,xiaomi,oppo,vivo,transsion,others",

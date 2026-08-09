@@ -33,20 +33,27 @@ export const dashboardMeta = {
 
 export const executiveSummary = dashboardData.executiveSummary
 
-const historyPeriods = [
-  "5개월 전",
-  "4개월 전",
-  "3개월 전",
-  "2개월 전",
-  "1개월 전",
-  "현재",
-]
 const revisionFactors = [0.91, 0.93, 0.95, 0.97, 0.985, 1]
+
+function getHistoryPeriods(quarter: string) {
+  const [year, quarterLabel] = quarter.split(" ")
+  const lastRevisionMonth = Number(quarterLabel.slice(1)) * 3 - 1
+
+  return revisionFactors.map((_, index) => {
+    const date = new Date(
+      Date.UTC(Number(year), lastRevisionMonth - 1 - (5 - index), 1)
+    )
+    const shortYear = String(date.getUTCFullYear()).slice(-2)
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0")
+    return `${shortYear}-${month}월`
+  })
+}
 
 export function getForecastHistory(quarter: string): ForecastHistoryPoint[] {
   const current =
     cumulativeProduction.find((item) => item.quarter === quarter) ??
     cumulativeProduction[0]
+  const historyPeriods = getHistoryPeriods(current.quarter)
 
   return revisionFactors.map((factor, periodIndex) => {
     const point = {

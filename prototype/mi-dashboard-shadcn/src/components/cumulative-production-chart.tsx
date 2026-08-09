@@ -1,4 +1,5 @@
 import { type Key, useMemo, useState } from "react"
+import { MousePointerClick } from "lucide-react"
 import {
   Bar,
   BarChart,
@@ -128,18 +129,19 @@ export function CumulativeProductionChart() {
             className="min-w-0 pe-6"
             aria-labelledby="production-chart-title"
           >
-            <div className="mb-3 flex items-center justify-between gap-4">
+            <div className="mb-3 flex h-16 items-center justify-between gap-4">
               <p id="production-chart-title" className="text-sm font-medium">
                 업체별 누적 생산량
               </p>
-              <p className="text-xs text-muted-foreground">
-                막대 조각을 클릭해 전망 변화 확인
+              <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                <MousePointerClick aria-hidden="true" className="size-3.5" />
+                막대를 클릭해 전망 변화 확인
               </p>
             </div>
             <ChartContainer className="h-[430px] w-full" config={chartConfig}>
               <BarChart
                 accessibilityLayer
-                barCategoryGap="18%"
+                barCategoryGap="8%"
                 data={cumulativeProduction}
                 margin={{ top: 12, right: 8, left: 10, bottom: 4 }}
               >
@@ -181,6 +183,7 @@ export function CumulativeProductionChart() {
                   >
                     {cumulativeProduction.map((item) => (
                       <Cell
+                        className="cursor-pointer transition-[filter,stroke] hover:stroke-foreground hover:stroke-2 hover:brightness-90"
                         key={`${vendor.key}-${item.quarter}`}
                         stroke={
                           selection.quarter === item.quarter &&
@@ -193,7 +196,7 @@ export function CumulativeProductionChart() {
                     ))}
                     <LabelList
                       dataKey={vendor.key}
-                      formatter={(value) => Number(value).toFixed(0)}
+                      formatter={(value) => Number(value).toFixed(1)}
                       fill={
                         vendorIndex === 0 || vendorIndex === 5
                           ? "var(--foreground)"
@@ -210,7 +213,7 @@ export function CumulativeProductionChart() {
           </section>
 
           <aside className="border-s ps-6" aria-labelledby="history-title">
-            <div className="mb-3 min-h-14">
+            <div className="mb-3 h-16">
               <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
                 Forecast History
               </p>
@@ -232,7 +235,7 @@ export function CumulativeProductionChart() {
             <ChartContainer className="h-[430px] w-full" config={chartConfig}>
               <BarChart
                 accessibilityLayer
-                barCategoryGap="14%"
+                barCategoryGap="8%"
                 data={history}
                 margin={{ top: 12, right: 2, left: 0, bottom: 4 }}
               >
