@@ -1,0 +1,279 @@
+.counterpoint-weekly.cp-report {
+  max-width: none;
+  padding: 0 16px 36px;
+  background: var(--mi-color-surface);
+}
+
+.counterpoint-weekly .dashboard-page-header {
+  gap: var(--mi-space-8);
+  padding: 2px 0 var(--mi-space-6);
+}
+
+.counterpoint-weekly .cp-report-control-row {
+  padding: var(--mi-space-4) 0;
+}
+
+.counterpoint-weekly .cp-report-summary,
+.counterpoint-weekly .cp-report-overview,
+.counterpoint-weekly .cp-report-region-section {
+  margin-top: var(--mi-space-6);
+}
+
+.counterpoint-weekly .cp-report-summary {
+  padding: var(--mi-space-4);
+  border: var(--mi-border);
+  border-radius: var(--mi-radius-md);
+  background: var(--mi-color-surface);
+}
+
+.counterpoint-weekly .cp-report-overview {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--mi-space-6);
+}
+
+.counterpoint-weekly .cp-report-overview-matrix {
+  grid-column: 1 / -1;
+  padding: var(--mi-space-4);
+  border: var(--mi-border);
+}
+
+.counterpoint-weekly .cp-report-overview > .cp-report-section,
+.counterpoint-weekly .cp-report-chart-card,
+.counterpoint-weekly .cp-report-region-section {
+  border-color: var(--mi-color-line);
+  border-radius: var(--mi-radius-md);
+  background: var(--mi-color-surface);
+}
+
+.counterpoint-weekly .cp-report-overview > .cp-report-section {
+  min-width: 0;
+}
+
+.counterpoint-weekly .cp-report-region-toolbar {
+  padding: var(--mi-space-4);
+  background: var(--mi-color-surface-soft);
+}
+
+.counterpoint-weekly .cp-report-footer {
+  margin-top: var(--mi-space-6);
+  padding-top: var(--mi-space-4);
+}
+
+.sigma.wide-dashboard .forecast-chart-row {
+  max-width: 100%;
+  overflow: visible;
+}
+
+.sigma.wide-dashboard .cumulative-chart {
+  max-width: 100%;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 6px;
+  overflow: clip;
+  overflow-clip-margin: 6px;
+}
+
+.sigma.wide-dashboard .cumulative-heading {
+  height: 43px;
+}
+
+.sigma.wide-dashboard .cumulative-heading h4 {
+  margin: 6px 0 0;
+  font-size: var(--mi-type-subtitle-size);
+  line-height: var(--mi-type-subtitle-line);
+  font-weight: var(--mi-type-subtitle-weight);
+  letter-spacing: -.02em;
+}
+
+.sigma.wide-dashboard .cumulative-wrap.sigma-baseline-column {
+  padding: 22px 20px 18px;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.sigma.wide-dashboard .cumulative-wrap .chart-meta {
+  justify-content: flex-end;
+}
+
+.sigma.wide-dashboard .sigma-summary-list {
+  display: grid;
+  gap: 3px;
+}
+
+.sigma.wide-dashboard .sigma-summary-list > span {
+  position: relative;
+  display: block;
+  padding-left: 12px;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.sigma.wide-dashboard .forecast-side-legend em,
+.sigma.wide-dashboard .forecast-side-legend b {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.sigma.wide-dashboard .sigma-summary-list > span::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+}
+
+.sigma.wide-dashboard .dashboard-insights.columns-1 {
+  grid-template-columns: 1fr;
+}
+
+.portal-content:has(.sigma.wide-dashboard) .topbar,
+.portal-shell:has(.sigma.wide-dashboard) .nav-foot,
+.sigma.wide-dashboard .dashboard-mock-badge,
+.sigma.wide-dashboard .source-note {
+  display: none;
+}
+
+.sigma.wide-dashboard {
+  padding-bottom: 0;
+}
+
+.sigma.wide-dashboard .quarter-bar.active .stack {
+  box-shadow: inset 0 0 0 2px var(--mi-color-primary);
+}
+
+.sigma.wide-dashboard .quarter-bar:focus-visible {
+  outline-offset: -2px;
+}
+
+.sigma.wide-dashboard .production-value {
+  font-size: 12px !important;
+  line-height: 16px;
+}
+
+.sigma.wide-dashboard .quarter-label,
+.sigma.wide-dashboard .year-label {
+  font-weight: 400;
+}
+
+.counterpoint-weekly .cp-report-metric-toggle.cp-report-chip-control {
+  border-radius: 6px;
+}
+
+.counterpoint-weekly .cp-report-metric-toggle.cp-report-chip-control button {
+  min-height: 26px;
+  padding: 5px 7px;
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.counterpoint-weekly .cp-report-metric-toggle.cp-report-chip-control button:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--mi-color-primary);
+  outline-offset: -2px;
+}
+
+.counterpoint-weekly .cp-report-plot--compact,
+.counterpoint-weekly .cp-report-plot--compact svg {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: visible;
+}
+
+.counterpoint-weekly .cp-report-stacked-chart svg > g:has(> .cp-report-total-label) > g:first-child .cp-report-segment-label {
+  transform: translateY(-12px);
+}
+
+@media (min-width: 1101px) {
+  .sigma.wide-dashboard .production-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sigma.wide-dashboard .vintage-chart {
+    grid-area: chart;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: 320px;
+    gap: 6px;
+    height: 363px;
+    min-width: 0;
+  }
+
+  .sigma.wide-dashboard .forecast-chart-row {
+    grid-template-columns: calc(50% - 2px) minmax(0, 1fr);
+    grid-template-areas: "chart legend";
+    gap: 16px;
+  }
+
+  .sigma.wide-dashboard .forecast-side-legend {
+    grid-area: legend;
+    display: flex;
+    min-width: 118px;
+    padding: 28px 0 0 12px;
+    border-left: 1px solid #e1e6ee;
+  }
+
+  .sigma.wide-dashboard .forecast-side-legend span {
+    grid-template-columns: 8px minmax(0, 1fr) auto;
+    gap: 5px;
+  }
+
+}
+
+@media (max-width: 850px) {
+  .portal-nav {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .portal-nav nav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+  }
+
+  .portal-nav .nav-provider {
+    padding: 0;
+  }
+
+  .portal-nav .nav-provider > span {
+    display: none;
+  }
+
+  .portal-nav .nav-series {
+    display: flex;
+  }
+
+  .portal-nav .nav-series button {
+    min-height: 36px;
+    padding: 8px 12px;
+    border: var(--mi-border);
+    white-space: nowrap;
+  }
+
+  .portal-nav .nav-series button:focus-visible {
+    outline: 2px solid var(--mi-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 900px) {
+  .counterpoint-weekly .cp-report-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .counterpoint-weekly .cp-report-overview-matrix {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .counterpoint-weekly.cp-report {
+    padding: 0 10px 28px;
+  }
+
+  .counterpoint-weekly .dashboard-page-header {
+    gap: var(--mi-space-4);
+  }
+
+  .counterpoint-weekly .cp-report-summary,
+  .counterpoint-weekly .cp-report-overview-matrix {
+    padding: var(--mi-space-3);
+  }
+}

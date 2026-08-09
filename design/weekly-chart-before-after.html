@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weekly 누적 지역 차트 · Before / After</title>
+  <style>
+    :root {
+      --mi-font-sans: "Pretendard Variable", Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", Arial, sans-serif;
+      --mi-type-title-size: 2rem;
+      --mi-type-subtitle-size: 1.25rem;
+      --mi-type-body-size: .875rem;
+      --mi-type-annotation-size: .75rem;
+      --mi-type-data-size: .875rem;
+      --mi-type-legend-size: .75rem;
+      --mi-color-bg: #fff;
+      --mi-color-surface: #fff;
+      --mi-color-surface-soft: #f7f9fc;
+      --mi-color-ink: #0d0d0d;
+      --mi-color-text: #555;
+      --mi-color-muted: #7a7a76;
+      --mi-color-line: #e8e8e5;
+      --mi-color-line-strong: #cbd7e6;
+      --mi-color-primary: #146ef5;
+      --mi-color-primary-deep: #1428a0;
+      --mi-color-primary-soft: #eaf2ff;
+      --mi-chart-blue-1: #0b1f3a;
+      --mi-chart-blue-2: #123e6a;
+      --mi-chart-blue-3: #1d5f91;
+      --mi-chart-blue-5: #5a9fd0;
+      --mi-chart-blue-7: #b9daee;
+      --mi-border: 1px solid var(--mi-color-line);
+      --mi-radius-sm: 6px;
+      --mi-radius-md: 8px;
+      --mi-space-1: 4px;
+      --mi-space-2: 8px;
+      --mi-space-3: 12px;
+      --mi-space-4: 16px;
+      --mi-space-6: 24px;
+      --mi-space-8: 32px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; max-width: 100%; overflow-x: hidden; }
+    body {
+      color: var(--mi-color-ink);
+      background: var(--mi-color-bg);
+      font-family: var(--mi-font-sans);
+      letter-spacing: -.012em;
+    }
+    button { font: inherit; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 52px;
+      padding: 0 clamp(16px, 4vw, 56px);
+      border-bottom: var(--mi-border);
+    }
+    .brand { display: flex; align-items: center; gap: var(--mi-space-2); font-size: 14px; font-weight: 650; }
+    .brand::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--mi-color-primary); box-shadow: 0 0 0 4px var(--mi-color-primary-soft); }
+    .boundary { color: var(--mi-color-muted); font-size: 11px; font-weight: 700; letter-spacing: .12em; }
+    main { width: min(1400px, 100%); margin: 0 auto; padding: clamp(28px, 5vw, 64px) clamp(12px, 4vw, 56px) 56px; }
+    .eyebrow { color: var(--mi-color-primary); font-size: 10px; font-weight: 750; letter-spacing: .13em; }
+    h1 { margin: 12px 0 10px; font-size: clamp(30px, 4vw, 52px); line-height: 1.08; letter-spacing: -.045em; }
+    .lede { max-width: 780px; margin: 0; color: var(--mi-color-text); font-size: 15px; line-height: 1.7; }
+    .decision-note { display: flex; gap: 10px; margin: 24px 0 32px; padding: 14px 16px; border-left: 3px solid var(--mi-color-primary); background: var(--mi-color-surface-soft); color: var(--mi-color-text); font-size: 13px; line-height: 1.55; }
+    .decision-note strong { flex: none; color: var(--mi-color-ink); }
+    .comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--mi-space-6); }
+    .case { min-width: 0; }
+    .case-label { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 0 0 10px; }
+    .case-label h2 { margin: 0; font-size: var(--mi-type-subtitle-size); }
+    .case-label span { color: var(--mi-color-muted); font-size: var(--mi-type-annotation-size); }
+    .chart-card { min-width: 0; border: var(--mi-border); border-radius: var(--mi-radius-md); background: var(--mi-color-surface); overflow: hidden; }
+    .chart-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 16px 12px; }
+    .chart-head h3 { margin: 0; font-size: 18px; line-height: 1.25; }
+    .toggle { display: inline-flex; flex: none; border: 1px solid #b8cff0; border-radius: var(--mi-radius-sm); overflow: hidden; }
+    .toggle button { min-width: 0; min-height: 26px; padding: 5px 7px; border: 0; color: #075ecb; background: var(--mi-color-surface); font-size: 12px; line-height: 14px; cursor: pointer; }
+    .toggle button[aria-pressed="true"] { color: #fff; background: #075ecb; }
+    button:focus-visible { position: relative; z-index: 2; outline: 2px solid var(--mi-color-primary); outline-offset: 2px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 7px 12px; padding: 0 16px 12px; color: var(--mi-color-text); font-size: var(--mi-type-legend-size); }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .legend i { width: 9px; height: 9px; border-radius: 2px; }
+    .plot { border-top: 1px solid var(--mi-color-line); }
+    .plot svg { display: block; width: 100%; height: auto; font-family: var(--mi-font-sans); }
+    .after .plot { max-width: 100%; overflow: visible; }
+    .after .plot svg { width: 100%; min-width: 0; }
+    .grid-line { stroke: #e8eef6; stroke-width: 1; }
+    .axis-line { stroke: #b8c7da; stroke-width: 1; }
+    .axis-label { fill: var(--mi-color-muted); font-size: 11px; }
+    .bar-segment { stroke: #fff; stroke-width: 1; }
+    .before .total-label, .before .segment-label, .before .callout-label { font-size: 30px; font-weight: 600; }
+    .before .year-label { font-size: 15px; font-weight: 650; }
+    .after .total-label { font-size: 14px; font-weight: 650; }
+    .after .segment-label, .after .callout-label { font-size: 12px; font-weight: 600; }
+    .after .year-label { font-size: 12px; font-weight: 650; }
+    .label-dark { fill: #fff; }
+    .label-light { fill: var(--mi-color-ink); }
+    .callout { stroke: #6d7b8e; stroke-width: 1; fill: none; }
+    .case-summary { margin: 12px 2px 0; padding: 0; color: var(--mi-color-text); font-size: 13px; line-height: 1.6; }
+    .case-summary b { color: var(--mi-color-ink); }
+    .delta-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 32px; border: var(--mi-border); border-radius: var(--mi-radius-md); overflow: hidden; background: var(--mi-color-line); }
+    .delta-list div { padding: 18px; background: var(--mi-color-surface-soft); }
+    .delta-list b { display: block; margin-bottom: 5px; font-size: 14px; }
+    .delta-list span { color: var(--mi-color-text); font-size: 12px; line-height: 1.5; }
+    footer { display: flex; justify-content: space-between; gap: 16px; margin-top: 32px; padding-top: 16px; border-top: var(--mi-border); color: var(--mi-color-muted); font-size: 12px; line-height: 1.5; }
+
+    @media (max-width: 980px) {
+      .comparison { grid-template-columns: 1fr; }
+      .delta-list { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .topbar { flex-direction: column; align-items: flex-start; gap: 8px; padding-block: 12px; }
+      .boundary { text-align: left; }
+      .case-label { display: block; }
+      .case-label span { display: block; margin-top: 3px; }
+      .chart-head { display: grid; grid-template-columns: minmax(0, 1fr); align-items: flex-start; }
+      .toggle { justify-self: start; }
+      .chart-head h3 { padding-top: 8px; font-size: 16px; }
+      .delta-list { grid-template-columns: 1fr; }
+      .decision-note { display: block; }
+      .decision-note strong { display: block; margin-bottom: 4px; }
+      footer { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">MI Intelligence</div>
+    <div class="boundary">DESIGN PREVIEW · MOCK DATA</div>
+  </header>
+
+  <main>
+    <span class="eyebrow">COUNTERPOINT · WEEKLY CHART RULE</span>
+    <h1>누적 지역 차트 · Before / After</h1>
+    <p class="lede">같은 W1~W32 누적 판매 데이터와 지역별 색을 사용해, 현재 Weekly 표현과 SigmaIntel 기준 표현의 차이만 비교합니다.</p>
+
+    <div class="decision-note">
+      <strong>의사결정용 시안</strong>
+      <span>실제 대시보드가 아닙니다. After 승인 후 Weekly의 데스크톱 차트 크기와 간격 규칙만 운영 화면에 반영합니다.</span>
+    </div>
+
+    <section class="comparison" aria-label="Weekly 누적 지역 차트 전후 비교">
+      <div class="case before">
+        <div class="case-label"><h2>Before</h2><span>현재 Weekly 구조</span></div>
+        <article class="chart-card">
+          <div class="chart-head">
+            <h3>Breakdown: Cumulative by Region</h3>
+            <div class="toggle" role="group" aria-label="Before 표시 단위">
+              <button type="button" aria-pressed="true" data-metric="share">M/S (%)</button>
+              <button type="button" aria-pressed="false" data-metric="unit">Mu</button>
+            </div>
+          </div>
+          <div class="legend" aria-label="지역 범례"></div>
+          <div class="plot"><svg role="img"></svg></div>
+        </article>
+        <p class="case-summary"><b>문제:</b> 30px 숫자가 차트보다 강하고, 고정 SVG 전체가 카드 폭에 맞춰 축소되어 좁은 화면에서 값과 연도가 가까워집니다.</p>
+      </div>
+
+      <div class="case after">
+        <div class="case-label"><h2>After</h2><span>Sigma visual baseline</span></div>
+        <article class="chart-card">
+          <div class="chart-head">
+            <h3>Breakdown: Cumulative by Region</h3>
+            <div class="toggle" role="group" aria-label="After 표시 단위">
+              <button type="button" aria-pressed="true" data-metric="share">M/S (%)</button>
+              <button type="button" aria-pressed="false" data-metric="unit">Mu</button>
+            </div>
+          </div>
+          <div class="legend" aria-label="지역 범례"></div>
+          <div class="plot" aria-label="카드 폭에 맞춰 표시되는 차트 영역"><svg role="img"></svg></div>
+        </article>
+        <p class="case-summary"><b>개선:</b> Total 14px, 내부값·연결선 12px, Total→막대와 막대→연도 8px을 유지하면서 네 연도 막대를 카드 폭 안에 배치합니다.</p>
+      </div>
+    </section>
+
+    <section class="delta-list" aria-label="변경 규칙 요약">
+      <div><b>숫자 위계</b><span>Total 14px · 구성값 12px으로 데이터 역할을 구분합니다.</span></div>
+      <div><b>고정 간격</b><span>Total→막대 8px · 막대→연도 8px을 유지합니다.</span></div>
+      <div><b>정보 보존</b><span>M/S 100% 축, Mu 실수량 축, 2023~2026, 지역색을 유지합니다.</span></div>
+      <div><b>데스크톱</b><span>1440px 카드 폭 안에 네 연도 막대를 배치해 가로 스크롤을 만들지 않습니다.</span></div>
+    </section>
+
+    <footer>
+      <span>Source: Counterpoint · Weekly Sell-Through by Model · 모든 수치는 디자인 검토용 MOCK DATA입니다.</span>
+      <span>Internal use only · MOCK DATA</span>
+    </footer>
+  </main>
+
+  <script>
+    const years = [2023, 2024, 2025, 2026];
+    const regions = ["USA", "China", "Japan", "Europe", "India"];
+    const colors = { USA: "#0b1f3a", China: "#123e6a", Japan: "#1d5f91", Europe: "#5a9fd0", India: "#b9daee" };
+    const totals = { 2023: 251.088, 2024: 264.886, 2025: 275.938, 2026: 294.817 };
+    const shares = {
+      2023: { USA: 13.9, China: 39.7, Japan: 5.4, Europe: 20.8, India: 20.1 },
+      2024: { USA: 13.9, China: 39.7, Japan: 5.4, Europe: 20.8, India: 20.1 },
+      2025: { USA: 13.9, China: 39.7, Japan: 5.4, Europe: 20.8, India: 20.1 },
+      2026: { USA: 13.8, China: 39.9, Japan: 5.3, Europe: 20.4, India: 20.6 }
+    };
+    const units = {
+      2023: { USA: 34.971, China: 99.692, Japan: 13.512, Europe: 52.325, India: 50.588 },
+      2024: { USA: 36.900, China: 105.171, Japan: 14.254, Europe: 55.194, India: 53.367 },
+      2025: { USA: 38.433, China: 109.556, Japan: 14.855, Europe: 57.500, India: 55.594 },
+      2026: { USA: 40.754, China: 117.686, Japan: 15.502, Europe: 60.128, India: 60.747 }
+    };
+    const ns = "http://www.w3.org/2000/svg";
+
+    function node(name, attrs = {}, text = "") {
+      const element = document.createElementNS(ns, name);
+      Object.entries(attrs).forEach(([key, value]) => element.setAttribute(key, value));
+      if (text) element.textContent = text;
+      return element;
+    }
+
+    function values(year, metric) {
+      return metric === "share" ? shares[year] : units[year];
+    }
+
+    function render(caseElement, metric) {
+      const svg = caseElement.querySelector("svg");
+      const isAfter = caseElement.classList.contains("after");
+      const width = 720;
+      const top = isAfter ? 40 : 30;
+      const bottom = isAfter ? 286 : 296;
+      const plotHeight = bottom - top;
+      const max = metric === "share" ? 100 : Math.max(...Object.values(totals)) * 1.08;
+      const ticks = metric === "share" ? [0, 25, 50, 75, 100] : [0, .25, .5, .75, 1].map(value => value * max);
+      const barWidth = 78;
+      const starts = [98, 250, 402, 554];
+      svg.replaceChildren();
+      svg.setAttribute("viewBox", `0 0 ${width} 330`);
+      svg.setAttribute("aria-label", `W1~W32 2023~2026 누적 지역 ${metric === "share" ? "점유율" : "판매량"} 막대 차트`);
+
+      ticks.forEach(tick => {
+        const y = bottom - tick / max * plotHeight;
+        svg.append(node("line", { x1: 42, x2: 710, y1: y, y2: y, class: "grid-line" }));
+        svg.append(node("text", { x: 36, y: y + 4, "text-anchor": "end", class: "axis-label" }, metric === "share" ? `${Math.round(tick)}%` : tick.toFixed(0)));
+      });
+
+      years.forEach((year, yearIndex) => {
+        const x = starts[yearIndex];
+        const data = values(year, metric);
+        let cumulative = 0;
+        regions.forEach(region => {
+          const value = data[region];
+          const height = value / max * plotHeight;
+          const y = bottom - (cumulative + value) / max * plotHeight;
+          cumulative += value;
+          svg.append(node("rect", { x, y, width: barWidth, height, fill: colors[region], class: "bar-segment" }));
+          const label = metric === "share" ? `${shares[year][region].toFixed(1)}%` : value.toFixed(1);
+          if (height < 24) {
+            const center = y + height / 2;
+            const labelY = Math.max(top + 18, center);
+            svg.append(node("path", { d: `M${x + barWidth},${center} H${x + barWidth + 8} V${labelY}`, class: "callout" }));
+            svg.append(node("text", { x: x + barWidth + 11, y: labelY + 4, class: "callout-label label-light" }, label));
+          } else {
+            svg.append(node("text", { x: x + barWidth / 2, y: y + height / 2 + 4, "text-anchor": "middle", class: `segment-label ${regions.indexOf(region) < 3 ? "label-dark" : "label-light"}` }, label));
+          }
+        });
+        svg.append(node("text", { x: x + barWidth / 2, y: isAfter ? 28.75 : 20, "text-anchor": "middle", class: "total-label label-light" }, `${totals[year].toFixed(1)} MU`));
+        svg.append(node("text", { x: x + barWidth / 2, y: isAfter ? 306 : 304, "text-anchor": "middle", class: "year-label label-light" }, String(year)));
+      });
+      svg.append(node("line", { x1: 42, x2: 710, y1: bottom, y2: bottom, class: "axis-line" }));
+    }
+
+    document.querySelectorAll(".case").forEach(caseElement => {
+      const legend = caseElement.querySelector(".legend");
+      regions.forEach(region => {
+        const item = document.createElement("span");
+        item.innerHTML = `<i style="background:${colors[region]}"></i>${region}`;
+        legend.append(item);
+      });
+      caseElement.querySelectorAll("[data-metric]").forEach(button => button.addEventListener("click", () => {
+        caseElement.querySelectorAll("[data-metric]").forEach(peer => peer.setAttribute("aria-pressed", String(peer === button)));
+        render(caseElement, button.dataset.metric);
+      }));
+      render(caseElement, "share");
+    });
+  </script>
+</body>
+</html>
