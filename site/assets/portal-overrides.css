@@ -212,6 +212,11 @@
     padding-left: 24px;
   }
 
+  .sigma.wide-dashboard .dashboard-page-description {
+    max-width: none;
+    white-space: nowrap;
+  }
+
   .sigma.wide-dashboard .production-layout {
     grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
     margin-top: 19px;
