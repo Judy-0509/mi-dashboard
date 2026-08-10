@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/chart"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   aniFocusQuarter,
   aniModels,
@@ -26,7 +27,11 @@ import {
   getAniHistorySummary,
   getAniProductionTotal,
   getAniVisibleModelKeys,
+  getAniVisibleModelKeysForLineup,
+  type AniFilterMode,
   type AniGenerationKey,
+  type AniLineupBucketKey,
+  type AniModelKey,
   type AniModelTypeKey,
 } from "@/data/ani"
 
@@ -52,6 +57,19 @@ const modelTypeOptions = [
   label: string
 }[]
 
+const lineupOptions = [
+  { key: "n", label: "N" },
+  { key: "nPlus1", label: "N+1" },
+  { key: "nPlus2", label: "N+2" },
+  { key: "legacy", label: "Legacy" },
+] as const satisfies readonly {
+  key: AniLineupBucketKey
+  label: string
+}[]
+
+const generationLegendTypes = ["basic", "plusAir", "pro", "proMax"] as const
+const specialLegendTypes = ["e", "foldable"] as const
+
 const aniChartConfig = Object.fromEntries(
   aniModels.map((model) => [
     model.key,
@@ -68,6 +86,13 @@ type AniLabelProps = {
   fill?: string
 }
 
+type AniChartItem = {
+  quarter: string
+  period?: string
+  visibleTotal: number
+  topVisibleModelKey?: AniModelKey
+} & Record<AniModelKey, number>
+
 function renderAniSegmentLabel(props: AniLabelProps) {
   const value = Number(props.value)
   const width = Number(props.width)
@@ -79,7 +104,7 @@ function renderAniSegmentLabel(props: AniLabelProps) {
     !Number.isFinite(value) ||
     value === 0 ||
     !Number.isFinite(height) ||
-    height < 24
+    height < 12
   ) {
     return ""
   }
@@ -97,6 +122,61 @@ function renderAniSegmentLabel(props: AniLabelProps) {
       {value.toFixed(1)}
     </text>
   )
+}
+
+function renderAniTotalLabel(props: AniLabelProps) {
+  const value = Number(props.value)
+  const x = Number(props.x)
+  const y = Number(props.y)
+  const width = Number(props.width)
+
+  if (
+    props.value === "" ||
+    !Number.isFinite(value) ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    !Number.isFinite(width)
+  ) {
+    return ""
+  }
+
+  return (
+    <text
+      fill="var(--foreground)"
+      fontSize={9}
+      fontWeight={600}
+      textAnchor="middle"
+      x={x + width / 2}
+      y={y - 6}
+    >
+      {formatMu(value)}
+    </text>
+  )
+}
+
+function maskAniChartItem(
+  item: {
+    quarter: string
+    period?: string
+  } & Record<AniModelKey, number>,
+  visibleModelKeys: readonly AniModelKey[],
+): AniChartItem {
+  const visibleModelKeySet = new Set(visibleModelKeys)
+  const chartItem = {
+    ...item,
+    visibleTotal: getAniProductionTotal(item, visibleModelKeys),
+    topVisibleModelKey:
+      [...visibleModelKeys].reverse().find((modelKey) => item[modelKey] > 0) ??
+      visibleModelKeys.at(-1),
+  } as AniChartItem
+
+  aniModels.forEach((model) => {
+    chartItem[model.key] = visibleModelKeySet.has(model.key)
+      ? item[model.key]
+      : 0
+  })
+
+  return chartItem
 }
 
 function formatMu(value: number) {
@@ -122,6 +202,10 @@ function getLabelColor(modelType: AniModelTypeKey) {
 }
 
 export function AniProductionChart() {
+  const [filterMode, setFilterMode] = useState<AniFilterMode>("lineup")
+  const [selectedLineupBuckets, setSelectedLineupBuckets] = useState<
+    Set<AniLineupBucketKey>
+  >(() => new Set(lineupOptions.map(({ key }) => key)))
   const [selectedGenerations, setSelectedGenerations] = useState<
     Set<AniGenerationKey>
   >(() => new Set(generationOptions.map(({ key }) => key)))
@@ -134,40 +218,65 @@ export function AniProductionChart() {
   const activeGenerations = generationOptions
     .map(({ key }) => key)
     .filter((key) => selectedGenerations.has(key))
+  const activeLineupBuckets = lineupOptions
+    .map(({ key }) => key)
+    .filter((key) => selectedLineupBuckets.has(key))
   const activeTypes = modelTypeOptions
     .map(({ key }) => key)
     .filter((key) => selectedTypes.has(key))
-  const visibleModelKeys = useMemo(
-    () => getAniVisibleModelKeys(activeGenerations, activeTypes),
-    [activeGenerations, activeTypes],
+  const getVisibleModelKeysForQuarter = (quarter: string) =>
+    filterMode === "lineup"
+      ? getAniVisibleModelKeysForLineup(
+          quarter,
+          activeLineupBuckets,
+          activeTypes,
+        )
+      : getAniVisibleModelKeys(activeGenerations, activeTypes)
+  const quarterlyVisibleModelKeys = aniQuarterlyProduction.map((item) =>
+    getVisibleModelKeysForQuarter(item.quarter),
   )
-  const visibleModels = aniModels.filter((model) =>
-    visibleModelKeys.includes(model.key),
+  const productionWithVisibleTotals = aniQuarterlyProduction.map(
+    (item, index) => maskAniChartItem(item, quarterlyVisibleModelKeys[index]),
   )
-  const topVisibleModelKey = visibleModelKeys.at(-1)
-  const productionWithVisibleTotals = aniQuarterlyProduction.map((item) => ({
-    ...item,
-    visibleTotal: getAniProductionTotal(item, visibleModelKeys),
-  }))
   const history = useMemo(
     () => getAniForecastHistory(selectedQuarter),
     [selectedQuarter],
   )
-  const historyWithVisibleTotals = history.map((item) => ({
-    ...item,
-    visibleTotal: getAniProductionTotal(item, visibleModelKeys),
-  }))
-  const visibleYAxisDomain = useMemo(() => {
-    const maxVisibleTotal = Math.max(
-      0,
-      ...productionWithVisibleTotals.map((item) => item.visibleTotal),
-      ...historyWithVisibleTotals.map((item) => item.visibleTotal),
-    )
-    const upperBound = Math.max(10, Math.ceil((maxVisibleTotal * 1.08) / 10) * 10)
+  const historyVisibleModelKeys = getVisibleModelKeysForQuarter(selectedQuarter)
+  const historyWithVisibleTotals = history.map((item) =>
+    maskAniChartItem(item, historyVisibleModelKeys),
+  )
+  const chartModelKeys = Array.from(
+    new Set([
+      ...quarterlyVisibleModelKeys.flat(),
+      ...historyVisibleModelKeys,
+    ]),
+  )
+  const visibleModels = aniModels.filter((model) =>
+    chartModelKeys.includes(model.key),
+  )
+  const maxVisibleTotal = Math.max(
+    0,
+    ...productionWithVisibleTotals.map((item) => item.visibleTotal),
+    ...historyWithVisibleTotals.map((item) => item.visibleTotal),
+  )
+  const upperBound = Math.max(10, Math.ceil((maxVisibleTotal * 1.08) / 10) * 10)
+  const visibleYAxisDomain = [0, upperBound] as const
+  const summary = getAniHistorySummary(history, historyVisibleModelKeys)
 
-    return [0, upperBound] as const
-  }, [historyWithVisibleTotals, productionWithVisibleTotals])
-  const summary = getAniHistorySummary(history, visibleModelKeys)
+  const toggleLineupBucket = (bucket: AniLineupBucketKey) => {
+    setSelectedLineupBuckets((current) => {
+      const next = new Set(current)
+      if (next.has(bucket)) {
+        if (next.size > 1) {
+          next.delete(bucket)
+        }
+      } else {
+        next.add(bucket)
+      }
+      return next
+    })
+  }
 
   const toggleGeneration = (generation: AniGenerationKey) => {
     setSelectedGenerations((current) => {
@@ -211,6 +320,8 @@ export function AniProductionChart() {
         <Button
           className="shrink-0"
           onPress={() => {
+            setFilterMode("lineup")
+            setSelectedLineupBuckets(new Set(lineupOptions.map(({ key }) => key)))
             setSelectedGenerations(new Set(generationOptions.map(({ key }) => key)))
             setSelectedTypes(new Set(modelTypeOptions.map(({ key }) => key)))
           }}
@@ -221,9 +332,62 @@ export function AniProductionChart() {
         </Button>
       </CardHeader>
       <CardContent className="pt-3">
-        <div className="mb-3 flex min-w-0 flex-wrap items-start justify-between gap-3">
-          <div className="grid min-w-0 gap-2">
-            <div aria-label="시리즈" className="flex flex-wrap gap-2" role="group">
+        <div className="mb-3 grid min-w-0 gap-2">
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+            <ToggleGroup
+              aria-label="필터 기준"
+              onSelectionChange={(selection) => {
+                const next = Array.from(selection)[0]
+                if (next === "lineup" || next === "series") {
+                  setFilterMode(next)
+                }
+              }}
+              selectedKeys={new Set([filterMode])}
+              selectionMode="single"
+              size="sm"
+              variant="outline"
+            >
+              <ToggleGroupItem id="lineup">라인업 기준</ToggleGroupItem>
+              <ToggleGroupItem id="series">시리즈 기준</ToggleGroupItem>
+            </ToggleGroup>
+            <p className="pt-1 text-right text-xs leading-5 text-muted-foreground">
+              {aniModels.length}개 중 {visibleModels.length}개 모델 표시
+            </p>
+          </div>
+          {filterMode === "lineup" ? (
+            <div
+              aria-label="라인업 필터"
+              className="flex flex-wrap gap-2"
+              role="group"
+            >
+              <span className="w-16 pt-1 text-xs font-medium text-muted-foreground">
+                라인업
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {lineupOptions.map(({ key, label }) => {
+                  const isSelected = selectedLineupBuckets.has(key)
+
+                  return (
+                    <Button
+                      aria-pressed={isSelected}
+                      className="h-7 px-2 text-xs"
+                      key={key}
+                      onPress={() => toggleLineupBucket(key)}
+                      size="sm"
+                      variant={isSelected ? "secondary" : "outline"}
+                    >
+                      {label}
+                    </Button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div
+              aria-label="시리즈 필터"
+              className="flex flex-wrap gap-2"
+              role="group"
+            >
               <span className="w-16 pt-1 text-xs font-medium text-muted-foreground">
                 시리즈
               </span>
@@ -246,46 +410,80 @@ export function AniProductionChart() {
                 })}
               </div>
             </div>
-            <div
-              aria-label="모델 유형"
-              className="flex flex-wrap gap-2"
-              role="group"
-            >
-              <span className="w-16 pt-1 text-xs font-medium text-muted-foreground">
-                모델 유형
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {modelTypeOptions.map(({ key, label }) => {
-                  const isSelected = selectedTypes.has(key)
+          )}
+          <div
+            aria-label="모델 유형"
+            className="flex flex-wrap gap-2"
+            role="group"
+          >
+            <span className="w-16 pt-1 text-xs font-medium text-muted-foreground">
+              모델 유형
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {modelTypeOptions.map(({ key, label }) => {
+                const isSelected = selectedTypes.has(key)
 
-                  return (
-                    <Button
-                      aria-pressed={isSelected}
-                      className="h-7 gap-1.5 px-2 text-xs"
-                      key={key}
-                      onPress={() => toggleType(key)}
-                      size="sm"
-                      variant={isSelected ? "secondary" : "outline"}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="size-2"
-                        style={{
-                          backgroundColor:
-                            aniModels.find((model) => model.type === key)
-                              ?.color,
-                        }}
-                      />
-                      {label}
-                    </Button>
-                  )
-                })}
-              </div>
+                return (
+                  <Button
+                    aria-pressed={isSelected}
+                    className="h-7 gap-1.5 px-2 text-xs"
+                    key={key}
+                    onPress={() => toggleType(key)}
+                    size="sm"
+                    variant={isSelected ? "secondary" : "outline"}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="size-2"
+                      style={{
+                        backgroundColor:
+                          aniModels.find((model) => model.type === key)?.color,
+                      }}
+                    />
+                    {label}
+                  </Button>
+                )
+              })}
             </div>
           </div>
-          <p className="pt-1 text-right text-xs leading-5 text-muted-foreground">
-            {aniModels.length}개 중 {visibleModels.length}개 모델 표시
-          </p>
+          <div
+            aria-label="시리즈 색상 범례"
+            className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 border-t pt-2 text-[10px] leading-4 text-muted-foreground"
+          >
+            {generationOptions.map(({ key, label }) => (
+              <span className="flex items-center gap-1" key={key}>
+                <span>{label}</span>
+                <span className="flex items-center gap-0.5" aria-hidden="true">
+                  {generationLegendTypes.map((type) => {
+                    const model = aniModels.find(
+                      (item) => item.generation === key && item.type === type,
+                    )
+                    return model ? (
+                      <i
+                        className="size-2"
+                        key={model.key}
+                        style={{ backgroundColor: model.color }}
+                        title={model.label}
+                      />
+                    ) : null
+                  })}
+                </span>
+              </span>
+            ))}
+            {specialLegendTypes.map((type) => {
+              const model = aniModels.find((item) => item.type === type)
+              return model ? (
+                <span className="flex items-center gap-1" key={type}>
+                  <i
+                    aria-hidden="true"
+                    className="size-2"
+                    style={{ backgroundColor: model.color }}
+                  />
+                  {type === "e" ? "e" : "Foldable"}
+                </span>
+              ) : null
+            })}
+          </div>
         </div>
 
         <div className="grid min-w-0 grid-cols-[minmax(0,58fr)_minmax(0,42fr)] gap-0 border-t pt-3">
@@ -358,7 +556,7 @@ export function AniProductionChart() {
                     key={model.key}
                     stackId="ani-production"
                   >
-                    {aniQuarterlyProduction.map((item) => (
+                    {productionWithVisibleTotals.map((item) => (
                       <Cell
                         className="cursor-pointer transition-opacity focus:outline-none focus-visible:outline-none"
                         fillOpacity={
@@ -381,17 +579,15 @@ export function AniProductionChart() {
                       fill={getLabelColor(model.type)}
                       position="center"
                     />
-                    {model.key === topVisibleModelKey ? (
-                      <LabelList
-                        dataKey="visibleTotal"
-                        fill="var(--foreground)"
-                        fontSize={9}
-                        fontWeight={600}
-                        formatter={(value) => formatMu(Number(value))}
-                        offset={8}
-                        position="top"
-                      />
-                    ) : null}
+                    <LabelList
+                      content={renderAniTotalLabel}
+                      valueAccessor={(entry) =>
+                        entry.payload.topVisibleModelKey === model.key
+                          ? entry.payload.visibleTotal
+                          : ""
+                      }
+                      position="top"
+                    />
                   </Bar>
                 ))}
               </BarChart>
@@ -447,17 +643,15 @@ export function AniProductionChart() {
                         fill={getLabelColor(model.type)}
                         position="center"
                       />
-                      {model.key === topVisibleModelKey ? (
-                        <LabelList
-                          dataKey="visibleTotal"
-                          fill="var(--foreground)"
-                          fontSize={8}
-                          fontWeight={600}
-                          formatter={(value) => formatMu(Number(value))}
-                          offset={8}
-                          position="top"
-                        />
-                      ) : null}
+                      <LabelList
+                        content={renderAniTotalLabel}
+                        valueAccessor={(entry) =>
+                          entry.payload.topVisibleModelKey === model.key
+                            ? entry.payload.visibleTotal
+                            : ""
+                        }
+                        position="top"
+                      />
                     </Bar>
                   ))}
                 </BarChart>

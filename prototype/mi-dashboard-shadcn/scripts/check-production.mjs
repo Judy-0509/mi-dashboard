@@ -16,8 +16,10 @@ import {
   aniQuarterlyProduction,
   getAniForecastHistory,
   getAniHistorySummary,
+  getAniLineupBuckets,
   getAniProductionTotal,
   getAniVisibleModelKeys,
+  getAniVisibleModelKeysForLineup,
 } from "../src/data/ani.ts"
 import {
   getWeeklyCumulative,
@@ -127,6 +129,28 @@ assert.deepEqual(
 assert.deepEqual(
   getAniVisibleModelKeys(["iphone16", "iphone17"], ["pro", "e"]),
   ["iphone16Pro", "iphone16E", "iphone17Pro", "iphone17E"],
+)
+assert.deepEqual(getAniLineupBuckets("2024 Q1"), {
+  iphone15: "n",
+})
+assert.deepEqual(getAniLineupBuckets("2024 Q3"), {
+  iphone15: "nPlus1",
+  iphone16: "n",
+})
+assert.deepEqual(getAniLineupBuckets("2025 Q3"), {
+  iphone15: "nPlus2",
+  iphone16: "nPlus1",
+  iphone17: "n",
+})
+assert.deepEqual(getAniLineupBuckets("2026 Q3"), {
+  iphone15: "legacy",
+  iphone16: "nPlus2",
+  iphone17: "nPlus1",
+  iphone18: "n",
+})
+assert.deepEqual(
+  getAniVisibleModelKeysForLineup("2026 Q3", ["nPlus1"], ["plusAir"]),
+  ["iphone17Air"],
 )
 assert.equal(aniFocusQuarter, "2027 Q2")
 assert.equal(getAniForecastHistory("2027 Q2").length, 6)
@@ -320,7 +344,15 @@ assert.match(aniChartSource, /모델 유형/)
 assert.match(aniChartSource, /현재 Forecast/)
 assert.match(aniChartSource, /전월 대비/)
 assert.match(aniChartSource, /6개월 대비/)
-assert.match(aniChartSource, /height < 24/)
+assert.match(aniChartSource, /height < 12/)
+assert.match(aniChartSource, /useState<AniFilterMode>\("lineup"\)/)
+assert.match(aniChartSource, /라인업 기준/)
+assert.match(aniChartSource, /시리즈 기준/)
+assert.match(aniChartSource, /getAniVisibleModelKeysForLineup/)
+assert.match(aniChartSource, /시리즈 색상 범례/)
+assert.match(aniChartSource, /renderAniTotalLabel/)
+assert.match(aniChartSource, /payload/)
+assert.match(aniChartSource, /topVisibleModelKey/)
 assert.match(aniChartSource, /const visibleYAxisDomain/)
 assert.match(aniChartSource, /productionWithVisibleTotals\.map/)
 assert.match(aniChartSource, /historyWithVisibleTotals\.map/)

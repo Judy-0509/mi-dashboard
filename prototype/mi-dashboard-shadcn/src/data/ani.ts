@@ -8,6 +8,9 @@ export type AniModelTypeKey =
   | "e"
   | "foldable"
 
+export type AniLineupBucketKey = "n" | "nPlus1" | "nPlus2" | "legacy"
+export type AniFilterMode = "lineup" | "series"
+
 export type AniModelKey =
   | "iphone15Basic"
   | "iphone15Plus"
@@ -286,6 +289,68 @@ export const aniQuarterlyProduction: readonly AniQuarterlyProduction[] = [
     iphone18Foldable: 14,
   }),
 ]
+
+const aniGenerationKeys = ["iphone15", "iphone16", "iphone17", "iphone18"] as const
+
+export function getAniLineupBuckets(
+  quarter: string,
+): Partial<Record<AniGenerationKey, AniLineupBucketKey>> {
+  const current =
+    aniQuarterlyProduction.find((item) => item.quarter === quarter) ??
+    aniQuarterlyProduction[0]
+  const activeGenerations = aniGenerationKeys.filter((generation) =>
+    aniModels.some(
+      (model) =>
+        model.generation === generation && current[model.key] > 0,
+    ),
+  )
+
+  if (activeGenerations.length === 0) {
+    return {}
+  }
+
+  const newestGenerationIndex = Math.max(
+    ...activeGenerations.map((generation) =>
+      aniGenerationKeys.indexOf(generation),
+    ),
+  )
+
+  return Object.fromEntries(
+    activeGenerations.map((generation) => {
+      const distance =
+        newestGenerationIndex - aniGenerationKeys.indexOf(generation)
+      const bucket: AniLineupBucketKey =
+        distance === 0
+          ? "n"
+          : distance === 1
+            ? "nPlus1"
+            : distance === 2
+              ? "nPlus2"
+              : "legacy"
+
+      return [generation, bucket]
+    }),
+  ) as Partial<Record<AniGenerationKey, AniLineupBucketKey>>
+}
+
+export function getAniVisibleModelKeysForLineup(
+  quarter: string,
+  lineupBuckets: readonly AniLineupBucketKey[],
+  types: readonly AniModelTypeKey[],
+): AniModelKey[] {
+  const buckets = getAniLineupBuckets(quarter)
+
+  return aniModels
+    .filter((model) => {
+      const bucket = buckets[model.generation]
+      return (
+        bucket !== undefined &&
+        lineupBuckets.includes(bucket) &&
+        types.includes(model.type)
+      )
+    })
+    .map((model) => model.key)
+}
 
 export const aniFocusQuarter = "2027 Q2" as const
 
