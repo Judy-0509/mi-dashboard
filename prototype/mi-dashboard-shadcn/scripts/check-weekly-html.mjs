@@ -14,7 +14,7 @@ try {
   mkdirSync(assetsDir, { recursive: true })
   writeFileSync(
     path.join(siteDir, "index.html"),
-    '<!doctype html><html><head><link rel="icon" href="/mi-mark.svg"><link href="https://example.test/icon.svg" rel="icon"><link rel="stylesheet" href="/assets/index-test.css"></head><body><img src="/assets/index-decoy.js"><a href="/assets/index-decoy.css"></a><div id="root"></div><script type="module" src="/assets/index-test.js"></script></body></html>',
+    '<!doctype html>\r\n<html><head><link rel="icon" href="/mi-mark.svg"><link href="https://example.test/icon.svg" rel="icon"><link rel="stylesheet" href="/assets/index-test.css"></head><body><img src="/assets/index-decoy.js"><a href="/assets/index-decoy.css"></a><div id="root"></div><script type="module" src="/assets/index-test.js"></script></body></html>\r\n',
   )
   writeFileSync(path.join(assetsDir, "index-test.js"), 'console.log("</script>$&")')
   writeFileSync(path.join(assetsDir, "index-test.css"), '@font-face { src: url(./test.woff2) } body::before { content: "</style>$&" }')
@@ -23,7 +23,10 @@ try {
 
   const outputPath = buildWeeklyHtml({ siteDir })
   const html = readFileSync(outputPath, "utf8")
+  const indexHtml = readFileSync(path.join(siteDir, "index.html"), "utf8")
   assert.equal(basename(outputPath), "MI_Weekly_2026W32.html")
+  assert.doesNotMatch(indexHtml, /\r/)
+  assert.doesNotMatch(html, /\r/)
   assert.match(html, /window\.__MI_WEEKLY_EXPORT__ = true/)
   assert.match(html, /<script type="module">[\s\S]*<\\\/script>/)
   assert.match(html, /console\.log\("<\\\/script>\$&"\)/)

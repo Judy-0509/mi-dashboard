@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url"
 
 const escapeInlineScript = (value) => value.replaceAll("</script", "<\\/script")
 const escapeInlineStyle = (value) => value.replaceAll("</style", "<\\/style")
+const normalizeLineEndings = (value) => value.replace(/\r\n?/g, "\n")
 export const defaultSiteDir = path.resolve(import.meta.dirname, "../../../site")
 
 const readAsset = (siteDir, html, tagName, attribute, extension) => {
@@ -31,7 +32,10 @@ const readAsset = (siteDir, html, tagName, attribute, extension) => {
 
 export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html" }) {
   const resolvedSiteDir = path.resolve(siteDir)
-  let html = readFileSync(path.join(resolvedSiteDir, "index.html"), "utf8")
+  const indexPath = path.join(resolvedSiteDir, "index.html")
+  let html = normalizeLineEndings(readFileSync(indexPath, "utf8"))
+  assert.doesNotMatch(html, /\r/, "site/index.html must use LF")
+  writeFileSync(indexPath, html)
   const js = readAsset(resolvedSiteDir, html, "script", "src", "js")
   const css = readAsset(resolvedSiteDir, html, "link", "href", "css")
   const jsSource = escapeInlineScript(readFileSync(js.assetPath, "utf8"))
@@ -66,6 +70,8 @@ export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html"
   assert.doesNotMatch(html, /url\(["']?(?!data:)[^)]+\.woff2/i)
 
   const outputPath = path.join(resolvedSiteDir, outputName)
+  html = normalizeLineEndings(html)
+  assert.doesNotMatch(html, /\r/, `${outputName} must use LF`)
   writeFileSync(outputPath, html)
   return outputPath
 }
