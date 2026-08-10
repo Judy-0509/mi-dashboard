@@ -145,7 +145,27 @@ assert.match(
 )
 assert.match(
   weeklyAnalysisSource,
+  /<CardContent className="flex flex-1 flex-col pt-3">/
+)
+assert.match(
+  weeklyAnalysisSource,
+  /<div className="flex flex-1 overflow-hidden border">/
+)
+assert.match(
+  weeklyAnalysisSource,
+  /<table className="h-full w-full border-collapse text-xs">/
+)
+assert.match(
+  weeklyAnalysisSource,
   /<ul\s+aria-label="Cumulative composition legend"/
+)
+assert.match(
+  weeklyAnalysisSource,
+  /<ul\b(?=[^>]*aria-label="Cumulative composition legend")(?=[^>]*className="flex flex-col gap-1\.5 pt-1 text-sm leading-5 text-muted-foreground")[^>]*>/
+)
+assert.match(
+  weeklyAnalysisSource,
+  /<i\b(?=[^>]*aria-hidden="true")(?=[^>]*className="size-1\.5 shrink-0")[^>]*>/
 )
 assert.match(
   weeklyAnalysisSource,
