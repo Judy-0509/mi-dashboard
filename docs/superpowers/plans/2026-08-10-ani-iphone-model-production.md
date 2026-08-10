@@ -158,3 +158,18 @@ Extend PortalPage to "sigma" | "weekly" | "ani". Keep providers as the existing 
       npm run dev
 
   Open the printed local URL with #ani, confirm the sidebar route, default 2027 Q2, filter intersections, color families, quarter click/history update, summary-only deltas, and label hiding. Stop after reporting the local URL and any visual observations; do not commit.
+
+### Task 3: Apply the approved ANI visual encoding addendum
+
+**Files:**
+- Modify: docs/superpowers/specs/2026-08-10-ani-iphone-model-production-design.md
+- Modify: docs/superpowers/plans/2026-08-10-ani-iphone-model-production.md
+- Modify: prototype/mi-dashboard-shadcn/scripts/check-production.mjs
+- Modify: prototype/mi-dashboard-shadcn/src/data/ani.ts
+- Modify: prototype/mi-dashboard-shadcn/src/components/ani-production-chart.tsx
+- Do not modify: Sigma/Weekly components or data modules
+
+- [ ] **Step 1: Update the spec and plan addendum.** Record the approved generation-color, special-type pattern, first-introduction annotation, selected-quarter custom tick/underline, shared special-model colors, and 12 px readable label threshold rules above.
+- [ ] **Step 2: Add red assertions and run `npm test`.** Assert exact shared colors, chart-specific pattern hooks in both charts, accessible selected-quarter custom tick/2 px underline, absence of selected Cell stroke, generation-family legend/pattern samples, and the two conditional introduction markers. Capture the expected failure before production edits.
+- [ ] **Step 3: Implement the visual encoding.** Keep filters, tooltip semantics, dynamic shared Y-domain, totals, history summaries, and existing Sigma/Weekly/export behavior unchanged. Use generation-colored SVG hatch/dot patterns with quarterly/history prefixes; replace selected bar outline with the custom accessible X-axis tick; and render only the two conditional quarterly introduction markers.
+- [ ] **Step 4: Run the green checks.** Run `npm.cmd test`, `npm.cmd run build`, `npm.cmd run lint`, and `git diff --check`; append exact RED/GREEN output, changed files, and concerns to `task-2-report.md`. Do not perform broad browser QA, commit, or push.

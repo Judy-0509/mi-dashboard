@@ -155,22 +155,14 @@ assert.deepEqual(
 assert.equal(aniFocusQuarter, "2027 Q2")
 assert.equal(getAniForecastHistory("2027 Q2").length, 6)
 
-const aniBaseColors = new Set(
-  aniModels
-    .filter((model) => model.type === "basic" || model.type === "plusAir")
-    .map((model) => model.color),
+const findAniModel = (key) => aniModels.find((model) => model.key === key)
+assert.equal(findAniModel("iphone16E").color, findAniModel("iphone16Plus").color)
+assert.equal(findAniModel("iphone17E").color, findAniModel("iphone17Air").color)
+assert.equal(findAniModel("iphone18E").color, findAniModel("iphone18Air").color)
+assert.equal(
+  findAniModel("iphone18Foldable").color,
+  findAniModel("iphone18ProMax").color,
 )
-const aniEColors = new Set(
-  aniModels.filter((model) => model.type === "e").map((model) => model.color),
-)
-const aniFoldableColors = new Set(
-  aniModels
-    .filter((model) => model.type === "foldable")
-    .map((model) => model.color),
-)
-assert.ok([...aniEColors].every((color) => !aniBaseColors.has(color)))
-assert.ok([...aniFoldableColors].every((color) => !aniBaseColors.has(color)))
-assert.ok([...aniFoldableColors].every((color) => !aniEColors.has(color)))
 
 for (const quarter of aniQuarterlyProduction) {
   assert.equal(
@@ -364,11 +356,54 @@ assert.equal(
 assert.match(aniChartSource, /const \[hoveredQuarter, setHoveredQuarter\]/)
 assert.match(aniChartSource, /onMouseMove=\{\(\{ activeLabel \}\)/)
 assert.match(aniChartSource, /onMouseLeave=\{\(\) => setHoveredQuarter\(null\)\}/)
+assert.match(aniChartSource, /function AniQuarterTick/)
 assert.match(
   aniChartSource,
-  /stroke=\{\s*selectedQuarter === item\.quarter\s*\?\s*"var\(--primary\)"\s*:\s*"transparent"\s*\}/,
+  /tick=\{<AniQuarterTick selectedQuarter=\{selectedQuarter\} \/>\}/,
+)
+assert.match(aniChartSource, /aria-label=\{`\$\{quarter\}/)
+assert.match(aniChartSource, /strokeWidth=\{2\}/)
+assert.doesNotMatch(aniChartSource, /stroke=\{\s*selectedQuarter === item\.quarter/)
+assert.doesNotMatch(
+  aniChartSource,
+  /strokeWidth=\{\s*selectedQuarter === item\.quarter/,
 )
 assert.doesNotMatch(aniChartSource, /fillOpacity=\{\s*selectedQuarter === item\.quarter/)
+assert.match(aniChartSource, /function AniPatternDefs/)
+assert.match(aniChartSource, /patternUnits="userSpaceOnUse"/)
+assert.match(aniChartSource, /prefix="ani-quarterly"/)
+assert.match(aniChartSource, /prefix="ani-history"/)
+assert.match(aniChartSource, /fill=\{getAniBarFill\(model, "ani-quarterly"\)\}/)
+assert.match(aniChartSource, /fill=\{getAniBarFill\(model, "ani-history"\)\}/)
+assert.match(aniChartSource, /repeating-linear-gradient/)
+assert.match(aniChartSource, /radial-gradient/)
+assert.match(
+  aniChartSource,
+  /generationLegendTypes = \[\s*"basic",\s*"plusAir",\s*"pro",\s*"proMax",\s*"e",\s*"foldable"/,
+)
+assert.match(aniChartSource, /getAniLegendSwatchStyle\(model\)/)
+assert.match(aniChartSource, /getAniNeutralPatternStyle\(type\)/)
+assert.match(aniChartSource, /getAniNeutralPatternStyle\(key\)/)
+assert.match(aniChartSource, /backgroundColor: "var\(--muted-foreground\)"/)
+assert.match(aniChartSource, /사선 · e/)
+assert.match(aniChartSource, /점 · Foldable/)
+assert.doesNotMatch(
+  aniChartSource,
+  /specialLegendTypes\.map\(\(type\) => \{\s*const model = aniModels\.find/,
+)
+assert.equal(aniChartSource.match(/<ReferenceLine/g)?.length, 2)
+assert.match(aniChartSource, /x="2025 Q2"/)
+assert.match(aniChartSource, /label=\{\{\s*value: "NEW · e"/)
+assert.match(aniChartSource, /x="2027 Q1"/)
+assert.match(aniChartSource, /label=\{\{\s*value: "NEW · Foldable"/)
+assert.match(
+  aniChartSource,
+  /getVisibleModelKeysForQuarter\("2025 Q2"\)\.includes\("iphone16E"\)/,
+)
+assert.match(
+  aniChartSource,
+  /getVisibleModelKeysForQuarter\("2027 Q1"\)\.includes\("iphone18Foldable"\)/,
+)
 assert.doesNotMatch(aniChartSource, /getVendorHistoryDeltas/)
 assert.doesNotMatch(aniChartSource, /업체별 전망 변화/)
 

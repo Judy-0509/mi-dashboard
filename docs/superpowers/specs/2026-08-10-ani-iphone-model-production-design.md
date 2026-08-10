@@ -92,3 +92,13 @@ The implementation is accepted when all of the following are true:
 8. The right panel shows only current total, month-over-month delta, and six-month delta; no vendor delta list or vendor legend appears.
 9. Small segments hide only their inline labels, while their values remain in tooltips and accessible chart data; no horizontal overflow appears at the reference desktop viewport.
 10. Existing tests pass, `npm run build` passes, and the final result is handed to the user for visual review before any further visual refinement.
+
+## Task 3 visual encoding addendum (approved 2026-08-11)
+
+This addendum supersedes the earlier standalone `e`/`Foldable` hue and 24 px density guidance where it conflicts below. Generation color communicates the iPhone family; SVG pattern communicates special type; annotation communicates first-ever introduction.
+
+- `iphone16E` shares the iPhone 16 family color with `iphone16Plus`; `iphone17E` shares iPhone 17 with `iphone17Air`; `iphone18E` shares iPhone 18 with `iphone18Air`; and `iphone18Foldable` shares iPhone 18 with `iphone18ProMax`.
+- In both quarterly and history charts, `e` uses a generation-colored diagonal hatch and `Foldable` uses a generation-colored dot pattern. Chart-specific pattern ID prefixes prevent collisions; ordinary models remain solid. The legend shows generation-family swatches and pattern samples, without separate green/rose hue semantics.
+- The selected quarter keeps the existing `selectedQuarter 선택됨` text and uses a primary-colored X-axis label with a 2 px underline. Quarterly bar cells do not use a selected-quarter stroke or outline. The custom tick is accessible and renders ordinary quarters normally.
+- The quarterly chart alone shows subtle vertical dashed `NEW · e` at `2025 Q2` and `NEW · Foldable` at `2027 Q1`; each marker is conditional on the corresponding first-introduction model being visible under the active type and generation/lineup filters. Later `e` introductions are not annotated.
+- Inline labels use the approved readable 12 px minimum rendered vertical segment height; totals remain visible at the actual topmost nonzero visible segment.

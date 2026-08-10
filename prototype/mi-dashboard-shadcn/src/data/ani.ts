@@ -63,18 +63,18 @@ export const aniModels: readonly AniModel[] = [
   { key: "iphone16Plus", generation: "iphone16", type: "plusAir", label: "iPhone 16 Plus", color: "#5eead4" },
   { key: "iphone16Pro", generation: "iphone16", type: "pro", label: "iPhone 16 Pro", color: "#0d9488" },
   { key: "iphone16ProMax", generation: "iphone16", type: "proMax", label: "iPhone 16 Pro Max", color: "#134e4a" },
-  { key: "iphone16E", generation: "iphone16", type: "e", label: "iPhone 16e", color: "#059669" },
+  { key: "iphone16E", generation: "iphone16", type: "e", label: "iPhone 16e", color: "#5eead4" },
   { key: "iphone17Basic", generation: "iphone17", type: "basic", label: "iPhone 17 Basic", color: "#fde68a" },
   { key: "iphone17Air", generation: "iphone17", type: "plusAir", label: "iPhone 17 Air", color: "#fbbf24" },
   { key: "iphone17Pro", generation: "iphone17", type: "pro", label: "iPhone 17 Pro", color: "#d97706" },
   { key: "iphone17ProMax", generation: "iphone17", type: "proMax", label: "iPhone 17 Pro Max", color: "#78350f" },
-  { key: "iphone17E", generation: "iphone17", type: "e", label: "iPhone 17e", color: "#16a34a" },
+  { key: "iphone17E", generation: "iphone17", type: "e", label: "iPhone 17e", color: "#fbbf24" },
   { key: "iphone18Basic", generation: "iphone18", type: "basic", label: "iPhone 18 Basic", color: "#ddd6fe" },
   { key: "iphone18Air", generation: "iphone18", type: "plusAir", label: "iPhone 18 Air", color: "#a78bfa" },
   { key: "iphone18Pro", generation: "iphone18", type: "pro", label: "iPhone 18 Pro", color: "#7c3aed" },
   { key: "iphone18ProMax", generation: "iphone18", type: "proMax", label: "iPhone 18 Pro Max", color: "#4c1d95" },
-  { key: "iphone18E", generation: "iphone18", type: "e", label: "iPhone 18e", color: "#16a34a" },
-  { key: "iphone18Foldable", generation: "iphone18", type: "foldable", label: "iPhone 18 Foldable", color: "#e11d48" },
+  { key: "iphone18E", generation: "iphone18", type: "e", label: "iPhone 18e", color: "#a78bfa" },
+  { key: "iphone18Foldable", generation: "iphone18", type: "foldable", label: "iPhone 18 Foldable", color: "#4c1d95" },
 ]
 
 const emptyModelValues = Object.fromEntries(

@@ -6,6 +6,7 @@ import {
   CartesianGrid,
   Cell,
   LabelList,
+  ReferenceLine,
   XAxis,
   YAxis,
 } from "recharts"
@@ -67,8 +68,46 @@ const lineupOptions = [
   label: string
 }[]
 
-const generationLegendTypes = ["basic", "plusAir", "pro", "proMax"] as const
+const generationLegendTypes = [
+  "basic",
+  "plusAir",
+  "pro",
+  "proMax",
+  "e",
+  "foldable",
+] as const
 const specialLegendTypes = ["e", "foldable"] as const
+
+type AniSpecialLegendType = (typeof specialLegendTypes)[number]
+
+function getAniPatternImage(
+  type: AniSpecialLegendType,
+  patternColor: string,
+) {
+  return type === "e"
+    ? `repeating-linear-gradient(135deg, transparent 0 2px, ${patternColor} 2px 3px)`
+    : `radial-gradient(circle, ${patternColor} 1px, transparent 1.5px)`
+}
+
+function getAniLegendSwatchStyle(model: (typeof aniModels)[number]) {
+  if (model.type === "e" || model.type === "foldable") {
+    return {
+      backgroundColor: model.color,
+      backgroundImage: getAniPatternImage(model.type, "rgba(255,255,255,.78)"),
+      backgroundSize: "6px 6px",
+    }
+  }
+
+  return { backgroundColor: model.color }
+}
+
+function getAniNeutralPatternStyle(type: AniSpecialLegendType) {
+  return {
+    backgroundColor: "var(--muted-foreground)",
+    backgroundImage: getAniPatternImage(type, "var(--background)"),
+    backgroundSize: "6px 6px",
+  }
+}
 
 const aniChartConfig = Object.fromEntries(
   aniModels.map((model) => [
@@ -122,6 +161,94 @@ function renderAniSegmentLabel(props: AniLabelProps) {
       {value.toFixed(1)}
     </text>
   )
+}
+
+type AniQuarterTickProps = {
+  x?: number
+  y?: number
+  payload?: { value?: unknown }
+  selectedQuarter?: string
+}
+
+function AniQuarterTick({
+  payload,
+  selectedQuarter,
+  x,
+  y,
+}: AniQuarterTickProps) {
+  const quarter = String(payload?.value ?? "")
+  const isSelected = quarter === selectedQuarter
+
+  return (
+    <g
+      aria-label={`${quarter}${isSelected ? " selected" : ""}`}
+      role="text"
+      transform={`translate(${x ?? 0},${y ?? 0})`}
+    >
+      <text
+        dy={9}
+        fill={isSelected ? "var(--primary)" : "var(--muted-foreground)"}
+        fontSize={9}
+        fontWeight={isSelected ? 600 : 400}
+        textAnchor="middle"
+      >
+        {quarter}
+      </text>
+      {isSelected ? (
+        <line
+          stroke="var(--primary)"
+          strokeWidth={2}
+          x1={-18}
+          x2={18}
+          y1={12}
+          y2={12}
+        />
+      ) : null}
+    </g>
+  )
+}
+
+function AniPatternDefs({ prefix }: { prefix: string }) {
+  return (
+    <defs>
+      {aniModels
+        .filter((model) => model.type === "e" || model.type === "foldable")
+        .map((model) => (
+          <pattern
+            height="8"
+            id={`${prefix}-${model.key}`}
+            key={model.key}
+            patternUnits="userSpaceOnUse"
+            width="8"
+          >
+            <rect
+              fill={model.color}
+              fillOpacity={0.22}
+              height="8"
+              width="8"
+            />
+            {model.type === "e" ? (
+              <path
+                d="M-2 2L2 -2M0 8L8 0M6 10L10 6"
+                stroke={model.color}
+                strokeWidth={1.5}
+              />
+            ) : (
+              <circle cx="2" cy="2" fill={model.color} r="1.5" />
+            )}
+          </pattern>
+        ))}
+    </defs>
+  )
+}
+
+function getAniBarFill(
+  model: (typeof aniModels)[number],
+  prefix: string,
+) {
+  return model.type === "e" || model.type === "foldable"
+    ? `url(#${prefix}-${model.key})`
+    : model.color
 }
 
 function renderAniTotalLabel(props: AniLabelProps) {
@@ -435,10 +562,15 @@ export function AniProductionChart() {
                     <span
                       aria-hidden="true"
                       className="size-2"
-                      style={{
-                        backgroundColor:
-                          aniModels.find((model) => model.type === key)?.color,
-                      }}
+                      style={
+                        key === "e" || key === "foldable"
+                          ? getAniNeutralPatternStyle(key)
+                          : {
+                              backgroundColor:
+                                aniModels.find((model) => model.type === key)
+                                  ?.color,
+                            }
+                      }
                     />
                     {label}
                   </Button>
@@ -462,7 +594,7 @@ export function AniProductionChart() {
                       <i
                         className="size-2"
                         key={model.key}
-                        style={{ backgroundColor: model.color }}
+                        style={getAniLegendSwatchStyle(model)}
                         title={model.label}
                       />
                     ) : null
@@ -470,19 +602,16 @@ export function AniProductionChart() {
                 </span>
               </span>
             ))}
-            {specialLegendTypes.map((type) => {
-              const model = aniModels.find((item) => item.type === type)
-              return model ? (
-                <span className="flex items-center gap-1" key={type}>
-                  <i
-                    aria-hidden="true"
-                    className="size-2"
-                    style={{ backgroundColor: model.color }}
-                  />
-                  {type === "e" ? "e" : "Foldable"}
-                </span>
-              ) : null
-            })}
+            {specialLegendTypes.map((type) => (
+              <span className="flex items-center gap-1" key={`pattern-key-${type}`}>
+                <i
+                  aria-hidden="true"
+                  className="size-2"
+                  style={getAniNeutralPatternStyle(type)}
+                />
+                {type === "e" ? "사선 · e" : "점 · Foldable"}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -528,6 +657,7 @@ export function AniProductionChart() {
                 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <AniPatternDefs prefix="ani-quarterly" />
                 <XAxis
                   axisLine={false}
                   dataKey="quarter"
@@ -535,6 +665,7 @@ export function AniProductionChart() {
                   interval={0}
                   tickLine={false}
                   tickMargin={6}
+                  tick={<AniQuarterTick selectedQuarter={selectedQuarter} />}
                 />
                 <YAxis
                   axisLine={false}
@@ -548,10 +679,36 @@ export function AniProductionChart() {
                   content={<ChartTooltipContent />}
                   cursor={false}
                 />
+                {getVisibleModelKeysForQuarter("2025 Q2").includes("iphone16E") ? (
+                  <ReferenceLine
+                    label={{
+                      value: "NEW · e",
+                      fill: "var(--muted-foreground)",
+                      fontSize: 8,
+                      position: "insideTop",
+                    }}
+                    stroke="var(--muted-foreground)"
+                    strokeDasharray="3 3"
+                    x="2025 Q2"
+                  />
+                ) : null}
+                {getVisibleModelKeysForQuarter("2027 Q1").includes("iphone18Foldable") ? (
+                  <ReferenceLine
+                    label={{
+                      value: "NEW · Foldable",
+                      fill: "var(--muted-foreground)",
+                      fontSize: 8,
+                      position: "insideTop",
+                    }}
+                    stroke="var(--muted-foreground)"
+                    strokeDasharray="3 3"
+                    x="2027 Q1"
+                  />
+                ) : null}
                 {visibleModels.map((model) => (
                   <Bar
                     dataKey={model.key}
-                    fill={model.color}
+                    fill={getAniBarFill(model, "ani-quarterly")}
                     isAnimationActive={false}
                     key={model.key}
                     stackId="ani-production"
@@ -565,12 +722,6 @@ export function AniProductionChart() {
                             : 1
                         }
                         key={`${model.key}-${item.quarter}`}
-                        stroke={
-                          selectedQuarter === item.quarter
-                            ? "var(--primary)"
-                            : "transparent"
-                        }
-                        strokeWidth={selectedQuarter === item.quarter ? 1 : 0}
                       />
                     ))}
                     <LabelList
@@ -616,6 +767,7 @@ export function AniProductionChart() {
                   margin={{ top: 26, right: 2, left: 0, bottom: 4 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <AniPatternDefs prefix="ani-history" />
                   <XAxis
                     axisLine={false}
                     dataKey="period"
@@ -632,7 +784,7 @@ export function AniProductionChart() {
                   {visibleModels.map((model) => (
                     <Bar
                       dataKey={model.key}
-                      fill={model.color}
+                      fill={getAniBarFill(model, "ani-history")}
                       isAnimationActive={false}
                       key={model.key}
                       stackId="ani-history"
