@@ -393,6 +393,24 @@ assert.match(
 )
 assert.match(aniChartSource, /className="size-2\.5"/)
 assert.doesNotMatch(aniChartSource, /text-\[10px\]/)
+assert.equal(
+  aniChartSource.match(/\{aniModels\.map\(\(model\) => \(\s*<Bar/g)?.length,
+  2,
+)
+assert.doesNotMatch(
+  aniChartSource,
+  /\{visibleModels\.map\(\(model\) => \(\s*<Bar/,
+)
+assert.doesNotMatch(
+  aniChartSource,
+  /hide=\{!chartModelKeys\.includes\(model\.key\)\}/,
+)
+assert.equal(
+  aniChartSource.match(
+    /payload=\{props\.payload\?\.filter\(\s*\(\{\s*value\s*\}\)\s*=>\s*Number\(value\)\s*!==\s*0,\s*\)\}/g,
+  )?.length,
+  2,
+)
 assert.doesNotMatch(
   aniChartSource,
   /specialLegendTypes\.map\(\(type\) => \{\s*const model = aniModels\.find/,

@@ -682,7 +682,15 @@ export function AniProductionChart() {
                   width={48}
                 />
                 <ChartTooltip
-                  content={<ChartTooltipContent />}
+                  content={(props) => (
+                    <ChartTooltipContent
+                      {...props}
+                      content={undefined}
+                      payload={props.payload?.filter(
+                        ({ value }) => Number(value) !== 0,
+                      )}
+                    />
+                  )}
                   cursor={false}
                 />
                 {getVisibleModelKeysForQuarter("2025 Q2").includes("iphone16E") ? (
@@ -711,7 +719,7 @@ export function AniProductionChart() {
                     x="2027 Q1"
                   />
                 ) : null}
-                {visibleModels.map((model) => (
+                {aniModels.map((model) => (
                   <Bar
                     dataKey={model.key}
                     fill={getAniBarFill(model, "ani-quarterly")}
@@ -784,10 +792,18 @@ export function AniProductionChart() {
                   />
                   <YAxis domain={visibleYAxisDomain} hide />
                   <ChartTooltip
-                    content={<ChartTooltipContent />}
+                    content={(props) => (
+                      <ChartTooltipContent
+                        {...props}
+                        content={undefined}
+                        payload={props.payload?.filter(
+                          ({ value }) => Number(value) !== 0,
+                        )}
+                      />
+                    )}
                     cursor={false}
                   />
-                  {visibleModels.map((model) => (
+                  {aniModels.map((model) => (
                     <Bar
                       dataKey={model.key}
                       fill={getAniBarFill(model, "ani-history")}
