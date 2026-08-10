@@ -33,7 +33,28 @@ import {
   weeklyVendors,
   weeklySelectedWeek,
 } from "../src/data/weekly.ts"
+import {
+  getSellThroughRatio,
+  inventorySnapshots,
+  sellThroughMonthly,
+  sellThroughMonths,
+  sellThroughVendors,
+} from "../src/data/sell-through.ts"
 import { normalizeRow, parseCsv } from "./update-dashboard-data.mjs"
+
+assert.deepEqual(sellThroughMonths, [
+  "2025-09", "2025-10", "2025-11", "2025-12",
+  "2026-01", "2026-02", "2026-03", "2026-04",
+  "2026-05", "2026-06", "2026-07", "2026-08",
+])
+assert.equal(sellThroughMonthly.length, 12)
+assert.deepEqual(sellThroughVendors.map(({ key }) => key), [
+  "apple", "samsung", "xiaomi", "oppo", "vivo", "transsion", "others",
+])
+assert.equal(getSellThroughRatio(120, 100), 120)
+assert.equal(getSellThroughRatio(120, 0), null)
+assert.equal(inventorySnapshots.length, 7)
+assert.ok(inventorySnapshots.every((row) => row.inventory.length === 3 && row.wos.length === 3))
 
 assert.equal(cumulativeProduction.length, 14)
 assert.equal(productionYAxisDomain[0], 0)
