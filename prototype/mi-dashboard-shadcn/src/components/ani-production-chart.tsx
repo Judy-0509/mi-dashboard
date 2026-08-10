@@ -580,10 +580,13 @@ export function AniProductionChart() {
           </div>
           <div
             aria-label="시리즈 색상 범례"
-            className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 border-t pt-2 text-[10px] leading-4 text-muted-foreground"
+            className="flex min-w-0 flex-wrap items-center gap-2 border-t pt-2 text-xs leading-4 text-muted-foreground"
           >
             {generationOptions.map(({ key, label }) => (
-              <span className="flex items-center gap-1" key={key}>
+              <span
+                className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-secondary px-2 text-xs text-secondary-foreground"
+                key={key}
+              >
                 <span>{label}</span>
                 <span className="flex items-center gap-0.5" aria-hidden="true">
                   {generationLegendTypes.map((type) => {
@@ -592,7 +595,7 @@ export function AniProductionChart() {
                     )
                     return model ? (
                       <i
-                        className="size-2"
+                        className="size-2.5"
                         key={model.key}
                         style={getAniLegendSwatchStyle(model)}
                         title={model.label}
@@ -603,10 +606,13 @@ export function AniProductionChart() {
               </span>
             ))}
             {specialLegendTypes.map((type) => (
-              <span className="flex items-center gap-1" key={`pattern-key-${type}`}>
+              <span
+                className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-secondary px-2 text-xs text-secondary-foreground"
+                key={`pattern-key-${type}`}
+              >
                 <i
                   aria-hidden="true"
-                  className="size-2"
+                  className="size-2.5"
                   style={getAniNeutralPatternStyle(type)}
                 />
                 {type === "e" ? "사선 · e" : "점 · Foldable"}

@@ -387,6 +387,12 @@ assert.match(aniChartSource, /getAniNeutralPatternStyle\(key\)/)
 assert.match(aniChartSource, /backgroundColor: "var\(--muted-foreground\)"/)
 assert.match(aniChartSource, /사선 · e/)
 assert.match(aniChartSource, /점 · Foldable/)
+assert.match(
+  aniChartSource,
+  /className="inline-flex h-7 shrink-0 items-center gap-1\.5 rounded-md border border-border bg-secondary px-2 text-xs text-secondary-foreground"/,
+)
+assert.match(aniChartSource, /className="size-2\.5"/)
+assert.doesNotMatch(aniChartSource, /text-\[10px\]/)
 assert.doesNotMatch(
   aniChartSource,
   /specialLegendTypes\.map\(\(type\) => \{\s*const model = aniModels\.find/,
