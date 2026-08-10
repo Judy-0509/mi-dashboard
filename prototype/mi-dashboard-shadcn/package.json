@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/build-weekly-html.mjs",
     "data:update": "node scripts/update-dashboard-data.mjs",
     "data:check": "node scripts/update-dashboard-data.mjs prototype/mi-dashboard-shadcn/src/data/dashboard.json --check",
-    "test": "node --experimental-strip-types scripts/check-production.mjs",
+    "test": "node --experimental-strip-types scripts/check-production.mjs && node scripts/check-weekly-html.mjs",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
