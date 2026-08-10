@@ -157,7 +157,7 @@ export function CumulativeProductionChart() {
             {vendors.length}개 중 {visibleVendors.size}개 업체 표시
           </p>
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)_360px] gap-0 border-t pt-3">
+        <div className="grid grid-cols-[minmax(0,58fr)_minmax(0,42fr)] gap-0 border-t pt-3">
           <section
             className="min-w-0 pe-6"
             aria-labelledby="production-chart-title"
