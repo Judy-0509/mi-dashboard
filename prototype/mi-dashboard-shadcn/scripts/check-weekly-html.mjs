@@ -12,7 +12,7 @@ try {
   mkdirSync(assetsDir, { recursive: true })
   writeFileSync(
     path.join(siteDir, "index.html"),
-    '<!doctype html><html><head><link rel="icon" href="/mi-mark.svg"><link rel="stylesheet" href="/assets/index-test.css"></head><body><div id="root"></div><script type="module" src="/assets/index-test.js"></script></body></html>',
+    '<!doctype html><html><head><link rel="icon" href="/mi-mark.svg"><link href="https://example.test/icon.svg" rel="icon"><link rel="stylesheet" href="/assets/index-test.css"></head><body><img src="/assets/index-decoy.js"><a href="/assets/index-decoy.css"></a><div id="root"></div><script type="module" src="/assets/index-test.js"></script></body></html>',
   )
   writeFileSync(path.join(assetsDir, "index-test.js"), 'console.log("</script>")')
   writeFileSync(path.join(assetsDir, "index-test.css"), '@font-face { src: url(./test.woff2) } body::before { content: "</style>" }')
@@ -25,7 +25,9 @@ try {
   assert.match(html, /window\.__MI_WEEKLY_EXPORT__ = true/)
   assert.match(html, /<script type="module">[\s\S]*<\\\/script>/)
   assert.match(html, /<style>[\s\S]*data:font\/woff2;base64,/)
+  assert.match(html, /<style>[\s\S]*<\\\/style>/)
   assert.match(html, /href="data:image\/svg\+xml;base64,/)
+  assert.doesNotMatch(html, /https:\/\/example\.test\/icon\.svg/)
   assert.doesNotMatch(html, /<script[^>]+\bsrc=/i)
   assert.doesNotMatch(html, /rel=["']stylesheet["']/i)
 

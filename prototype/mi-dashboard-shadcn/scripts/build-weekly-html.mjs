@@ -6,8 +6,14 @@ import { fileURLToPath } from "node:url"
 const escapeInlineScript = (value) => value.replaceAll("</script", "<\\/script")
 const escapeInlineStyle = (value) => value.replaceAll("</style", "<\\/style")
 
-const readAsset = (siteDir, html, attribute, extension) => {
-  const matcher = new RegExp(`<[^>]+\\b${attribute}=["']([^"']*assets/index-[^"']+\\.${extension})["'][^>]*>`, "gi")
+const readAsset = (siteDir, html, tagName, attribute, extension) => {
+  const entryAttribute = `\\b${attribute}=["']([^"']*assets/index-[^"']+\\.${extension})["']`
+  const matcher = new RegExp(
+    tagName === "script"
+      ? `<script\\b(?=[^>]*\\btype=["']module["'])(?=[^>]*${entryAttribute})[^>]*>`
+      : `<link\\b(?=[^>]*\\brel=["']stylesheet["'])(?=[^>]*${entryAttribute})[^>]*>`,
+    "gi",
+  )
   const matches = [...html.matchAll(matcher)]
   if (matches.length !== 1) {
     throw new Error(`Expected exactly one assets/index-*.${extension} ${attribute} attribute`)
@@ -25,8 +31,8 @@ const readAsset = (siteDir, html, attribute, extension) => {
 export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html" }) {
   const resolvedSiteDir = path.resolve(siteDir)
   let html = readFileSync(path.join(resolvedSiteDir, "index.html"), "utf8")
-  const js = readAsset(resolvedSiteDir, html, "src", "js")
-  const css = readAsset(resolvedSiteDir, html, "href", "css")
+  const js = readAsset(resolvedSiteDir, html, "script", "src", "js")
+  const css = readAsset(resolvedSiteDir, html, "link", "href", "css")
   const jsSource = escapeInlineScript(readFileSync(js.assetPath, "utf8"))
   const cssDir = path.dirname(css.assetPath)
   const cssSource = escapeInlineStyle(readFileSync(css.assetPath, "utf8")).replace(
@@ -34,8 +40,15 @@ export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html"
     (_, _quote, fontUrl) => `url(data:font/woff2;base64,${readFileSync(path.resolve(cssDir, fontUrl), "base64")})`,
   )
   const icon = Buffer.from(readFileSync(path.join(resolvedSiteDir, "mi-mark.svg"))).toString("base64")
-  const iconTag = html.match(/<link\b[^>]*\brel=["']icon["'][^>]*>/i)?.[0]
-  if (!iconTag) {
+  let iconCount = 0
+  html = html.replace(/<link\b(?=[^>]*\brel=["']icon["'])[^>]*>/gi, (iconTag) => {
+    iconCount += 1
+    if (!/\bhref=(["'])[^"']*\1/i.test(iconTag)) {
+      throw new Error("Expected every favicon link to have an href")
+    }
+    return iconTag.replace(/\bhref=(["'])[^"']*\1/i, `href="data:image/svg+xml;base64,${icon}"`)
+  })
+  if (iconCount === 0) {
     throw new Error("Expected a favicon link")
   }
 
@@ -45,11 +58,9 @@ export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html"
     '<script>window.__MI_WEEKLY_EXPORT__ = true; window.location.hash = "#weekly";</script>' +
       `<script type="module">${jsSource}</script>`,
   )
-  html = html.replace(iconTag, iconTag.replace(/\bhref=(["'])[^"']*\1/i, `href="data:image/svg+xml;base64,${icon}"`))
-
   assert.doesNotMatch(html, /<script[^>]+\bsrc=/i)
   assert.doesNotMatch(html, /<link[^>]+rel=["']stylesheet["']/i)
-  assert.doesNotMatch(html, /<link[^>]+rel=["']icon["'][^>]+href=["'](?!data:)/i)
+  assert.doesNotMatch(html, /<link\b(?=[^>]*\brel=["']icon["'])(?=[^>]*\bhref=["'](?!data:))[^>]*>/i)
   assert.doesNotMatch(html, /url\(["']?(?!data:)[^)]+\.woff2/i)
 
   const outputPath = path.join(resolvedSiteDir, outputName)
