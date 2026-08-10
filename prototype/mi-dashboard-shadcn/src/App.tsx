@@ -6,6 +6,7 @@ import { CumulativeProductionChart } from "@/components/cumulative-production-ch
 import { DashboardShell } from "@/components/dashboard-shell"
 import { ExecutiveSummary } from "@/components/executive-summary"
 import { PortalSidebar, type PortalPage } from "@/components/portal-sidebar"
+import { SellThroughAnalysis } from "@/components/sell-through-analysis"
 import { buttonVariants } from "@/components/ui/button"
 import { WeeklyAnalysis } from "@/components/weekly-analysis"
 import { WeeklyExecutiveSummary } from "@/components/weekly-executive-summary"
@@ -23,6 +24,8 @@ const isWeeklyExport = window.__MI_WEEKLY_EXPORT__ === true
 function pageFromHash(): PortalPage {
   return isWeeklyExport || window.location.hash === "#weekly"
     ? "weekly"
+    : window.location.hash === "#sell-through"
+      ? "sell-through"
     : window.location.hash === "#ani"
       ? "ani"
       : "sigma"
@@ -131,6 +134,30 @@ function AniPage() {
   )
 }
 
+function SellThroughPage() {
+  return (
+    <>
+      <header
+        className="flex items-end justify-between border-b pb-4"
+        id="sell-through"
+      >
+        <div>
+          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+            Counterpoint / Sell-in · Sell-through
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            스마트폰 Sell-in / Sell-through
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            2025년 9월–2026년 8월 월별 흐름 · Inventory / WoS 비교
+          </p>
+        </div>
+      </header>
+      <SellThroughAnalysis />
+    </>
+  )
+}
+
 export function App() {
   const [activePage, setActivePage] = useState<PortalPage>(pageFromHash)
 
@@ -142,7 +169,13 @@ export function App() {
 
   const navigate = (page: PortalPage) => {
     const hash =
-      page === "weekly" ? "#weekly" : page === "ani" ? "#ani" : "#overview"
+      page === "weekly"
+        ? "#weekly"
+        : page === "sell-through"
+          ? "#sell-through"
+          : page === "ani"
+            ? "#ani"
+            : "#overview"
     setActivePage(page)
     if (window.location.hash !== hash) {
       window.location.hash = hash
@@ -151,7 +184,11 @@ export function App() {
 
   return (
     <DashboardShell
-      scrollable={activePage === "weekly" || activePage === "ani"}
+      scrollable={
+        activePage === "weekly" ||
+        activePage === "ani" ||
+        activePage === "sell-through"
+      }
       sidebar={
         isWeeklyExport ? null : (
           <PortalSidebar activePage={activePage} onNavigate={navigate} />
@@ -160,6 +197,8 @@ export function App() {
     >
       {activePage === "weekly" ? (
         <WeeklyPage />
+      ) : activePage === "sell-through" ? (
+        <SellThroughPage />
       ) : activePage === "ani" ? (
         <AniPage />
       ) : (

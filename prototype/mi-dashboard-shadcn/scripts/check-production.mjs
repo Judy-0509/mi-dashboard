@@ -326,8 +326,23 @@ const sidebarSource = readFileSync(
   new URL("../src/components/portal-sidebar.tsx", import.meta.url),
   "utf8"
 )
+const sellThroughSource = readFileSync(
+  new URL("../src/components/sell-through-analysis.tsx", import.meta.url),
+  "utf8"
+)
 
-assert.match(sidebarSource, /PortalPage = "sigma" \| "weekly" \| "ani"/)
+assert.match(sidebarSource, /Sell-in \/ Sell-through/)
+assert.match(sidebarSource, /#sell-through/)
+assert.match(appSource, /#sell-through/)
+assert.match(appSource, /SellThroughAnalysis/)
+assert.match(appSource, /Counterpoint \/ Sell-in · Sell-through/)
+assert.match(appSource, /스마트폰 Sell-in \/ Sell-through/)
+assert.match(sellThroughSource, /58fr.*42fr/)
+assert.match(sellThroughSource, /Vendor.*Total/)
+assert.match(sellThroughSource, /Inventory/)
+assert.match(sellThroughSource, /25년 말.*26년 4월.*26년 8월/)
+
+assert.match(sidebarSource, /PortalPage = "sigma" \| "weekly" \| "ani" \| "sell-through"/)
 assert.match(sidebarSource, /label: "ANI"/)
 assert.match(sidebarSource, /child: "iPhone Model Production"/)
 assert.match(sidebarSource, /page: "ani"/)

@@ -1,25 +1,45 @@
 import { Separator } from "@/components/ui/separator"
 
-export type PortalPage = "sigma" | "weekly" | "ani"
+export type PortalPage = "sigma" | "weekly" | "ani" | "sell-through"
 
 const providers: Array<{
   label: string
-  child: string
-  page: PortalPage
-  href: string
+  children: Array<{
+    child: string
+    page: PortalPage
+    href: string
+  }>
 }> = [
   {
     label: "SigmaIntel",
-    child: "Production Forecast",
-    page: "sigma",
-    href: "#overview",
+    children: [
+      {
+        child: "Production Forecast",
+        page: "sigma",
+        href: "#overview",
+      },
+    ],
   },
-  { label: "Counterpoint", child: "Weekly", page: "weekly", href: "#weekly" },
+  {
+    label: "Counterpoint",
+    children: [
+      { child: "Weekly", page: "weekly", href: "#weekly" },
+      {
+        child: "Sell-in / Sell-through",
+        page: "sell-through",
+        href: "#sell-through",
+      },
+    ],
+  },
   {
     label: "ANI",
-    child: "iPhone Model Production",
-    page: "ani",
-    href: "#ani",
+    children: [
+      {
+        child: "iPhone Model Production",
+        page: "ani",
+        href: "#ani",
+      },
+    ],
   },
 ]
 
@@ -42,27 +62,30 @@ export function PortalSidebar({
       </div>
       <Separator className="my-7 bg-sidebar-border" />
       <nav aria-label="Research portals" className="space-y-6">
-        {providers.map(({ label, child, page, href }) => {
-          const active = activePage === page
+        {providers.map(({ label, children }) => (
+          <section key={label}>
+            <h2 className="text-base leading-6 font-bold">{label}</h2>
+            {children.map(({ child, page, href }) => {
+              const active = activePage === page
 
-          return (
-            <section key={label}>
-              <h2 className="text-base leading-6 font-bold">{label}</h2>
-              <a
-                aria-current={active ? "page" : undefined}
-                className={`ms-3 mt-1.5 block px-3 py-2 text-sm leading-5 ${
-                  active
-                    ? "bg-sidebar-primary font-medium text-sidebar-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent"
-                }`}
-                href={href}
-                onClick={() => onNavigate(page)}
-              >
-                {child}
-              </a>
-            </section>
-          )
-        })}
+              return (
+                <a
+                  aria-current={active ? "page" : undefined}
+                  className={`ms-3 mt-1.5 block px-3 py-2 text-sm leading-5 ${
+                    active
+                      ? "bg-sidebar-primary font-medium text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  }`}
+                  href={href}
+                  key={page}
+                  onClick={() => onNavigate(page)}
+                >
+                  {child}
+                </a>
+              )
+            })}
+          </section>
+        ))}
       </nav>
     </aside>
   )
