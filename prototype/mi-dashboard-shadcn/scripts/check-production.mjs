@@ -55,13 +55,13 @@ assert.ok(focusQuarter)
 assert.equal(getVisibleVendorTotal(focusQuarter, ["apple", "samsung"]), 130)
 assert.equal(getVisibleVendorTotal(focusQuarter, ["transsion"]), 32)
 assert.deepEqual(getVendorHistoryDeltas(getForecastHistory("2026 Q3")), {
-  apple: 8.6,
-  samsung: 7.9,
-  xiaomi: 4.9,
-  oppo: 3.1,
-  vivo: 2.5,
-  transsion: 1.9,
-  others: 4,
+  apple: 1.5,
+  samsung: 1.4,
+  xiaomi: 0.8,
+  oppo: 0.5,
+  vivo: 0.4,
+  transsion: 0.3,
+  others: 0.5,
 })
 
 const csvRows = parseCsv(

@@ -96,13 +96,13 @@ export function getForecastHistory(quarter: string): ForecastHistoryPoint[] {
 export function getVendorHistoryDeltas(
   history: readonly ForecastHistoryPoint[]
 ) {
-  const first = history[0]!
+  const previous = history.at(-2)!
   const current = history.at(-1)!
 
   return Object.fromEntries(
     vendors.map((vendor) => [
       vendor.key,
-      Number((current[vendor.key] - first[vendor.key]).toFixed(1)),
+      Number((current[vendor.key] - previous[vendor.key]).toFixed(1)),
     ])
   ) as Record<VendorKey, number>
 }

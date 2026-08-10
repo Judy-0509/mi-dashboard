@@ -269,7 +269,7 @@ export function CumulativeProductionChart() {
                 {selectedQuarter} 전망 변화
               </h3>
             </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_108px] gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_140px] gap-2">
               <ChartContainer
                 className="h-[330px] w-full min-w-0"
                 config={chartConfig}
@@ -330,35 +330,41 @@ export function CumulativeProductionChart() {
               </ChartContainer>
               <div
                 aria-label="업체별 전망 변화"
-                className="space-y-1.5 pt-5 text-[10px] leading-3"
+                className="pt-5 text-sm leading-5"
               >
-                {vendors.map((vendor) => {
-                  const delta = historyDeltas[vendor.key]
-                  const deltaClassName =
-                    delta > 0
-                      ? "text-primary"
-                      : delta < 0
-                        ? "text-destructive"
-                        : "text-muted-foreground"
+                <p className="mb-2 font-medium text-foreground">
+                  {history.at(-1)?.period} vs {history.at(-2)?.period} 업체별
+                  증감
+                </p>
+                <div className="space-y-1.5">
+                  {vendors.map((vendor) => {
+                    const delta = historyDeltas[vendor.key]
+                    const deltaClassName =
+                      delta > 0
+                        ? "text-primary"
+                        : delta < 0
+                          ? "text-destructive"
+                          : "text-muted-foreground"
 
-                  return (
-                    <div className="flex items-center gap-1" key={vendor.key}>
-                      <span
-                        aria-hidden="true"
-                        className="size-1.5 shrink-0"
-                        style={{ backgroundColor: vendor.color }}
-                      />
-                      <span className="min-w-0 flex-1 text-foreground">
-                        {vendor.label}
-                      </span>
-                      <span
-                        className={`shrink-0 font-medium ${deltaClassName}`}
-                      >
-                        {formatSignedMu(delta)}
-                      </span>
-                    </div>
-                  )
-                })}
+                    return (
+                      <div className="flex items-center gap-1" key={vendor.key}>
+                        <span
+                          aria-hidden="true"
+                          className="size-1.5 shrink-0"
+                          style={{ backgroundColor: vendor.color }}
+                        />
+                        <span className="min-w-0 flex-1 text-foreground">
+                          {vendor.label}
+                        </span>
+                        <span
+                          className={`shrink-0 font-medium ${deltaClassName}`}
+                        >
+                          {formatSignedMu(delta)}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </aside>
