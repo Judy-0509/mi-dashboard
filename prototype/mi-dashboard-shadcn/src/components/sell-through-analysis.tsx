@@ -346,6 +346,30 @@ function InventoryTable() {
   )
 }
 
+function SellThroughLegend({ view }: { view: SellThroughView }) {
+  return view === "vendor" ? (
+    <ul aria-label="Vendor legend" className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+      {sellThroughVendors.map(({ label, color }) => (
+        <li className="flex items-center gap-1.5" key={label}>
+          <i aria-hidden="true" className="size-1.5 shrink-0" style={{ backgroundColor: color }} />
+          {label}
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <ul aria-label="Sell-in / Sell-through legend" className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+      <li className="flex items-center gap-1.5">
+        <i aria-hidden="true" className="size-1.5 shrink-0" style={{ backgroundColor: "var(--chart-1)" }} />
+        Sell-in
+      </li>
+      <li className="flex items-center gap-1.5">
+        <i aria-hidden="true" className="size-1.5 shrink-0" style={{ backgroundColor: "var(--chart-2)" }} />
+        Sell-through
+      </li>
+    </ul>
+  )
+}
+
 export function SellThroughAnalysis(): React.JSX.Element {
   const [view, setView] = useState<SellThroughView>("vendor")
 
@@ -395,14 +419,7 @@ export function SellThroughAnalysis(): React.JSX.Element {
             </p>
           </div>
           <SellThroughChart view={view} />
-          <ul aria-label="Vendor legend" className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            {sellThroughVendors.map(({ label, color }) => (
-              <li className="flex items-center gap-1.5" key={label}>
-                <i aria-hidden="true" className="size-1.5 shrink-0" style={{ backgroundColor: color }} />
-                {label}
-              </li>
-            ))}
-          </ul>
+          <SellThroughLegend view={view} />
         </CardContent>
       </Card>
 

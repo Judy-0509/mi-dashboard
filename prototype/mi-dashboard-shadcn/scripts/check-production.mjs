@@ -341,6 +341,10 @@ assert.match(sellThroughSource, /58fr.*42fr/)
 assert.match(sellThroughSource, /Vendor.*Total/)
 assert.match(sellThroughSource, /Inventory/)
 assert.match(sellThroughSource, /25년 말.*26년 4월.*26년 8월/)
+assert.match(
+  sellThroughSource,
+  /function SellThroughLegend[\s\S]*view === "vendor"[\s\S]*Vendor legend[\s\S]*Sell-in \/ Sell-through legend/
+)
 
 assert.match(sidebarSource, /PortalPage = "sigma" \| "weekly" \| "ani" \| "sell-through"/)
 assert.match(sidebarSource, /label: "ANI"/)
