@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Download, FileSpreadsheet } from "lucide-react"
 
+import { AniProductionChart } from "@/components/ani-production-chart"
 import { CumulativeProductionChart } from "@/components/cumulative-production-chart"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { ExecutiveSummary } from "@/components/executive-summary"
@@ -20,7 +21,11 @@ declare global {
 const isWeeklyExport = window.__MI_WEEKLY_EXPORT__ === true
 
 function pageFromHash(): PortalPage {
-  return isWeeklyExport || window.location.hash === "#weekly" ? "weekly" : "sigma"
+  return isWeeklyExport || window.location.hash === "#weekly"
+    ? "weekly"
+    : window.location.hash === "#ani"
+      ? "ani"
+      : "sigma"
 }
 
 function SigmaPage() {
@@ -102,6 +107,30 @@ function WeeklyPage() {
   )
 }
 
+function AniPage() {
+  return (
+    <>
+      <header
+        className="flex items-end justify-between border-b pb-4"
+        id="ani"
+      >
+        <div>
+          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+            ANI / iPhone Model Production
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            iPhone 모델 생산 전망
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            2024 Q1–2027 Q2 분기별 Forecast · 단위: Mu
+          </p>
+        </div>
+      </header>
+      <AniProductionChart />
+    </>
+  )
+}
+
 export function App() {
   const [activePage, setActivePage] = useState<PortalPage>(pageFromHash)
 
@@ -112,7 +141,8 @@ export function App() {
   }, [])
 
   const navigate = (page: PortalPage) => {
-    const hash = page === "weekly" ? "#weekly" : "#overview"
+    const hash =
+      page === "weekly" ? "#weekly" : page === "ani" ? "#ani" : "#overview"
     setActivePage(page)
     if (window.location.hash !== hash) {
       window.location.hash = hash
@@ -121,14 +151,20 @@ export function App() {
 
   return (
     <DashboardShell
-      scrollable={activePage === "weekly"}
+      scrollable={activePage === "weekly" || activePage === "ani"}
       sidebar={
         isWeeklyExport ? null : (
           <PortalSidebar activePage={activePage} onNavigate={navigate} />
         )
       }
     >
-      {activePage === "weekly" ? <WeeklyPage /> : <SigmaPage />}
+      {activePage === "weekly" ? (
+        <WeeklyPage />
+      ) : activePage === "ani" ? (
+        <AniPage />
+      ) : (
+        <SigmaPage />
+      )}
     </DashboardShell>
   )
 }

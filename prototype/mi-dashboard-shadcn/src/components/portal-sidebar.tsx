@@ -1,6 +1,6 @@
 import { Separator } from "@/components/ui/separator"
 
-export type PortalPage = "sigma" | "weekly"
+export type PortalPage = "sigma" | "weekly" | "ani"
 
 const providers: Array<{
   label: string
@@ -15,6 +15,12 @@ const providers: Array<{
     href: "#overview",
   },
   { label: "Counterpoint", child: "Weekly", page: "weekly", href: "#weekly" },
+  {
+    label: "ANI",
+    child: "iPhone Model Production",
+    page: "ani",
+    href: "#ani",
+  },
 ]
 
 type PortalSidebarProps = {

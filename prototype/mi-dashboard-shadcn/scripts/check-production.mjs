@@ -11,6 +11,15 @@ import {
   vendors,
 } from "../src/data/production.ts"
 import {
+  aniFocusQuarter,
+  aniModels,
+  aniQuarterlyProduction,
+  getAniForecastHistory,
+  getAniHistorySummary,
+  getAniProductionTotal,
+  getAniVisibleModelKeys,
+} from "../src/data/ani.ts"
+import {
   getWeeklyCumulative,
   getWeeklyHeatmap,
   getWeeklyMetric,
@@ -70,6 +79,115 @@ assert.deepEqual(getVendorHistoryDeltas(getForecastHistory("2026 Q3")), {
   transsion: 0.3,
   others: 0.5,
 })
+
+assert.equal(aniQuarterlyProduction.length, 14)
+assert.deepEqual(
+  aniQuarterlyProduction.map((item) => item.quarter),
+  [
+    "2024 Q1",
+    "2024 Q2",
+    "2024 Q3",
+    "2024 Q4",
+    "2025 Q1",
+    "2025 Q2",
+    "2025 Q3",
+    "2025 Q4",
+    "2026 Q1",
+    "2026 Q2",
+    "2026 Q3",
+    "2026 Q4",
+    "2027 Q1",
+    "2027 Q2",
+  ],
+)
+assert.equal(aniModels.length, 20)
+assert.equal(new Set(aniModels.map((model) => model.key)).size, 20)
+assert.equal(
+  aniModels.filter((model) => model.generation === "iphone15").length,
+  4,
+)
+assert.equal(
+  aniModels.filter((model) => model.generation === "iphone16").length,
+  5,
+)
+assert.equal(
+  aniModels.filter((model) => model.generation === "iphone17").length,
+  5,
+)
+assert.equal(
+  aniModels.filter((model) => model.generation === "iphone18").length,
+  6,
+)
+assert.deepEqual(getAniVisibleModelKeys(["iphone16"], ["e"]), ["iphone16E"])
+assert.deepEqual(getAniVisibleModelKeys(["iphone17"], ["plusAir"]), ["iphone17Air"])
+assert.deepEqual(
+  getAniVisibleModelKeys(["iphone18"], ["foldable"]),
+  ["iphone18Foldable"],
+)
+assert.deepEqual(
+  getAniVisibleModelKeys(["iphone16", "iphone17"], ["pro", "e"]),
+  ["iphone16Pro", "iphone16E", "iphone17Pro", "iphone17E"],
+)
+assert.equal(aniFocusQuarter, "2027 Q2")
+assert.equal(getAniForecastHistory("2027 Q2").length, 6)
+
+const aniBaseColors = new Set(
+  aniModels
+    .filter((model) => model.type === "basic" || model.type === "plusAir")
+    .map((model) => model.color),
+)
+const aniEColors = new Set(
+  aniModels.filter((model) => model.type === "e").map((model) => model.color),
+)
+const aniFoldableColors = new Set(
+  aniModels
+    .filter((model) => model.type === "foldable")
+    .map((model) => model.color),
+)
+assert.ok([...aniEColors].every((color) => !aniBaseColors.has(color)))
+assert.ok([...aniFoldableColors].every((color) => !aniBaseColors.has(color)))
+assert.ok([...aniFoldableColors].every((color) => !aniEColors.has(color)))
+
+for (const quarter of aniQuarterlyProduction) {
+  assert.equal(
+    getAniProductionTotal(quarter),
+    aniModels.reduce((total, model) => total + quarter[model.key], 0),
+  )
+
+  const history = getAniForecastHistory(quarter.quarter)
+  assert.equal(history.length, 6)
+  for (const model of aniModels) {
+    assert.equal(history.at(-1)[model.key], quarter[model.key])
+  }
+}
+
+const aniSummaryHistory = getAniForecastHistory("2027 Q2")
+const aniSummaryVisibleKeys = ["iphone18Basic", "iphone18Foldable"]
+const aniSummaryCurrent = aniSummaryVisibleKeys.reduce(
+  (total, modelKey) => total + aniSummaryHistory.at(-1)[modelKey],
+  0,
+)
+const aniSummaryPrevious = aniSummaryVisibleKeys.reduce(
+  (total, modelKey) => total + aniSummaryHistory.at(-2)[modelKey],
+  0,
+)
+const aniSummaryFirst = aniSummaryVisibleKeys.reduce(
+  (total, modelKey) => total + aniSummaryHistory[0][modelKey],
+  0,
+)
+const aniSummary = getAniHistorySummary(
+  aniSummaryHistory,
+  aniSummaryVisibleKeys,
+)
+assert.equal(aniSummary.currentTotal, aniSummaryCurrent)
+assert.equal(
+  aniSummary.monthOverMonth,
+  Number((aniSummaryCurrent - aniSummaryPrevious).toFixed(1)),
+)
+assert.equal(
+  aniSummary.sixMonth,
+  Number((aniSummaryCurrent - aniSummaryFirst).toFixed(1)),
+)
 
 const csvRows = parseCsv(
   [
@@ -171,6 +289,56 @@ const sidebarSource = readFileSync(
   new URL("../src/components/portal-sidebar.tsx", import.meta.url),
   "utf8"
 )
+
+assert.match(sidebarSource, /PortalPage = "sigma" \| "weekly" \| "ani"/)
+assert.match(sidebarSource, /label: "ANI"/)
+assert.match(sidebarSource, /child: "iPhone Model Production"/)
+assert.match(sidebarSource, /page: "ani"/)
+assert.match(sidebarSource, /href: "#ani"/)
+assert.match(appSource, /window\.location\.hash === "#ani"/)
+assert.match(appSource, /page === "ani"/)
+assert.match(appSource, /function AniPage\(\)/)
+assert.match(appSource, /<AniPage \/>/)
+assert.match(appSource, /<AniProductionChart \/>/)
+assert.match(appSource, /ANI \/ iPhone Model Production/)
+assert.match(appSource, /iPhone 모델 생산 전망/)
+assert.match(appSource, /2024 Q1–2027 Q2 분기별 Forecast · 단위: Mu/)
+assert.match(appSource, /activePage === "ani"/)
+
+const aniChartSource = readFileSync(
+  new URL("../src/components/ani-production-chart.tsx", import.meta.url),
+  "utf8"
+)
+
+assert.match(aniChartSource, /grid-cols-\[minmax\(0,58fr\)_minmax\(0,42fr\)\]/)
+assert.match(aniChartSource, /getAniVisibleModelKeys/)
+assert.match(aniChartSource, /getAniForecastHistory\(selectedQuarter\)/)
+assert.match(aniChartSource, /history\.map/)
+assert.match(aniChartSource, /onClick=\{\(\{ activeLabel \}\)/)
+assert.match(aniChartSource, /시리즈/)
+assert.match(aniChartSource, /모델 유형/)
+assert.match(aniChartSource, /현재 Forecast/)
+assert.match(aniChartSource, /전월 대비/)
+assert.match(aniChartSource, /6개월 대비/)
+assert.match(aniChartSource, /height < 24/)
+assert.match(aniChartSource, /const visibleYAxisDomain/)
+assert.match(aniChartSource, /productionWithVisibleTotals\.map/)
+assert.match(aniChartSource, /historyWithVisibleTotals\.map/)
+assert.match(aniChartSource, /Math\.max\(10/)
+assert.equal(
+  aniChartSource.match(/domain=\{visibleYAxisDomain\}/g)?.length,
+  2,
+)
+assert.match(aniChartSource, /const \[hoveredQuarter, setHoveredQuarter\]/)
+assert.match(aniChartSource, /onMouseMove=\{\(\{ activeLabel \}\)/)
+assert.match(aniChartSource, /onMouseLeave=\{\(\) => setHoveredQuarter\(null\)\}/)
+assert.match(
+  aniChartSource,
+  /stroke=\{\s*selectedQuarter === item\.quarter\s*\?\s*"var\(--primary\)"\s*:\s*"transparent"\s*\}/,
+)
+assert.doesNotMatch(aniChartSource, /fillOpacity=\{\s*selectedQuarter === item\.quarter/)
+assert.doesNotMatch(aniChartSource, /getVendorHistoryDeltas/)
+assert.doesNotMatch(aniChartSource, /업체별 전망 변화/)
 
 assert.doesNotMatch(appSource, /기준: 2026 W32 · 단위: Mu/)
 assert.match(appSource, /window\.__MI_WEEKLY_EXPORT__ === true/)
