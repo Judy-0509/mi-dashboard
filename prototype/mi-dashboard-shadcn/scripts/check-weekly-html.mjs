@@ -11,15 +11,15 @@ try {
 
   const siteDir = path.join(tempDir, "site")
   const assetsDir = path.join(siteDir, "assets")
+  const indexSource =
+    '<!doctype html>\r\n<html><head><link rel="icon" href="/mi-mark.svg"><link href="https://example.test/icon.svg" rel="icon"><link rel="stylesheet" href="/assets/index-test.css"></head><body><img src="/assets/index-decoy.js"><a href="/assets/index-decoy.css"></a><div id="root"></div><script type="module" src="/assets/index-test.js"></script></body></html>\r\n'
+  const iconSource = '<svg>\r\n  <path />\r\n</svg>\r\n'
   mkdirSync(assetsDir, { recursive: true })
-  writeFileSync(
-    path.join(siteDir, "index.html"),
-    '<!doctype html>\r\n<html><head><link rel="icon" href="/mi-mark.svg"><link href="https://example.test/icon.svg" rel="icon"><link rel="stylesheet" href="/assets/index-test.css"></head><body><img src="/assets/index-decoy.js"><a href="/assets/index-decoy.css"></a><div id="root"></div><script type="module" src="/assets/index-test.js"></script></body></html>\r\n',
-  )
+  writeFileSync(path.join(siteDir, "index.html"), indexSource)
   writeFileSync(path.join(assetsDir, "index-test.js"), 'console.log("</script>$&")')
   writeFileSync(path.join(assetsDir, "index-test.css"), '@font-face { src: url(./test.woff2) } body::before { content: "</style>$&" }')
   writeFileSync(path.join(assetsDir, "test.woff2"), Buffer.from([0, 1, 2, 3]))
-  writeFileSync(path.join(siteDir, "mi-mark.svg"), '<svg xmlns="http://www.w3.org/2000/svg"></svg>')
+  writeFileSync(path.join(siteDir, "mi-mark.svg"), iconSource)
 
   const outputPath = buildWeeklyHtml({ siteDir })
   const html = readFileSync(outputPath, "utf8")
@@ -37,6 +37,12 @@ try {
   assert.doesNotMatch(html, /https:\/\/example\.test\/icon\.svg/)
   assert.doesNotMatch(html, /<script[^>]+\bsrc=/i)
   assert.doesNotMatch(html, /rel=["']stylesheet["']/i)
+
+  writeFileSync(path.join(siteDir, "index.html"), indexSource.replaceAll("\r\n", "\n"))
+  writeFileSync(path.join(siteDir, "mi-mark.svg"), iconSource.replaceAll("\r\n", "\n"))
+  const lfOutput = readFileSync(buildWeeklyHtml({ siteDir }), "utf8")
+  assert.equal(readFileSync(path.join(siteDir, "index.html"), "utf8"), indexHtml)
+  assert.equal(lfOutput, html)
 
   const missingJsDir = path.join(tempDir, "missing-js-site")
   mkdirSync(path.join(missingJsDir, "assets"), { recursive: true })

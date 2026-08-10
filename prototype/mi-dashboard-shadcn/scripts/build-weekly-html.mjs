@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url"
 const escapeInlineScript = (value) => value.replaceAll("</script", "<\\/script")
 const escapeInlineStyle = (value) => value.replaceAll("</style", "<\\/style")
 const normalizeLineEndings = (value) => value.replace(/\r\n?/g, "\n")
+const normalizeIndexHtml = (value) => normalizeLineEndings(value).replace(/\n[ \t]*\n([ \t]*<\/body>)/, "\n$1")
 export const defaultSiteDir = path.resolve(import.meta.dirname, "../../../site")
 
 const readAsset = (siteDir, html, tagName, attribute, extension) => {
@@ -33,7 +34,7 @@ const readAsset = (siteDir, html, tagName, attribute, extension) => {
 export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html" }) {
   const resolvedSiteDir = path.resolve(siteDir)
   const indexPath = path.join(resolvedSiteDir, "index.html")
-  let html = normalizeLineEndings(readFileSync(indexPath, "utf8"))
+  let html = normalizeIndexHtml(readFileSync(indexPath, "utf8"))
   assert.doesNotMatch(html, /\r/, "site/index.html must use LF")
   writeFileSync(indexPath, html)
   const js = readAsset(resolvedSiteDir, html, "script", "src", "js")
@@ -44,7 +45,7 @@ export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html"
     /url\((["']?)(\.\/[^)'"\s]+\.woff2)\1\)/gi,
     (_, _quote, fontUrl) => `url(data:font/woff2;base64,${readFileSync(path.resolve(cssDir, fontUrl), "base64")})`,
   )
-  const icon = Buffer.from(readFileSync(path.join(resolvedSiteDir, "mi-mark.svg"))).toString("base64")
+  const icon = Buffer.from(normalizeLineEndings(readFileSync(path.join(resolvedSiteDir, "mi-mark.svg"), "utf8"))).toString("base64")
   let iconCount = 0
   html = html.replace(/<link\b(?=[^>]*\brel=["']icon["'])[^>]*>/gi, (iconTag) => {
     iconCount += 1
