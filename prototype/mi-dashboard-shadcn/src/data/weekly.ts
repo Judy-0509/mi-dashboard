@@ -171,35 +171,22 @@ export function getWeeklyHeatmap(metric: WeeklyMetric) {
   })
 }
 
-export function getWeeklyCumulative(region: WeeklyRegion) {
-  const segmentNames =
-    region === "Total" ? weeklyRegions.slice(1) : weeklyVendors
+export function getWeeklyRegionalCumulative(vendorIndex: number | null) {
+  const segmentNames = weeklyRegions.slice(1)
   const years = weeklyYears.map((year) => {
     const segments = segmentNames.map((name) => {
-      const value =
-        region === "Total"
-          ? sumWeeklySellOut(
-              year,
-              weeklySelectedWeek,
-              name as Country,
-              null,
-              true
-            )
-          : sumWeeklySellOut(
-              year,
-              weeklySelectedWeek,
-              region,
-              weeklyVendors.indexOf(name as (typeof weeklyVendors)[number]),
-              true
-            )
+      const value = sumWeeklySellOut(
+        year,
+        weeklySelectedWeek,
+        name as Country,
+        vendorIndex,
+        true
+      )
 
       return {
         name,
         value: round3(value),
-        color:
-          region === "Total"
-            ? weeklyRegionColors[name as Country]
-            : weeklyVendorColors[name as (typeof weeklyVendors)[number]],
+        color: weeklyRegionColors[name as Country],
       }
     })
 
@@ -211,6 +198,41 @@ export function getWeeklyCumulative(region: WeeklyRegion) {
   })
 
   return { segmentNames, years }
+}
+
+export function getWeeklyVendorCumulative(region: WeeklyRegion) {
+  const segmentNames = weeklyVendors
+  const years = weeklyYears.map((year) => {
+    const segments = segmentNames.map((name) => {
+      const value = sumWeeklySellOut(
+        year,
+        weeklySelectedWeek,
+        region,
+        weeklyVendors.indexOf(name),
+        true
+      )
+
+      return {
+        name,
+        value: round3(value),
+        color: weeklyVendorColors[name],
+      }
+    })
+
+    return {
+      year,
+      total: round3(segments.reduce((sum, segment) => sum + segment.value, 0)),
+      segments,
+    }
+  })
+
+  return { segmentNames, years }
+}
+
+export function getWeeklyCumulative(region: WeeklyRegion) {
+  return region === "Total"
+    ? getWeeklyRegionalCumulative(null)
+    : getWeeklyVendorCumulative(region)
 }
 
 export function getWeeklyTrend(

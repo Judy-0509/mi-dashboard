@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Download } from "lucide-react"
+import { Download, FileSpreadsheet } from "lucide-react"
 
 import { CumulativeProductionChart } from "@/components/cumulative-production-chart"
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -67,21 +67,34 @@ function WeeklyPage() {
             {weeklyDescription}
           </p>
         </div>
-        <div className="flex items-end gap-3 text-right">
-          <p className="font-mono text-xs text-muted-foreground">
-            기준: 2026 W32 · 단위: Mu
-          </p>
-          {!isWeeklyExport && (
+        {!isWeeklyExport && (
+          <div className="flex items-center gap-2">
             <a
-              className={buttonVariants({ variant: "outline", size: "sm" })}
+              aria-disabled="true"
+              className={buttonVariants({
+                variant: "outline",
+                size: "sm",
+                className: "text-sm leading-5 font-normal",
+              })}
+              title="사내 EDM 원본 엑셀 링크가 아직 설정되지 않았습니다."
+            >
+              <FileSpreadsheet aria-hidden="true" />
+              원본 엑셀 보기
+            </a>
+            <a
+              className={buttonVariants({
+                variant: "outline",
+                size: "sm",
+                className: "text-sm leading-5 font-normal",
+              })}
               download="MI_Weekly_2026W32.html"
               href="./MI_Weekly_2026W32.html"
             >
               <Download aria-hidden="true" />
               Download as HTML
             </a>
-          )}
-        </div>
+          </div>
+        )}
       </header>
       <WeeklyExecutiveSummary />
       <WeeklyAnalysis />
@@ -110,11 +123,9 @@ export function App() {
     <DashboardShell
       scrollable={activePage === "weekly"}
       sidebar={
-        <PortalSidebar
-          activePage={activePage}
-          onNavigate={navigate}
-          weeklyOnly={isWeeklyExport}
-        />
+        isWeeklyExport ? null : (
+          <PortalSidebar activePage={activePage} onNavigate={navigate} />
+        )
       }
     >
       {activePage === "weekly" ? <WeeklyPage /> : <SigmaPage />}

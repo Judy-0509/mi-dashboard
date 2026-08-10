@@ -1,4 +1,4 @@
-import { type Key, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import {
   Bar,
   BarChart,
@@ -19,8 +19,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
-  getWeeklyCumulative,
   getWeeklyHeatmap,
+  getWeeklyRegionalCumulative,
+  getWeeklyVendorCumulative,
   weeklyRegionColors,
   weeklyRegions,
   weeklyVendorColors,
@@ -65,20 +66,11 @@ function formatMetric(value: number | null) {
     return "N/A"
   }
 
-  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`
+  return `${value < 0 ? "△" : value > 0 ? "+" : ""}${Math.abs(value).toFixed(1)}%`
 }
 
-function isWeeklyRegion(value: Key | undefined): value is WeeklyRegion {
+function isWeeklyVendor(value: string): value is (typeof weeklyVendors)[number] {
   return (
-    typeof value === "string" && weeklyRegions.includes(value as WeeklyRegion)
-  )
-}
-
-function isWeeklyVendor(
-  value: Key | undefined
-): value is (typeof weeklyVendors)[number] {
-  return (
-    typeof value === "string" &&
     weeklyVendors.includes(value as (typeof weeklyVendors)[number])
   )
 }
@@ -138,27 +130,140 @@ function WeeklyTrendChart({
   )
 }
 
-export function WeeklyAnalysis() {
-  const [metric, setMetric] = useState<WeeklyMetric>("yoy")
-  const [region, setRegion] = useState<WeeklyRegion>("Total")
-  const [trendVendor, setTrendVendor] =
-    useState<(typeof weeklyVendors)[number]>("Apple")
-  const [trendMetric, setTrendMetric] = useState<WeeklyTrendMetric>("mu")
-  const heatmap = useMemo(() => getWeeklyHeatmap(metric), [metric])
-  const cumulative = useMemo(() => getWeeklyCumulative(region), [region])
-  const totalTrend = useMemo(() => getWeeklyTrend("Total", null, "mu"), [])
-  const vendorTrend = useMemo(
-    () =>
-      getWeeklyTrend(region, weeklyVendors.indexOf(trendVendor), trendMetric),
-    [region, trendMetric, trendVendor]
-  )
-  const chartData = cumulative.years.map((year) => ({
+function WeeklyCumulativeChart({
+  data,
+  metric,
+  label,
+}: {
+  data:
+    | ReturnType<typeof getWeeklyRegionalCumulative>
+    | ReturnType<typeof getWeeklyVendorCumulative>
+  metric: WeeklyTrendMetric
+  label: string
+}) {
+  const chartData = data.years.map((year) => ({
     year: String(year.year),
-    total: year.total,
+    total: metric === "share" ? 100 : year.total,
     ...Object.fromEntries(
-      year.segments.map((segment) => [segment.name, segment.value])
+      year.segments.map((segment) => [
+        segment.name,
+        metric === "share"
+          ? year.total === 0
+            ? 0
+            : (segment.value / year.total) * 100
+          : segment.value,
+      ])
     ),
   }))
+
+  return (
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_120px] gap-2">
+      <ChartContainer
+        aria-label={label}
+        className="h-[240px] w-full min-w-0"
+        config={weeklyChartConfig}
+      >
+        <BarChart
+          accessibilityLayer
+          barCategoryGap="28%"
+          data={chartData}
+          margin={{ top: 24, right: 4, left: 4, bottom: 0 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis
+            axisLine={{ stroke: "var(--muted-foreground)", strokeOpacity: 0.45 }}
+            dataKey="year"
+            tickLine={false}
+            tickMargin={8}
+          />
+          <YAxis hide />
+          <ChartTooltip content={<ChartTooltipContent />} cursor={false} />
+          {data.segmentNames.map((segmentName, index) => (
+            <Bar
+              dataKey={segmentName}
+              fill={`var(--color-${segmentName})`}
+              isAnimationActive={false}
+              key={segmentName}
+              stackId="weekly"
+            >
+              <LabelList
+                dataKey={segmentName}
+                fill={
+                  index === 0 || index === 5
+                    ? "var(--foreground)"
+                    : "var(--primary-foreground)"
+                }
+                fontSize={9}
+                formatter={(value) =>
+                  `${Number(value).toFixed(1)}${metric === "share" ? "%" : ""}`
+                }
+                position="center"
+              />
+              {index === data.segmentNames.length - 1 ? (
+                <LabelList
+                  dataKey="total"
+                  fill="var(--foreground)"
+                  fontSize={10}
+                  formatter={(value) =>
+                    `${Number(value).toFixed(1)}${metric === "share" ? "%" : "Mu"}`
+                  }
+                  position="top"
+                />
+              ) : null}
+            </Bar>
+          ))}
+        </BarChart>
+      </ChartContainer>
+      <ul
+        aria-label="Cumulative composition legend"
+        className="flex min-w-0 flex-col gap-1.5 pt-1 text-xs leading-4 whitespace-nowrap text-muted-foreground"
+      >
+        {data.years[0].segments.map((segment) => (
+          <li className="flex items-center gap-1.5" key={segment.name}>
+            <i
+              aria-hidden="true"
+              className="size-1.5 shrink-0"
+              style={{ backgroundColor: segment.color }}
+            />
+            {segment.name}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+export function WeeklyAnalysis() {
+  const [metric, setMetric] = useState<WeeklyMetric>("yoy")
+  const [selectedVendor, setSelectedVendor] = useState<
+    (typeof weeklyVendors)[number] | null
+  >(null)
+  const [selectedRegion, setSelectedRegion] = useState<WeeklyRegion>("Total")
+  const heatmap = useMemo(() => getWeeklyHeatmap(metric), [metric])
+  const regionalCumulative = useMemo(
+    () =>
+      getWeeklyRegionalCumulative(
+        selectedVendor === null ? null : weeklyVendors.indexOf(selectedVendor)
+      ),
+    [selectedVendor]
+  )
+  const vendorCumulative = useMemo(
+    () => getWeeklyVendorCumulative(selectedRegion),
+    [selectedRegion]
+  )
+  const selectedTrend = useMemo(
+    () =>
+      getWeeklyTrend(
+        selectedRegion,
+        selectedVendor === null ? null : weeklyVendors.indexOf(selectedVendor),
+        "mu"
+      ),
+    [selectedRegion, selectedVendor]
+  )
+  const [cumulativeMetric, setCumulativeMetric] =
+    useState<WeeklyTrendMetric>("mu")
+  const selectedVendorLabel = selectedVendor ?? "Total"
+  const selectedRegionLabel = selectedRegion
 
   return (
     <section
@@ -193,17 +298,17 @@ export function WeeklyAnalysis() {
           </ToggleGroup>
         </CardHeader>
         <CardContent className="pt-3">
-          <div className="flex h-[388px] overflow-hidden border">
+          <div className="flex h-[300px] overflow-hidden border">
             <table
               className="h-full w-full border-collapse text-xs"
               aria-label="Vendor by region weekly heatmap"
             >
               <thead className="bg-muted/40 text-muted-foreground">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium">Vendor</th>
+                  <th className="px-3 py-1.5 text-left font-medium">Vendor</th>
                   {weeklyRegions.map((regionName) => (
                     <th
-                      className="px-2 py-2 text-right font-medium"
+                      className="px-2 py-1.5 text-right font-medium"
                       key={regionName}
                     >
                       {regionName}
@@ -214,21 +319,45 @@ export function WeeklyAnalysis() {
               <tbody>
                 {heatmap.map((row) => (
                   <tr className="border-t" key={row.label}>
-                    <th className="px-3 py-2 text-left font-medium" scope="row">
+                    <th className="px-3 py-1.5 text-left font-medium" scope="row">
                       {row.label}
                     </th>
-                    {row.values.map((value, index) => (
-                      <td
-                        className={`px-2 py-2 text-right tabular-nums ${
-                          value !== null && value < 0
-                            ? "text-destructive"
-                            : "text-foreground"
-                        }`}
-                        key={`${row.label}-${weeklyRegions[index]}`}
-                      >
-                        {formatMetric(value)}
-                      </td>
-                    ))}
+                    {row.values.map((value, index) => {
+                      const regionName = weeklyRegions[index]
+                      const vendor =
+                        row.label === "Total"
+                          ? null
+                          : isWeeklyVendor(row.label)
+                            ? row.label
+                            : null
+                      const isSelected =
+                        vendor === selectedVendor &&
+                        regionName === selectedRegion
+
+                      return (
+                        <td
+                          className="p-0 text-right"
+                          key={`${row.label}-${regionName}`}
+                        >
+                          <button
+                            aria-label={`${row.label} × ${regionName}: ${formatMetric(value)}`}
+                            aria-pressed={isSelected}
+                            className={`block w-full rounded-sm border border-transparent px-2 py-1.5 text-right tabular-nums transition-colors hover:bg-muted/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold ${
+                              value !== null && value < 0
+                                ? "text-destructive"
+                                : "text-foreground"
+                            }`}
+                            onClick={() => {
+                              setSelectedVendor(vendor)
+                              setSelectedRegion(regionName)
+                            }}
+                            type="button"
+                          >
+                            {formatMetric(value)}
+                          </button>
+                        </td>
+                      )
+                    })}
                   </tr>
                 ))}
               </tbody>
@@ -241,7 +370,7 @@ export function WeeklyAnalysis() {
                   Weekly trend
                 </p>
                 <h3 className="mt-1 text-sm font-semibold tracking-tight">
-                  Total weekly sell-out
+                  {selectedVendorLabel} × {selectedRegionLabel} weekly sell-out
                 </h3>
               </div>
               <p className="pt-1 text-xs text-muted-foreground">
@@ -264,8 +393,8 @@ export function WeeklyAnalysis() {
               ))}
             </div>
             <WeeklyTrendChart
-              data={totalTrend}
-              label="Weekly total sell-out trend"
+              data={selectedTrend}
+              label={`${selectedVendorLabel} × ${selectedRegionLabel} weekly sell-out trend`}
               metric="mu"
             />
           </div>
@@ -273,178 +402,64 @@ export function WeeklyAnalysis() {
       </Card>
 
       <Card className="min-w-0 border-border shadow-none" size="sm">
-        <CardHeader className="border-b pb-3">
-          <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
-            Cumulative sell-out
-          </p>
-          <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
-            4-year cumulative composition
-          </CardTitle>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 border-b pb-3">
+          <div>
+            <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+              Cumulative sell-out
+            </p>
+            <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
+              4-year cumulative composition
+            </CardTitle>
+          </div>
           <ToggleGroup
-            aria-label="Cumulative context selector"
-            className="mt-3 flex flex-wrap gap-1"
+            aria-label="Cumulative metric"
             onSelectionChange={(selection) => {
               const next = Array.from(selection)[0]
-              if (isWeeklyRegion(next)) {
-                setRegion(next)
+              if (next === "mu" || next === "share") {
+                setCumulativeMetric(next)
               }
             }}
-            selectedKeys={new Set([region])}
+            selectedKeys={new Set([cumulativeMetric])}
             selectionMode="single"
             size="sm"
             variant="outline"
           >
-            {weeklyRegions.map((regionName) => (
-              <ToggleGroupItem id={regionName} key={regionName}>
-                {regionName}
-              </ToggleGroupItem>
-            ))}
+            <ToggleGroupItem id="mu">Mu</ToggleGroupItem>
+            <ToggleGroupItem id="share">M/S (%)</ToggleGroupItem>
           </ToggleGroup>
         </CardHeader>
         <CardContent className="pt-3">
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_140px] gap-3">
-            <ChartContainer
-              className="h-[340px] w-full min-w-0"
-              config={weeklyChartConfig}
-            >
-              <BarChart
-                accessibilityLayer
-                barCategoryGap="28%"
-                data={chartData}
-                margin={{ top: 24, right: 4, left: 4, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis
-                  axisLine={false}
-                  dataKey="year"
-                  tickLine={false}
-                  tickMargin={8}
-                />
-                <YAxis hide />
-                <ChartTooltip
-                  content={<ChartTooltipContent />}
-                  cursor={false}
-                />
-                {cumulative.segmentNames.map((segmentName, index) => (
-                  <Bar
-                    dataKey={segmentName}
-                    fill={`var(--color-${segmentName})`}
-                    isAnimationActive={false}
-                    key={segmentName}
-                    stackId="weekly"
-                  >
-                    <LabelList
-                      dataKey={segmentName}
-                      fill={
-                        index === 0 || index === 5
-                          ? "var(--foreground)"
-                          : "var(--primary-foreground)"
-                      }
-                      fontSize={9}
-                      formatter={(value) => Number(value).toFixed(1)}
-                      position="center"
-                    />
-                    {index === cumulative.segmentNames.length - 1 ? (
-                      <LabelList
-                        dataKey="total"
-                        fill="var(--foreground)"
-                        fontSize={10}
-                        formatter={(value) => `${Number(value).toFixed(1)}Mu`}
-                        position="top"
-                      />
-                    ) : null}
-                  </Bar>
-                ))}
-              </BarChart>
-            </ChartContainer>
-            <ul
-              aria-label="Cumulative composition legend"
-              className="flex flex-col gap-1.5 pt-1 text-sm leading-5 text-muted-foreground"
-            >
-              {cumulative.years[0].segments.map((segment) => (
-                <li className="flex items-center gap-1.5" key={segment.name}>
-                  <i
-                    aria-hidden="true"
-                    className="size-1.5 shrink-0"
-                    style={{ backgroundColor: segment.color }}
-                  />
-                  {segment.name}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="mt-4 border-t pt-3">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
+          <div className="grid min-w-0 gap-4">
+            <div className="border-b pb-3">
+              <div className="mb-2">
                 <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
-                  Weekly trend
+                  Regional composition
                 </p>
                 <h3 className="mt-1 text-sm font-semibold tracking-tight">
-                  {region} · {trendVendor} weekly sell-out
+                  <span className="text-primary">{selectedVendorLabel}</span> · cumulative sell-out by region
                 </h3>
               </div>
-              <p className="pt-1 text-xs text-muted-foreground">
-                2023–2025 W1–W52 · 2026 W1–W32
-              </p>
+              <WeeklyCumulativeChart
+                data={regionalCumulative}
+                label={`${selectedVendorLabel} cumulative sell-out by region`}
+                metric={cumulativeMetric}
+              />
             </div>
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-              <ToggleGroup
-                aria-label="Trend vendor selector"
-                className="flex flex-wrap gap-1"
-                onSelectionChange={(selection) => {
-                  const next = Array.from(selection)[0]
-                  if (isWeeklyVendor(next)) {
-                    setTrendVendor(next)
-                  }
-                }}
-                selectedKeys={new Set([trendVendor])}
-                selectionMode="single"
-                size="sm"
-                variant="outline"
-              >
-                {weeklyVendors.map((vendor) => (
-                  <ToggleGroupItem id={vendor} key={vendor}>
-                    {vendor}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-              <ToggleGroup
-                aria-label="Trend unit selector"
-                onSelectionChange={(selection) => {
-                  const next = Array.from(selection)[0]
-                  if (next === "mu" || next === "share") {
-                    setTrendMetric(next)
-                  }
-                }}
-                selectedKeys={new Set([trendMetric])}
-                selectionMode="single"
-                size="sm"
-                variant="outline"
-              >
-                <ToggleGroupItem id="mu">Mu</ToggleGroupItem>
-                <ToggleGroupItem id="share">M/S (%)</ToggleGroupItem>
-              </ToggleGroup>
+            <div>
+              <div className="mb-2">
+                <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                  Vendor composition
+                </p>
+                <h3 className="mt-1 text-sm font-semibold tracking-tight">
+                  <span className="text-primary">{selectedRegionLabel}</span> · cumulative sell-out by vendor
+                </h3>
+              </div>
+              <WeeklyCumulativeChart
+                data={vendorCumulative}
+                label={`${selectedRegionLabel} cumulative sell-out by vendor`}
+                metric={cumulativeMetric}
+              />
             </div>
-            <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
-              {weeklyTrendLines.map((line) => (
-                <span className="flex items-center gap-1.5" key={line.dataKey}>
-                  <i
-                    aria-hidden="true"
-                    className="size-1.5 rounded-full"
-                    style={{
-                      backgroundColor: weeklyTrendConfig[line.dataKey].color,
-                      opacity: line.opacity,
-                    }}
-                  />
-                  {weeklyTrendConfig[line.dataKey].label}
-                </span>
-              ))}
-            </div>
-            <WeeklyTrendChart
-              data={vendorTrend}
-              label="Weekly vendor trend"
-              metric={trendMetric}
-            />
           </div>
         </CardContent>
       </Card>

@@ -20,18 +20,12 @@ const providers: Array<{
 type PortalSidebarProps = {
   activePage: PortalPage
   onNavigate: (page: PortalPage) => void
-  weeklyOnly?: boolean
 }
 
 export function PortalSidebar({
   activePage,
   onNavigate,
-  weeklyOnly,
 }: PortalSidebarProps) {
-  const visibleProviders = weeklyOnly
-    ? providers.filter((provider) => provider.page === "weekly")
-    : providers
-
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r bg-sidebar px-5 py-7 text-sidebar-foreground">
       <div>
@@ -42,7 +36,7 @@ export function PortalSidebar({
       </div>
       <Separator className="my-7 bg-sidebar-border" />
       <nav aria-label="Research portals" className="space-y-6">
-        {visibleProviders.map(({ label, child, page, href }) => {
+        {providers.map(({ label, child, page, href }) => {
           const active = activePage === page
 
           return (

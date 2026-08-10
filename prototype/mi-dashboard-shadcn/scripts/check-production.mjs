@@ -14,7 +14,12 @@ import {
   getWeeklyCumulative,
   getWeeklyHeatmap,
   getWeeklyMetric,
+  getWeeklyRegionalCumulative,
   getWeeklyTrend,
+  getWeeklyVendorCumulative,
+  sumWeeklySellOut,
+  weeklyRegions,
+  weeklyVendors,
   weeklySelectedWeek,
 } from "../src/data/weekly.ts"
 import { normalizeRow, parseCsv } from "./update-dashboard-data.mjs"
@@ -88,9 +93,32 @@ assert.deepEqual(csvRows.at(-1), {
 const approximatelyEqual = (actual, expected, tolerance = 0.0005) =>
   Math.abs(actual - expected) <= tolerance
 const weeklyTotal = getWeeklyCumulative("Total")
+const appleRegional = getWeeklyRegionalCumulative(0)
+const usaVendor = getWeeklyVendorCumulative("USA")
 
 assert.equal(getWeeklyHeatmap("yoy").length, 8)
 assert.ok(getWeeklyHeatmap("wow").every((row) => row.values.length === 6))
+assert.deepEqual(appleRegional.segmentNames, weeklyRegions.slice(1))
+assert.deepEqual(usaVendor.segmentNames, weeklyVendors)
+const appleUsa = sumWeeklySellOut(
+  2026,
+  weeklySelectedWeek,
+  "USA",
+  0,
+  true,
+)
+assert.ok(
+  approximatelyEqual(
+    appleRegional.years.at(-1).segments.find((segment) => segment.name === "USA").value,
+    appleUsa,
+  ),
+)
+assert.ok(
+  approximatelyEqual(
+    usaVendor.years.at(-1).segments.find((segment) => segment.name === "Apple").value,
+    appleUsa,
+  ),
+)
 assert.ok(
   weeklyTotal.years.every((year, index) =>
     approximatelyEqual(year.total, [251.088, 264.886, 275.938, 294.817][index])
@@ -127,6 +155,9 @@ assert.ok(
     .every((point) => point.y2026 > 0 && point.y2026 < 100)
 )
 assert.equal(usaAppleShareTrend[weeklySelectedWeek].y2026, null)
+const usaAppleMuTrend = getWeeklyTrend("USA", 0, "mu")
+assert.equal(usaAppleMuTrend.length, 52)
+assert.ok(usaAppleMuTrend[0].y2023 > 0)
 
 const appSource = readFileSync(
   new URL("../src/App.tsx", import.meta.url),
@@ -141,13 +172,17 @@ const sidebarSource = readFileSync(
   "utf8"
 )
 
-assert.match(appSource, /기준: 2026 W32 · 단위: Mu/)
+assert.doesNotMatch(appSource, /기준: 2026 W32 · 단위: Mu/)
 assert.match(appSource, /window\.__MI_WEEKLY_EXPORT__ === true/)
 assert.match(appSource, /download="MI_Weekly_2026W32\.html"/)
 assert.match(appSource, /href="\.\/MI_Weekly_2026W32\.html"/)
 assert.match(appSource, /!isWeeklyExport/)
-assert.match(sidebarSource, /weeklyOnly\?: boolean/)
-assert.match(sidebarSource, /provider\.page === "weekly"/)
+assert.match(appSource, /isWeeklyExport \? null/)
+assert.match(appSource, /원본 엑셀 보기/)
+assert.match(appSource, /aria-disabled="true"/)
+assert.match(appSource, /사내 EDM 원본 엑셀 링크가 아직 설정되지 않았습니다\./)
+assert.doesNotMatch(sidebarSource, /weeklyOnly/)
+assert.doesNotMatch(sidebarSource, /provider\.page === "weekly"/)
 assert.match(
   weeklyAnalysisSource,
   /grid-cols-\[minmax\(0,58fr\)_minmax\(0,42fr\)\] gap-4/
@@ -165,10 +200,18 @@ assert.equal(
   2
 )
 assert.match(weeklyAnalysisSource, /<YAxis hide \/>/)
-assert.match(weeklyAnalysisSource, /grid-cols-\[minmax\(0,1fr\)_140px\] gap-3/)
+assert.equal(
+  weeklyAnalysisSource.match(/<WeeklyCumulativeChart/g)?.length,
+  2,
+)
+assert.match(weeklyAnalysisSource, /className="h-\[240px\] w-full min-w-0"/)
 assert.match(
   weeklyAnalysisSource,
-  /<ChartContainer\s+className="h-\[340px\] w-full min-w-0"/
+  /grid-cols-\[minmax\(0,1fr\)_120px\] gap-2/
+)
+assert.match(
+  weeklyAnalysisSource,
+  /axisLine=\{\{ stroke: "var\(--muted-foreground\)", strokeOpacity: 0\.45 \}\}/
 )
 assert.match(
   weeklyAnalysisSource,
@@ -176,7 +219,11 @@ assert.match(
 )
 assert.match(
   weeklyAnalysisSource,
-  /<div className="flex h-\[388px\] overflow-hidden border">/
+  /<div className="flex h-\[300px\] overflow-hidden border">/
+)
+assert.equal(
+  weeklyAnalysisSource.match(/py-1\.5/g)?.length,
+  4,
 )
 assert.match(
   weeklyAnalysisSource,
@@ -188,7 +235,7 @@ assert.match(
 )
 assert.match(
   weeklyAnalysisSource,
-  /<ul\b(?=[^>]*aria-label="Cumulative composition legend")(?=[^>]*className="flex flex-col gap-1\.5 pt-1 text-sm leading-5 text-muted-foreground")[^>]*>/
+  /<ul\b(?=[^>]*aria-label="Cumulative composition legend")(?=[^>]*className="flex min-w-0 flex-col gap-1\.5 pt-1 text-xs leading-4 whitespace-nowrap text-muted-foreground")[^>]*>/
 )
 assert.match(
   weeklyAnalysisSource,
@@ -196,16 +243,30 @@ assert.match(
 )
 assert.match(
   weeklyAnalysisSource,
-  /cumulative\.years\[0\]\.segments\.map\(\(segment\) =>/
+  /data\.years\[0\]\.segments\.map\(\(segment\) =>/
 )
+assert.match(weeklyAnalysisSource, /Regional composition/)
+assert.match(weeklyAnalysisSource, /Vendor composition/)
+assert.match(weeklyAnalysisSource, /value < 0 \? "△"/)
+assert.match(weeklyAnalysisSource, /Math\.abs\(value\)\.toFixed\(1\)/)
+assert.match(weeklyAnalysisSource, /aria-pressed=\{isSelected\}/)
+assert.match(weeklyAnalysisSource, /setSelectedVendor\(vendor\)/)
+assert.match(weeklyAnalysisSource, /setSelectedRegion\(regionName\)/)
+assert.match(weeklyAnalysisSource, /data=\{selectedTrend\}/)
+assert.match(weeklyAnalysisSource, /getWeeklyTrend\(\s*selectedRegion/)
+assert.match(weeklyAnalysisSource, /aria-label="Cumulative metric"/)
+assert.match(weeklyAnalysisSource, /<ToggleGroupItem id="mu">Mu<\/ToggleGroupItem>/)
+assert.match(weeklyAnalysisSource, /<ToggleGroupItem id="share">M\/S \(%\)<\/ToggleGroupItem>/)
+assert.match(weeklyAnalysisSource, /metric=\{cumulativeMetric\}/)
 assert.doesNotMatch(
   weeklyAnalysisSource,
   /className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground"/
 )
-assert.match(weeklyAnalysisSource, /label="Weekly total sell-out trend"/)
-assert.match(weeklyAnalysisSource, /label="Weekly vendor trend"/)
-assert.match(weeklyAnalysisSource, /aria-label="Trend unit selector"/)
-assert.match(weeklyAnalysisSource, /aria-label="Trend vendor selector"/)
+assert.match(weeklyAnalysisSource, /selectedVendorLabel\} × \$\{selectedRegionLabel\} weekly sell-out trend/)
+assert.doesNotMatch(weeklyAnalysisSource, /Weekly vendor trend/)
+assert.doesNotMatch(weeklyAnalysisSource, /aria-label="Trend unit selector"/)
+assert.doesNotMatch(weeklyAnalysisSource, /aria-label="Trend vendor selector"/)
+assert.doesNotMatch(weeklyAnalysisSource, /aria-label="Cumulative context selector"/)
 assert.match(weeklyAnalysisSource, /dot=\{\{ r: 2 \}\}/)
 assert.match(weeklyAnalysisSource, /activeDot=\{\{ r: 4 \}\}/)
 
