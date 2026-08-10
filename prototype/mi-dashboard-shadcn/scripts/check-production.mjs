@@ -153,7 +153,7 @@ assert.match(
 )
 assert.match(
   weeklyAnalysisSource,
-  /<table className="h-full w-full border-collapse text-xs">/
+  /<table\b(?=[^>]*className="h-full w-full border-collapse text-xs")[^>]*>/
 )
 assert.match(
   weeklyAnalysisSource,
