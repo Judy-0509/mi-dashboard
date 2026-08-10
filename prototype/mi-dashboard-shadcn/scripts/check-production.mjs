@@ -346,6 +346,26 @@ assert.match(
   /function SellThroughLegend[\s\S]*view === "vendor"[\s\S]*Vendor legend[\s\S]*Sell-in \/ Sell-through legend/
 )
 
+assert.match(sellThroughSource, /Sell-in.*Sell-through/)
+assert.match(sellThroughSource, /ratio/)
+assert.match(sellThroughSource, /#d97706/)
+assert.match(
+  sellThroughSource,
+  /const sellThroughChartData[\s\S]*sellThroughMonthly\.map/
+)
+assert.match(
+  sellThroughSource,
+  /<Line[\s\S]*dataKey="ratio"[\s\S]*dot=\{\{ fill: ratioColor/
+)
+assert.match(
+  sellThroughSource,
+  /grid-cols-\[minmax\(0,58fr\)_minmax\(0,42fr\)\][\s\S]*items-stretch/
+)
+assert.match(sellThroughSource, /aria-label=.*Inventory|caption.*Inventory/i)
+assert.doesNotMatch(sellThroughSource, /region selector|지역 selector/i)
+assert.doesNotMatch(appSource, /ExecutiveSummary.*sell-through|sell-through.*ExecutiveSummary/i)
+assert.doesNotMatch(sellThroughSource, /getWeekly|weekly\.ts|CumulativeProductionChart/i)
+
 assert.match(sidebarSource, /PortalPage = "sigma" \| "weekly" \| "ani" \| "sell-through"/)
 assert.match(sidebarSource, /label: "ANI"/)
 assert.match(sidebarSource, /child: "iPhone Model Production"/)
