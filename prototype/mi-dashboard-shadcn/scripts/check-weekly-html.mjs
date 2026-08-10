@@ -16,8 +16,8 @@ try {
     path.join(siteDir, "index.html"),
     '<!doctype html><html><head><link rel="icon" href="/mi-mark.svg"><link href="https://example.test/icon.svg" rel="icon"><link rel="stylesheet" href="/assets/index-test.css"></head><body><img src="/assets/index-decoy.js"><a href="/assets/index-decoy.css"></a><div id="root"></div><script type="module" src="/assets/index-test.js"></script></body></html>',
   )
-  writeFileSync(path.join(assetsDir, "index-test.js"), 'console.log("</script>")')
-  writeFileSync(path.join(assetsDir, "index-test.css"), '@font-face { src: url(./test.woff2) } body::before { content: "</style>" }')
+  writeFileSync(path.join(assetsDir, "index-test.js"), 'console.log("</script>$&")')
+  writeFileSync(path.join(assetsDir, "index-test.css"), '@font-face { src: url(./test.woff2) } body::before { content: "</style>$&" }')
   writeFileSync(path.join(assetsDir, "test.woff2"), Buffer.from([0, 1, 2, 3]))
   writeFileSync(path.join(siteDir, "mi-mark.svg"), '<svg xmlns="http://www.w3.org/2000/svg"></svg>')
 
@@ -26,8 +26,10 @@ try {
   assert.equal(basename(outputPath), "MI_Weekly_2026W32.html")
   assert.match(html, /window\.__MI_WEEKLY_EXPORT__ = true/)
   assert.match(html, /<script type="module">[\s\S]*<\\\/script>/)
+  assert.match(html, /console\.log\("<\\\/script>\$&"\)/)
   assert.match(html, /<style>[\s\S]*data:font\/woff2;base64,/)
   assert.match(html, /<style>[\s\S]*<\\\/style>/)
+  assert.match(html, /content: "<\\\/style>\$&"/)
   assert.match(html, /href="data:image\/svg\+xml;base64,/)
   assert.doesNotMatch(html, /https:\/\/example\.test\/icon\.svg/)
   assert.doesNotMatch(html, /<script[^>]+\bsrc=/i)

@@ -53,10 +53,11 @@ export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html"
     throw new Error("Expected a favicon link")
   }
 
-  html = html.replace(css.tag, `<style>${cssSource}</style>`)
+  html = html.replace(css.tag, () => `<style>${cssSource}</style>`)
   html = html.replace(
     js.tag,
-    '<script>window.__MI_WEEKLY_EXPORT__ = true; window.location.hash = "#weekly";</script>' +
+    () =>
+      '<script>window.__MI_WEEKLY_EXPORT__ = true; window.location.hash = "#weekly";</script>' +
       `<script type="module">${jsSource}</script>`,
   )
   assert.doesNotMatch(html, /<script[^>]+\bsrc=/i)
