@@ -3,7 +3,9 @@ import assert from "node:assert/strict"
 import {
   cumulativeProduction,
   getForecastHistory,
+  getVendorHistoryDeltas,
   getProductionTotal,
+  getVisibleVendorTotal,
   productionYAxisDomain,
   vendors,
 } from "../src/data/production.ts"
@@ -45,6 +47,22 @@ assert.deepEqual(
   getForecastHistory("2024 Q1").map((point) => point.period),
   ["23-09월", "23-10월", "23-11월", "23-12월", "24-01월", "24-02월"]
 )
+
+const focusQuarter = cumulativeProduction.find(
+  (item) => item.quarter === "2026 Q3"
+)
+assert.ok(focusQuarter)
+assert.equal(getVisibleVendorTotal(focusQuarter, ["apple", "samsung"]), 130)
+assert.equal(getVisibleVendorTotal(focusQuarter, ["transsion"]), 32)
+assert.deepEqual(getVendorHistoryDeltas(getForecastHistory("2026 Q3")), {
+  apple: 8.6,
+  samsung: 7.9,
+  xiaomi: 4.9,
+  oppo: 3.1,
+  vivo: 2.5,
+  transsion: 1.9,
+  others: 4,
+})
 
 const csvRows = parseCsv(
   [

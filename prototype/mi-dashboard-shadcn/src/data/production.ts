@@ -37,6 +37,16 @@ export function getProductionTotal(item: QuarterlyProduction) {
   return vendors.reduce((total, vendor) => total + item[vendor.key], 0)
 }
 
+export function getVisibleVendorTotal(
+  item: QuarterlyProduction,
+  visibleVendorKeys: readonly VendorKey[]
+) {
+  return visibleVendorKeys.reduce(
+    (total, vendorKey) => total + item[vendorKey],
+    0
+  )
+}
+
 export const productionYAxisDomain = [
   0,
   Math.ceil(Math.max(...cumulativeProduction.map(getProductionTotal)) / 100) *
@@ -81,4 +91,18 @@ export function getForecastHistory(quarter: string): ForecastHistoryPoint[] {
 
     return point
   })
+}
+
+export function getVendorHistoryDeltas(
+  history: readonly ForecastHistoryPoint[]
+) {
+  const first = history[0]!
+  const current = history.at(-1)!
+
+  return Object.fromEntries(
+    vendors.map((vendor) => [
+      vendor.key,
+      Number((current[vendor.key] - first[vendor.key]).toFixed(1)),
+    ])
+  ) as Record<VendorKey, number>
 }

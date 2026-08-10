@@ -1,4 +1,4 @@
-import { type Key, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { MousePointerClick } from "lucide-react"
 import {
   Bar,
@@ -18,13 +18,13 @@ import {
 } from "@/components/ui/chart"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   cumulativeProduction,
   dashboardMeta,
   getForecastHistory,
   getProductionTotal,
+  getVendorHistoryDeltas,
+  getVisibleVendorTotal,
   productionYAxisDomain,
   vendors,
   type VendorKey,
@@ -39,38 +39,57 @@ const chartConfig = Object.fromEntries(
 
 const allVendorKeys = vendors.map((vendor) => vendor.key)
 
-type ChartSelection = {
-  quarter: string
-  vendor: VendorKey
-}
-
-const defaultSelection: ChartSelection = {
-  quarter: dashboardMeta.focusQuarter,
-  vendor: "transsion",
+function formatSignedMu(value: number) {
+  return `${value > 0 ? "+" : ""}${value.toFixed(1)}Mu`
 }
 
 export function CumulativeProductionChart() {
   const [visibleVendors, setVisibleVendors] = useState<Set<VendorKey>>(
     () => new Set(allVendorKeys)
   )
-  const [selection, setSelection] = useState<ChartSelection>(defaultSelection)
+  const [selectedQuarter, setSelectedQuarter] = useState(
+    dashboardMeta.focusQuarter
+  )
   const [hoveredQuarter, setHoveredQuarter] = useState<string | null>(null)
   const history = useMemo(
-    () => getForecastHistory(selection.quarter),
-    [selection.quarter]
+    () => getForecastHistory(selectedQuarter),
+    [selectedQuarter]
   )
-  const selectedQuarter = cumulativeProduction.find(
-    (item) => item.quarter === selection.quarter
-  )!
-  const selectedVendor = vendors.find(
-    (vendor) => vendor.key === selection.vendor
-  )!
+  const visibleVendorKeys = vendors
+    .filter((vendor) => visibleVendors.has(vendor.key))
+    .map((vendor) => vendor.key)
+  const topVisibleVendorKey = visibleVendorKeys.at(-1)
+  const productionWithVisibleTotals = cumulativeProduction.map((item) => ({
+    ...item,
+    visibleTotal: getVisibleVendorTotal(item, visibleVendorKeys),
+  }))
+  const historyWithTotals = useMemo(
+    () =>
+      history.map((item) => ({
+        ...item,
+        total: getProductionTotal(item),
+      })),
+    [history]
+  )
+  const historyDeltas = useMemo(
+    () => getVendorHistoryDeltas(history),
+    [history]
+  )
 
-  const updateSelection = (selection: Set<Key>) => {
-    const nextSelection = new Set(selection) as Set<VendorKey>
-    setVisibleVendors(
-      nextSelection.size ? nextSelection : new Set(allVendorKeys)
-    )
+  const toggleVendor = (vendorKey: VendorKey) => {
+    setVisibleVendors((current) => {
+      const next = new Set(current)
+
+      if (next.has(vendorKey)) {
+        if (next.size > 1) {
+          next.delete(vendorKey)
+        }
+      } else {
+        next.add(vendorKey)
+      }
+
+      return next
+    })
   }
 
   return (
@@ -99,29 +118,41 @@ export function CumulativeProductionChart() {
       </CardHeader>
       <CardContent className="pt-3">
         <div className="mb-3 flex items-start justify-between gap-6">
-          <ToggleGroup
+          <div
             aria-label="업체 필터"
             className="flex flex-wrap gap-2"
-            onSelectionChange={updateSelection}
-            selectedKeys={visibleVendors}
-            selectionMode="multiple"
-            size="sm"
-            variant="outline"
+            role="group"
           >
             {vendors.map((vendor) => (
-              <TooltipTrigger key={vendor.key}>
-                <ToggleGroupItem id={vendor.key}>
+              <div className="flex" key={vendor.key}>
+                <Button
+                  aria-pressed={visibleVendors.has(vendor.key)}
+                  className="h-7 gap-1.5 px-2 text-xs"
+                  onPress={() => toggleVendor(vendor.key)}
+                  size="sm"
+                  variant={
+                    visibleVendors.has(vendor.key) ? "secondary" : "outline"
+                  }
+                >
                   <span
                     aria-hidden="true"
                     className="size-2"
                     style={{ backgroundColor: vendor.color }}
                   />
                   {vendor.label}
-                </ToggleGroupItem>
-                <Tooltip>{vendor.label} 표시 또는 숨기기</Tooltip>
-              </TooltipTrigger>
+                </Button>
+                <Button
+                  aria-label={`${vendor.label}만 표시`}
+                  className="h-7 px-2 text-[10px] font-semibold tracking-wide"
+                  onPress={() => setVisibleVendors(new Set([vendor.key]))}
+                  size="sm"
+                  variant="outline"
+                >
+                  ONLY
+                </Button>
+              </div>
             ))}
-          </ToggleGroup>
+          </div>
           <p className="pt-1 text-right text-xs leading-5 text-muted-foreground">
             {vendors.length}개 중 {visibleVendors.size}개 업체 표시
           </p>
@@ -144,8 +175,19 @@ export function CumulativeProductionChart() {
               <BarChart
                 accessibilityLayer
                 barCategoryGap="8%"
-                data={cumulativeProduction}
-                margin={{ top: 12, right: 8, left: 10, bottom: 4 }}
+                data={productionWithVisibleTotals}
+                margin={{ top: 26, right: 8, left: 10, bottom: 4 }}
+                onClick={({ activeLabel }) => {
+                  if (typeof activeLabel === "string") {
+                    setSelectedQuarter(activeLabel)
+                  }
+                }}
+                onMouseLeave={() => setHoveredQuarter(null)}
+                onMouseMove={({ activeLabel }) => {
+                  setHoveredQuarter(
+                    typeof activeLabel === "string" ? activeLabel : null
+                  )
+                }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
@@ -187,14 +229,6 @@ export function CumulativeProductionChart() {
                             : 1
                         }
                         key={`${vendor.key}-${item.quarter}`}
-                        onClick={() =>
-                          setSelection({
-                            quarter: item.quarter,
-                            vendor: vendor.key,
-                          })
-                        }
-                        onMouseEnter={() => setHoveredQuarter(item.quarter)}
-                        onMouseLeave={() => setHoveredQuarter(null)}
                       />
                     ))}
                     <LabelList
@@ -209,6 +243,17 @@ export function CumulativeProductionChart() {
                       fontWeight={600}
                       position="center"
                     />
+                    {vendor.key === topVisibleVendorKey ? (
+                      <LabelList
+                        dataKey="visibleTotal"
+                        formatter={(value) => `${Number(value).toFixed(1)}Mu`}
+                        fill="var(--foreground)"
+                        fontSize={9}
+                        fontWeight={600}
+                        offset={8}
+                        position="top"
+                      />
+                    ) : null}
                   </Bar>
                 ))}
               </BarChart>
@@ -220,65 +265,102 @@ export function CumulativeProductionChart() {
               <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
                 Forecast History
               </p>
-              <div className="mt-1 flex items-end justify-between gap-3">
-                <div>
-                  <h3 id="history-title" className="text-base font-semibold">
-                    {selection.quarter} 전망 변화
-                  </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    선택: {selectedVendor.label}{" "}
-                    {selectedQuarter[selection.vendor].toFixed(1)}Mu
-                  </p>
-                </div>
-                <p className="shrink-0 text-sm font-semibold">
-                  {getProductionTotal(selectedQuarter).toFixed(1)}Mu
-                </p>
+              <h3 id="history-title" className="mt-1 text-base font-semibold">
+                {selectedQuarter} 전망 변화
+              </h3>
+            </div>
+            <div className="grid grid-cols-[minmax(0,1fr)_108px] gap-2">
+              <ChartContainer
+                className="h-[330px] w-full min-w-0"
+                config={chartConfig}
+              >
+                <BarChart
+                  accessibilityLayer
+                  barCategoryGap="8%"
+                  data={historyWithTotals}
+                  margin={{ top: 26, right: 2, left: 0, bottom: 4 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis
+                    axisLine={false}
+                    dataKey="period"
+                    fontSize={9}
+                    interval={0}
+                    tickLine={false}
+                    tickMargin={6}
+                  />
+                  <YAxis domain={productionYAxisDomain} hide />
+                  <ChartTooltip
+                    content={<ChartTooltipContent />}
+                    cursor={false}
+                  />
+                  {vendors.map((vendor, vendorIndex) => (
+                    <Bar
+                      dataKey={vendor.key}
+                      fill={`var(--color-${vendor.key})`}
+                      isAnimationActive={false}
+                      key={vendor.key}
+                      stackId="history"
+                    >
+                      <LabelList
+                        dataKey={vendor.key}
+                        formatter={(value) => Number(value).toFixed(1)}
+                        fill={
+                          vendorIndex === 0 || vendorIndex === 5
+                            ? "var(--foreground)"
+                            : "var(--primary-foreground)"
+                        }
+                        fontSize={8}
+                        position="center"
+                      />
+                      {vendorIndex === vendors.length - 1 ? (
+                        <LabelList
+                          dataKey="total"
+                          formatter={(value) => `${Number(value).toFixed(1)}Mu`}
+                          fill="var(--foreground)"
+                          fontSize={8}
+                          fontWeight={600}
+                          offset={8}
+                          position="top"
+                        />
+                      ) : null}
+                    </Bar>
+                  ))}
+                </BarChart>
+              </ChartContainer>
+              <div
+                aria-label="업체별 전망 변화"
+                className="space-y-1.5 pt-5 text-[10px] leading-3"
+              >
+                {vendors.map((vendor) => {
+                  const delta = historyDeltas[vendor.key]
+                  const deltaClassName =
+                    delta > 0
+                      ? "text-primary"
+                      : delta < 0
+                        ? "text-destructive"
+                        : "text-muted-foreground"
+
+                  return (
+                    <div className="flex items-center gap-1" key={vendor.key}>
+                      <span
+                        aria-hidden="true"
+                        className="size-1.5 shrink-0"
+                        style={{ backgroundColor: vendor.color }}
+                      />
+                      <span className="min-w-0 flex-1 text-foreground">
+                        {vendor.label}
+                      </span>
+                      <span
+                        className={`shrink-0 font-medium ${deltaClassName}`}
+                      >
+                        {formatSignedMu(delta)}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
-            <ChartContainer className="h-[330px] w-full" config={chartConfig}>
-              <BarChart
-                accessibilityLayer
-                barCategoryGap="8%"
-                data={history}
-                margin={{ top: 12, right: 2, left: 0, bottom: 4 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis
-                  axisLine={false}
-                  dataKey="period"
-                  fontSize={9}
-                  interval={0}
-                  tickLine={false}
-                  tickMargin={6}
-                />
-                <YAxis domain={productionYAxisDomain} hide />
-                <ChartTooltip
-                  content={<ChartTooltipContent />}
-                  cursor={false}
-                />
-                {vendors.map((vendor, vendorIndex) => (
-                  <Bar
-                    dataKey={vendor.key}
-                    fill={`var(--color-${vendor.key})`}
-                    isAnimationActive={false}
-                    key={vendor.key}
-                    stackId="history"
-                  >
-                    <LabelList
-                      dataKey={vendor.key}
-                      formatter={(value) => Number(value).toFixed(1)}
-                      fill={
-                        vendorIndex === 0 || vendorIndex === 5
-                          ? "var(--foreground)"
-                          : "var(--primary-foreground)"
-                      }
-                      fontSize={8}
-                      position="center"
-                    />
-                  </Bar>
-                ))}
-              </BarChart>
-            </ChartContainer>
           </aside>
         </div>
       </CardContent>
