@@ -14,6 +14,7 @@ import {
   getWeeklyCumulative,
   getWeeklyHeatmap,
   getWeeklyMetric,
+  getWeeklyTrend,
   weeklySelectedWeek,
 } from "../src/data/weekly.ts"
 import { normalizeRow, parseCsv } from "./update-dashboard-data.mjs"
@@ -109,7 +110,28 @@ assert.equal(getWeeklyMetric(weeklySelectedWeek, "Total", null, "yoy"), 6.8)
 assert.equal(getWeeklyMetric(weeklySelectedWeek, "Total", null, "wow"), -0.2)
 assert.equal(getWeeklyMetric(weeklySelectedWeek, "India", null, "yoy"), 9.3)
 
-const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8")
+const totalWeeklyTrend = getWeeklyTrend("Total", null, "mu")
+assert.equal(totalWeeklyTrend.length, 52)
+assert.equal(totalWeeklyTrend[0].week, "W01")
+assert.equal(totalWeeklyTrend[51].week, "W52")
+assert.ok(totalWeeklyTrend[31].y2026 > 0)
+assert.equal(totalWeeklyTrend[32].y2026, null)
+assert.ok(totalWeeklyTrend[51].y2023 > 0)
+assert.ok(totalWeeklyTrend[51].y2024 > 0)
+assert.ok(totalWeeklyTrend[51].y2025 > 0)
+
+const usaAppleShareTrend = getWeeklyTrend("USA", 0, "share")
+assert.ok(
+  usaAppleShareTrend
+    .slice(0, weeklySelectedWeek)
+    .every((point) => point.y2026 > 0 && point.y2026 < 100)
+)
+assert.equal(usaAppleShareTrend[weeklySelectedWeek].y2026, null)
+
+const appSource = readFileSync(
+  new URL("../src/App.tsx", import.meta.url),
+  "utf8"
+)
 const weeklyAnalysisSource = readFileSync(
   new URL("../src/components/weekly-analysis.tsx", import.meta.url),
   "utf8"
@@ -128,28 +150,23 @@ assert.equal(
 )
 assert.equal(
   weeklyAnalysisSource.match(
-    /<CardTitle className="mt-1 group-data-\[size=sm\]\/card:text-xl text-xl font-semibold tracking-tight">/g
+    /<CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-\[size=sm\]\/card:text-xl">/g
   )?.length,
   2
 )
-const weeklyYAxes = weeklyAnalysisSource.match(/<YAxis\b[^>]*\/>/g) ?? []
-assert.equal(weeklyYAxes.length, 1)
-assert.deepEqual(weeklyYAxes, ["<YAxis hide />"])
+assert.match(weeklyAnalysisSource, /<YAxis hide \/>/)
+assert.match(weeklyAnalysisSource, /grid-cols-\[minmax\(0,1fr\)_140px\] gap-3/)
 assert.match(
   weeklyAnalysisSource,
-  /grid-cols-\[minmax\(0,1fr\)_140px\] gap-3/
+  /<ChartContainer\s+className="h-\[340px\] w-full min-w-0"/
 )
 assert.match(
   weeklyAnalysisSource,
-  /<ChartContainer\s+className="h-\[340px\] min-w-0 w-full"/
+  /<CardContent className="pt-3">/
 )
 assert.match(
   weeklyAnalysisSource,
-  /<CardContent className="flex flex-1 flex-col pt-3">/
-)
-assert.match(
-  weeklyAnalysisSource,
-  /<div className="flex flex-1 overflow-hidden border">/
+  /<div className="flex h-\[388px\] overflow-hidden border">/
 )
 assert.match(
   weeklyAnalysisSource,
@@ -175,5 +192,11 @@ assert.doesNotMatch(
   weeklyAnalysisSource,
   /className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground"/
 )
+assert.match(weeklyAnalysisSource, /label="Weekly total sell-out trend"/)
+assert.match(weeklyAnalysisSource, /label="Weekly vendor trend"/)
+assert.match(weeklyAnalysisSource, /aria-label="Trend unit selector"/)
+assert.match(weeklyAnalysisSource, /aria-label="Trend vendor selector"/)
+assert.match(weeklyAnalysisSource, /dot=\{\{ r: 2 \}\}/)
+assert.match(weeklyAnalysisSource, /activeDot=\{\{ r: 4 \}\}/)
 
 console.log("production and weekly data checks passed")

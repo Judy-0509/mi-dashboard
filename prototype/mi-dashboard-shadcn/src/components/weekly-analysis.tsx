@@ -1,5 +1,14 @@
 import { type Key, useMemo, useState } from "react"
-import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 import {
   ChartContainer,
@@ -17,6 +26,9 @@ import {
   weeklyVendorColors,
   type WeeklyMetric,
   type WeeklyRegion,
+  type WeeklyTrendMetric,
+  getWeeklyTrend,
+  weeklyVendors,
 } from "@/data/weekly"
 
 const weeklyChartConfig = {
@@ -34,6 +46,20 @@ const weeklyChartConfig = {
   Others: { label: "Others", color: weeklyVendorColors.Others },
 } satisfies ChartConfig
 
+const weeklyTrendConfig = {
+  y2023: { label: "2023", color: "var(--muted-foreground)" },
+  y2024: { label: "2024", color: "var(--muted-foreground)" },
+  y2025: { label: "2025", color: "var(--chart-2)" },
+  y2026: { label: "2026", color: "var(--chart-4)" },
+} satisfies ChartConfig
+
+const weeklyTrendLines = [
+  { dataKey: "y2023", opacity: 0.45, width: 1.5 },
+  { dataKey: "y2024", opacity: 0.75, width: 1.5 },
+  { dataKey: "y2025", opacity: 0.8, width: 2 },
+  { dataKey: "y2026", opacity: 1, width: 2.5 },
+] as const
+
 function formatMetric(value: number | null) {
   if (value === null) {
     return "N/A"
@@ -48,11 +74,84 @@ function isWeeklyRegion(value: Key | undefined): value is WeeklyRegion {
   )
 }
 
+function isWeeklyVendor(
+  value: Key | undefined
+): value is (typeof weeklyVendors)[number] {
+  return (
+    typeof value === "string" &&
+    weeklyVendors.includes(value as (typeof weeklyVendors)[number])
+  )
+}
+
+function WeeklyTrendChart({
+  data,
+  metric,
+  label,
+}: {
+  data: ReturnType<typeof getWeeklyTrend>
+  metric: WeeklyTrendMetric
+  label: string
+}) {
+  return (
+    <ChartContainer
+      aria-label={label}
+      className="h-[250px] w-full min-w-0"
+      config={weeklyTrendConfig}
+    >
+      <LineChart data={data} margin={{ top: 12, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis
+          axisLine={false}
+          dataKey="week"
+          tickLine={false}
+          tickMargin={8}
+          ticks={["W01", "W13", "W26", "W39", "W52"]}
+        />
+        <YAxis
+          axisLine={false}
+          tickLine={false}
+          tickFormatter={(value) =>
+            metric === "share"
+              ? `${Number(value).toFixed(0)}%`
+              : Number(value).toFixed(0)
+          }
+          width={36}
+        />
+        <ChartTooltip content={<ChartTooltipContent />} cursor={false} />
+        {weeklyTrendLines.map((line) => (
+          <Line
+            activeDot={{ r: 4 }}
+            connectNulls={false}
+            dataKey={line.dataKey}
+            dot={{ r: 2 }}
+            isAnimationActive={false}
+            key={line.dataKey}
+            name={weeklyTrendConfig[line.dataKey].label}
+            stroke={`var(--color-${line.dataKey})`}
+            strokeOpacity={line.opacity}
+            strokeWidth={line.width}
+            type="monotone"
+          />
+        ))}
+      </LineChart>
+    </ChartContainer>
+  )
+}
+
 export function WeeklyAnalysis() {
   const [metric, setMetric] = useState<WeeklyMetric>("yoy")
   const [region, setRegion] = useState<WeeklyRegion>("Total")
+  const [trendVendor, setTrendVendor] =
+    useState<(typeof weeklyVendors)[number]>("Apple")
+  const [trendMetric, setTrendMetric] = useState<WeeklyTrendMetric>("mu")
   const heatmap = useMemo(() => getWeeklyHeatmap(metric), [metric])
   const cumulative = useMemo(() => getWeeklyCumulative(region), [region])
+  const totalTrend = useMemo(() => getWeeklyTrend("Total", null, "mu"), [])
+  const vendorTrend = useMemo(
+    () =>
+      getWeeklyTrend(region, weeklyVendors.indexOf(trendVendor), trendMetric),
+    [region, trendMetric, trendVendor]
+  )
   const chartData = cumulative.years.map((year) => ({
     year: String(year.year),
     total: year.total,
@@ -72,7 +171,7 @@ export function WeeklyAnalysis() {
             <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
               Weekly market mix
             </p>
-            <CardTitle className="mt-1 group-data-[size=sm]/card:text-xl text-xl font-semibold tracking-tight">
+            <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
               Vendor × Region
             </CardTitle>
           </div>
@@ -93,9 +192,10 @@ export function WeeklyAnalysis() {
             <ToggleGroupItem id="wow">WoW</ToggleGroupItem>
           </ToggleGroup>
         </CardHeader>
-        <CardContent className="flex flex-1 flex-col pt-3">
-          <div className="flex flex-1 overflow-hidden border">
-            <table className="h-full w-full border-collapse text-xs"
+        <CardContent className="pt-3">
+          <div className="flex h-[388px] overflow-hidden border">
+            <table
+              className="h-full w-full border-collapse text-xs"
               aria-label="Vendor by region weekly heatmap"
             >
               <thead className="bg-muted/40 text-muted-foreground">
@@ -134,6 +234,41 @@ export function WeeklyAnalysis() {
               </tbody>
             </table>
           </div>
+          <div className="mt-4 shrink-0 border-t pt-3">
+            <div className="mb-2 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                  Weekly trend
+                </p>
+                <h3 className="mt-1 text-sm font-semibold tracking-tight">
+                  Total weekly sell-out
+                </h3>
+              </div>
+              <p className="pt-1 text-xs text-muted-foreground">
+                2023–2025 W1–W52 · 2026 W1–W32
+              </p>
+            </div>
+            <div className="mb-2 flex items-center gap-3 text-xs text-muted-foreground">
+              {weeklyTrendLines.map((line) => (
+                <span className="flex items-center gap-1.5" key={line.dataKey}>
+                  <i
+                    aria-hidden="true"
+                    className="size-1.5 rounded-full"
+                    style={{
+                      backgroundColor: weeklyTrendConfig[line.dataKey].color,
+                      opacity: line.opacity,
+                    }}
+                  />
+                  {weeklyTrendConfig[line.dataKey].label}
+                </span>
+              ))}
+            </div>
+            <WeeklyTrendChart
+              data={totalTrend}
+              label="Weekly total sell-out trend"
+              metric="mu"
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -142,7 +277,7 @@ export function WeeklyAnalysis() {
           <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
             Cumulative sell-out
           </p>
-          <CardTitle className="mt-1 group-data-[size=sm]/card:text-xl text-xl font-semibold tracking-tight">
+          <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
             4-year cumulative composition
           </CardTitle>
           <ToggleGroup
@@ -169,7 +304,7 @@ export function WeeklyAnalysis() {
         <CardContent className="pt-3">
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_140px] gap-3">
             <ChartContainer
-              className="h-[340px] min-w-0 w-full"
+              className="h-[340px] w-full min-w-0"
               config={weeklyChartConfig}
             >
               <BarChart
@@ -186,7 +321,10 @@ export function WeeklyAnalysis() {
                   tickMargin={8}
                 />
                 <YAxis hide />
-                <ChartTooltip content={<ChartTooltipContent />} cursor={false} />
+                <ChartTooltip
+                  content={<ChartTooltipContent />}
+                  cursor={false}
+                />
                 {cumulative.segmentNames.map((segmentName, index) => (
                   <Bar
                     dataKey={segmentName}
@@ -234,6 +372,79 @@ export function WeeklyAnalysis() {
                 </li>
               ))}
             </ul>
+          </div>
+          <div className="mt-4 border-t pt-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                  Weekly trend
+                </p>
+                <h3 className="mt-1 text-sm font-semibold tracking-tight">
+                  {region} · {trendVendor} weekly sell-out
+                </h3>
+              </div>
+              <p className="pt-1 text-xs text-muted-foreground">
+                2023–2025 W1–W52 · 2026 W1–W32
+              </p>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <ToggleGroup
+                aria-label="Trend vendor selector"
+                className="flex flex-wrap gap-1"
+                onSelectionChange={(selection) => {
+                  const next = Array.from(selection)[0]
+                  if (isWeeklyVendor(next)) {
+                    setTrendVendor(next)
+                  }
+                }}
+                selectedKeys={new Set([trendVendor])}
+                selectionMode="single"
+                size="sm"
+                variant="outline"
+              >
+                {weeklyVendors.map((vendor) => (
+                  <ToggleGroupItem id={vendor} key={vendor}>
+                    {vendor}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <ToggleGroup
+                aria-label="Trend unit selector"
+                onSelectionChange={(selection) => {
+                  const next = Array.from(selection)[0]
+                  if (next === "mu" || next === "share") {
+                    setTrendMetric(next)
+                  }
+                }}
+                selectedKeys={new Set([trendMetric])}
+                selectionMode="single"
+                size="sm"
+                variant="outline"
+              >
+                <ToggleGroupItem id="mu">Mu</ToggleGroupItem>
+                <ToggleGroupItem id="share">M/S (%)</ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+              {weeklyTrendLines.map((line) => (
+                <span className="flex items-center gap-1.5" key={line.dataKey}>
+                  <i
+                    aria-hidden="true"
+                    className="size-1.5 rounded-full"
+                    style={{
+                      backgroundColor: weeklyTrendConfig[line.dataKey].color,
+                      opacity: line.opacity,
+                    }}
+                  />
+                  {weeklyTrendConfig[line.dataKey].label}
+                </span>
+              ))}
+            </div>
+            <WeeklyTrendChart
+              data={vendorTrend}
+              label="Weekly vendor trend"
+              metric={trendMetric}
+            />
           </div>
         </CardContent>
       </Card>

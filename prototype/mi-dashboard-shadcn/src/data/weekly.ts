@@ -23,6 +23,15 @@ export const weeklyVendors = [
 
 export type WeeklyRegion = (typeof weeklyRegions)[number]
 export type WeeklyMetric = "yoy" | "wow"
+export type WeeklyTrendMetric = "mu" | "share"
+
+export type WeeklyTrendPoint = {
+  week: string
+  y2023: number | null
+  y2024: number | null
+  y2025: number | null
+  y2026: number | null
+}
 
 type Country = Exclude<WeeklyRegion, "Total">
 
@@ -202,6 +211,36 @@ export function getWeeklyCumulative(region: WeeklyRegion) {
   })
 
   return { segmentNames, years }
+}
+
+export function getWeeklyTrend(
+  region: WeeklyRegion,
+  vendorIndex: number | null,
+  metric: WeeklyTrendMetric
+): WeeklyTrendPoint[] {
+  return Array.from({ length: 52 }, (_, index) => {
+    const week = index + 1
+    const valueFor = (year: number) => {
+      if (year === 2026 && week > weeklySelectedWeek) {
+        return null
+      }
+
+      const total = sumWeeklySellOut(year, week, region, null, false)
+      const value = sumWeeklySellOut(year, week, region, vendorIndex, false)
+
+      return metric === "share" && vendorIndex !== null
+        ? round3((value / total) * 100)
+        : round3(value)
+    }
+
+    return {
+      week: `W${String(week).padStart(2, "0")}`,
+      y2023: valueFor(2023),
+      y2024: valueFor(2024),
+      y2025: valueFor(2025),
+      y2026: valueFor(2026),
+    }
+  })
 }
 
 export const weeklyExecutiveSummary = [
