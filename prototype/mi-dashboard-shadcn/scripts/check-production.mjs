@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 
 import {
   cumulativeProduction,
@@ -107,5 +108,52 @@ assert.ok(
 assert.equal(getWeeklyMetric(weeklySelectedWeek, "Total", null, "yoy"), 6.8)
 assert.equal(getWeeklyMetric(weeklySelectedWeek, "Total", null, "wow"), -0.2)
 assert.equal(getWeeklyMetric(weeklySelectedWeek, "India", null, "yoy"), 9.3)
+
+const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8")
+const weeklyAnalysisSource = readFileSync(
+  new URL("../src/components/weekly-analysis.tsx", import.meta.url),
+  "utf8"
+)
+
+assert.match(appSource, /기준: 2026 W32 · 단위: Mu/)
+assert.match(
+  weeklyAnalysisSource,
+  /grid-cols-\[minmax\(0,58fr\)_minmax\(0,42fr\)\] gap-4/
+)
+assert.equal(
+  weeklyAnalysisSource.match(
+    /<Card className="min-w-0 border-border shadow-none" size="sm">/g
+  )?.length,
+  2
+)
+assert.equal(
+  weeklyAnalysisSource.match(
+    /<CardTitle className="mt-1 group-data-\[size=sm\]\/card:text-xl text-xl font-semibold tracking-tight">/g
+  )?.length,
+  2
+)
+const weeklyYAxes = weeklyAnalysisSource.match(/<YAxis\b[^>]*\/>/g) ?? []
+assert.equal(weeklyYAxes.length, 1)
+assert.deepEqual(weeklyYAxes, ["<YAxis hide />"])
+assert.match(
+  weeklyAnalysisSource,
+  /grid-cols-\[minmax\(0,1fr\)_140px\] gap-3/
+)
+assert.match(
+  weeklyAnalysisSource,
+  /<ChartContainer\s+className="h-\[340px\] min-w-0 w-full"/
+)
+assert.match(
+  weeklyAnalysisSource,
+  /<ul\s+aria-label="Cumulative composition legend"/
+)
+assert.match(
+  weeklyAnalysisSource,
+  /cumulative\.years\[0\]\.segments\.map\(\(segment\) =>/
+)
+assert.doesNotMatch(
+  weeklyAnalysisSource,
+  /className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground"/
+)
 
 console.log("production and weekly data checks passed")
