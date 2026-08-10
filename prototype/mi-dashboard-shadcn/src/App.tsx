@@ -58,7 +58,7 @@ function WeeklyPage() {
           </p>
         </div>
         <p className="font-mono text-xs text-muted-foreground">
-          2026 W32 · 5 Regions · MU
+          기준: 2026 W32 · 단위: Mu
         </p>
       </header>
       <WeeklyExecutiveSummary />

@@ -63,16 +63,16 @@ export function WeeklyAnalysis() {
 
   return (
     <section
-      className="grid grid-cols-2 gap-4"
+      className="grid grid-cols-[minmax(0,58fr)_minmax(0,42fr)] gap-4"
       aria-label="Weekly market analysis"
     >
-      <Card className="border-border shadow-none" size="sm">
+      <Card className="min-w-0 border-border shadow-none" size="sm">
         <CardHeader className="flex flex-row items-start justify-between gap-4 border-b pb-3">
           <div>
             <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
               Weekly market mix
             </p>
-            <CardTitle className="mt-1 text-base font-semibold">
+            <CardTitle className="mt-1 group-data-[size=sm]/card:text-xl text-xl font-semibold tracking-tight">
               Vendor × Region
             </CardTitle>
           </div>
@@ -138,12 +138,12 @@ export function WeeklyAnalysis() {
         </CardContent>
       </Card>
 
-      <Card className="border-border shadow-none" size="sm">
+      <Card className="min-w-0 border-border shadow-none" size="sm">
         <CardHeader className="border-b pb-3">
           <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
             Cumulative sell-out
           </p>
-          <CardTitle className="mt-1 text-base font-semibold">
+          <CardTitle className="mt-1 group-data-[size=sm]/card:text-xl text-xl font-semibold tracking-tight">
             4-year cumulative composition
           </CardTitle>
           <ToggleGroup
@@ -168,76 +168,73 @@ export function WeeklyAnalysis() {
           </ToggleGroup>
         </CardHeader>
         <CardContent className="pt-3">
-          <ChartContainer
-            className="h-[340px] w-full"
-            config={weeklyChartConfig}
-          >
-            <BarChart
-              accessibilityLayer
-              barCategoryGap="28%"
-              data={chartData}
-              margin={{ top: 24, right: 4, left: 4, bottom: 0 }}
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_140px] gap-3">
+            <ChartContainer
+              className="h-[340px] min-w-0 w-full"
+              config={weeklyChartConfig}
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                axisLine={false}
-                dataKey="year"
-                tickLine={false}
-                tickMargin={8}
-              />
-              <YAxis
-                axisLine={false}
-                tickFormatter={(value) => `${value}Mu`}
-                tickLine={false}
-                width={54}
-              />
-              <ChartTooltip content={<ChartTooltipContent />} cursor={false} />
-              {cumulative.segmentNames.map((segmentName, index) => (
-                <Bar
-                  dataKey={segmentName}
-                  fill={`var(--color-${segmentName})`}
-                  isAnimationActive={false}
-                  key={segmentName}
-                  stackId="weekly"
-                >
-                  <LabelList
-                    dataKey={segmentName}
-                    fill={
-                      index === 0 || index === 5
-                        ? "var(--foreground)"
-                        : "var(--primary-foreground)"
-                    }
-                    fontSize={9}
-                    formatter={(value) => Number(value).toFixed(1)}
-                    position="center"
-                  />
-                  {index === cumulative.segmentNames.length - 1 ? (
-                    <LabelList
-                      dataKey="total"
-                      fill="var(--foreground)"
-                      fontSize={10}
-                      formatter={(value) => `${Number(value).toFixed(1)}Mu`}
-                      position="top"
-                    />
-                  ) : null}
-                </Bar>
-              ))}
-            </BarChart>
-          </ChartContainer>
-          <div
-            className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground"
-            aria-label="Cumulative composition legend"
-          >
-            {cumulative.years[0].segments.map((segment) => (
-              <span className="flex items-center gap-1.5" key={segment.name}>
-                <i
-                  aria-hidden="true"
-                  className="size-2"
-                  style={{ backgroundColor: segment.color }}
+              <BarChart
+                accessibilityLayer
+                barCategoryGap="28%"
+                data={chartData}
+                margin={{ top: 24, right: 4, left: 4, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  axisLine={false}
+                  dataKey="year"
+                  tickLine={false}
+                  tickMargin={8}
                 />
-                {segment.name}
-              </span>
-            ))}
+                <YAxis hide />
+                <ChartTooltip content={<ChartTooltipContent />} cursor={false} />
+                {cumulative.segmentNames.map((segmentName, index) => (
+                  <Bar
+                    dataKey={segmentName}
+                    fill={`var(--color-${segmentName})`}
+                    isAnimationActive={false}
+                    key={segmentName}
+                    stackId="weekly"
+                  >
+                    <LabelList
+                      dataKey={segmentName}
+                      fill={
+                        index === 0 || index === 5
+                          ? "var(--foreground)"
+                          : "var(--primary-foreground)"
+                      }
+                      fontSize={9}
+                      formatter={(value) => Number(value).toFixed(1)}
+                      position="center"
+                    />
+                    {index === cumulative.segmentNames.length - 1 ? (
+                      <LabelList
+                        dataKey="total"
+                        fill="var(--foreground)"
+                        fontSize={10}
+                        formatter={(value) => `${Number(value).toFixed(1)}Mu`}
+                        position="top"
+                      />
+                    ) : null}
+                  </Bar>
+                ))}
+              </BarChart>
+            </ChartContainer>
+            <ul
+              aria-label="Cumulative composition legend"
+              className="flex flex-col gap-1.5 pt-1 text-xs text-muted-foreground"
+            >
+              {cumulative.years[0].segments.map((segment) => (
+                <li className="flex items-center gap-1.5" key={segment.name}>
+                  <i
+                    aria-hidden="true"
+                    className="size-2 shrink-0"
+                    style={{ backgroundColor: segment.color }}
+                  />
+                  {segment.name}
+                </li>
+              ))}
+            </ul>
           </div>
         </CardContent>
       </Card>
