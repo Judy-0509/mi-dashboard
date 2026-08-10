@@ -1,16 +1,26 @@
 import { useEffect, useState } from "react"
+import { Download } from "lucide-react"
 
 import { CumulativeProductionChart } from "@/components/cumulative-production-chart"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { ExecutiveSummary } from "@/components/executive-summary"
 import { PortalSidebar, type PortalPage } from "@/components/portal-sidebar"
+import { buttonVariants } from "@/components/ui/button"
 import { WeeklyAnalysis } from "@/components/weekly-analysis"
 import { WeeklyExecutiveSummary } from "@/components/weekly-executive-summary"
 import { dashboardMeta } from "@/data/production"
 import { weeklyDescription, weeklyTitle } from "@/data/weekly"
 
+declare global {
+  interface Window {
+    __MI_WEEKLY_EXPORT__?: boolean
+  }
+}
+
+const isWeeklyExport = window.__MI_WEEKLY_EXPORT__ === true
+
 function pageFromHash(): PortalPage {
-  return window.location.hash === "#weekly" ? "weekly" : "sigma"
+  return isWeeklyExport || window.location.hash === "#weekly" ? "weekly" : "sigma"
 }
 
 function SigmaPage() {
@@ -57,9 +67,21 @@ function WeeklyPage() {
             {weeklyDescription}
           </p>
         </div>
-        <p className="font-mono text-xs text-muted-foreground">
-          기준: 2026 W32 · 단위: Mu
-        </p>
+        <div className="flex items-end gap-3 text-right">
+          <p className="font-mono text-xs text-muted-foreground">
+            기준: 2026 W32 · 단위: Mu
+          </p>
+          {!isWeeklyExport && (
+            <a
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+              download="MI_Weekly_2026W32.html"
+              href="./MI_Weekly_2026W32.html"
+            >
+              <Download aria-hidden="true" />
+              Download as HTML
+            </a>
+          )}
+        </div>
       </header>
       <WeeklyExecutiveSummary />
       <WeeklyAnalysis />
@@ -87,7 +109,13 @@ export function App() {
   return (
     <DashboardShell
       scrollable={activePage === "weekly"}
-      sidebar={<PortalSidebar activePage={activePage} onNavigate={navigate} />}
+      sidebar={
+        <PortalSidebar
+          activePage={activePage}
+          onNavigate={navigate}
+          weeklyOnly={isWeeklyExport}
+        />
+      }
     >
       {activePage === "weekly" ? <WeeklyPage /> : <SigmaPage />}
     </DashboardShell>

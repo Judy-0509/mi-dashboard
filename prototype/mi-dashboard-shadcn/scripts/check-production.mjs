@@ -136,8 +136,18 @@ const weeklyAnalysisSource = readFileSync(
   new URL("../src/components/weekly-analysis.tsx", import.meta.url),
   "utf8"
 )
+const sidebarSource = readFileSync(
+  new URL("../src/components/portal-sidebar.tsx", import.meta.url),
+  "utf8"
+)
 
 assert.match(appSource, /기준: 2026 W32 · 단위: Mu/)
+assert.match(appSource, /window\.__MI_WEEKLY_EXPORT__ === true/)
+assert.match(appSource, /download="MI_Weekly_2026W32\.html"/)
+assert.match(appSource, /href="\.\/MI_Weekly_2026W32\.html"/)
+assert.match(appSource, /!isWeeklyExport/)
+assert.match(sidebarSource, /weeklyOnly\?: boolean/)
+assert.match(sidebarSource, /provider\.page === "weekly"/)
 assert.match(
   weeklyAnalysisSource,
   /grid-cols-\[minmax\(0,58fr\)_minmax\(0,42fr\)\] gap-4/
