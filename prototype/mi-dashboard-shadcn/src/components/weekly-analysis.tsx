@@ -93,10 +93,9 @@ export function WeeklyAnalysis() {
             <ToggleGroupItem id="wow">WoW</ToggleGroupItem>
           </ToggleGroup>
         </CardHeader>
-        <CardContent className="pt-3">
-          <div className="overflow-hidden border">
-            <table
-              className="w-full border-collapse text-xs"
+        <CardContent className="flex flex-1 flex-col pt-3">
+          <div className="flex flex-1 overflow-hidden border">
+            <table className="h-full w-full border-collapse text-xs"
               aria-label="Vendor by region weekly heatmap"
             >
               <thead className="bg-muted/40 text-muted-foreground">
@@ -222,13 +221,13 @@ export function WeeklyAnalysis() {
             </ChartContainer>
             <ul
               aria-label="Cumulative composition legend"
-              className="flex flex-col gap-1.5 pt-1 text-xs text-muted-foreground"
+              className="flex flex-col gap-1.5 pt-1 text-sm leading-5 text-muted-foreground"
             >
               {cumulative.years[0].segments.map((segment) => (
                 <li className="flex items-center gap-1.5" key={segment.name}>
                   <i
                     aria-hidden="true"
-                    className="size-2 shrink-0"
+                    className="size-1.5 shrink-0"
                     style={{ backgroundColor: segment.color }}
                   />
                   {segment.name}
