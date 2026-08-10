@@ -2,11 +2,13 @@ import assert from "node:assert/strict"
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import os from "node:os"
 import path, { basename } from "node:path"
-import { buildWeeklyHtml } from "./build-weekly-html.mjs"
+import { buildWeeklyHtml, defaultSiteDir } from "./build-weekly-html.mjs"
 
 const tempDir = mkdtempSync(path.join(os.tmpdir(), "mi-weekly-html-"))
 
 try {
+  assert.equal(defaultSiteDir, path.resolve(import.meta.dirname, "../../../site"))
+
   const siteDir = path.join(tempDir, "site")
   const assetsDir = path.join(siteDir, "assets")
   mkdirSync(assetsDir, { recursive: true })

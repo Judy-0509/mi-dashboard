@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url"
 
 const escapeInlineScript = (value) => value.replaceAll("</script", "<\\/script")
 const escapeInlineStyle = (value) => value.replaceAll("</style", "<\\/style")
+export const defaultSiteDir = path.resolve(import.meta.dirname, "../../../site")
 
 const readAsset = (siteDir, html, tagName, attribute, extension) => {
   const entryAttribute = `\\b${attribute}=["']([^"']*assets/index-[^"']+\\.${extension})["']`
@@ -69,5 +70,5 @@ export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html"
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  console.log(buildWeeklyHtml({ siteDir: path.resolve(import.meta.dirname, "../../site") }))
+  console.log(buildWeeklyHtml({ siteDir: defaultSiteDir }))
 }
