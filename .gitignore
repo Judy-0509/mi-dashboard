@@ -2,3 +2,4 @@ _ceo/
 __pycache__/
 *.pyc
 .gstack/
+.worktrees/
