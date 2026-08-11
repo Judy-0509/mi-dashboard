@@ -2,6 +2,13 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 
 import {
+  canonicalVendors,
+  normalizeProviderValue,
+  normalizeProviderVendorName,
+  withVendorAdditions,
+} from "../src/data/vendor-catalog.ts"
+
+import {
   cumulativeProduction,
   getForecastHistory,
   getVendorHistoryDeltas,
@@ -65,6 +72,49 @@ import {
   pipelineYAxisDomain,
   pipelineYAxisTicks,
 } from "../src/data/pipeline-check.ts"
+
+assert.deepEqual(canonicalVendors.map(({ key }) => key), [
+  "apple",
+  "samsung",
+  "xiaomi",
+  "huawei",
+  "honor",
+  "oppo",
+  "vivo",
+  "transsion",
+  "lenovo",
+  "google",
+])
+assert.deepEqual(canonicalVendors.map(({ label }) => label), [
+  "Apple",
+  "Samsung",
+  "Xiaomi",
+  "Huawei",
+  "Honor",
+  "OPPO",
+  "vivo",
+  "Transsion",
+  "Lenovo",
+  "Google",
+])
+assert.equal(normalizeProviderVendorName(" HON-OR ", { honor: "honor" }), "honor")
+assert.equal(normalizeProviderVendorName("unknown vendor", { honor: "honor" }), null)
+assert.deepEqual(
+  normalizeProviderValue(0, (raw) => (typeof raw === "number" ? raw : null)),
+  { status: "available", value: 0 },
+)
+assert.deepEqual(
+  normalizeProviderValue(null, (raw) => (typeof raw === "number" ? raw : null)),
+  { status: "unavailable", value: null },
+)
+assert.equal(
+  withVendorAdditions([{ key: "others", label: "Others", color: "var(--chart-7)" }]).at(-1).key,
+  "others",
+)
+assert.throws(
+  () => withVendorAdditions([{ key: "apple", label: "Duplicate", color: "var(--chart-7)" }]),
+  /duplicate vendor key/i,
+)
 
 assert.equal(miInsightInsights.length, 3)
 assert.ok(miInsightReports.length >= 1)
