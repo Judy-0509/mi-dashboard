@@ -1139,6 +1139,14 @@ assert.match(
 )
 assert.equal(pipelineSource.match(/domain=\{pipelineYAxisDomain\}/g)?.length, 1)
 assert.equal(pipelineSource.match(/ticks=\{pipelineYAxisTicks\}/g)?.length, 1)
+assert.match(
+  pipelineSource,
+  /<YAxis[\s\S]*?fontSize=\{8\}[\s\S]*?domain=\{pipelineYAxisDomain\}/,
+)
+assert.match(
+  pipelineSource,
+  /<colgroup>[\s\S]*<col className="w-\[48px\]" \/>[\s\S]*pipelineQuarters\.map/,
+)
 assert.match(pipelineSource, /pipelineVendors\.map/)
 assert.match(pipelineSource, /accessibilityLayer/)
 assert.match(pipelineSource, /<caption/)

@@ -78,6 +78,7 @@ function PipelineStackedChart({
           />
           <YAxis
             axisLine={false}
+            fontSize={8}
             domain={pipelineYAxisDomain}
             tickFormatter={(value) => `${value}m`}
             ticks={pipelineYAxisTicks}
@@ -136,6 +137,12 @@ function PipelineInventoryTable({
         className="h-[300px] w-full table-fixed border-collapse text-[8px] tabular-nums"
       >
         <caption className="sr-only">{title} · 단위 Mu</caption>
+        <colgroup>
+          <col className="w-[48px]" />
+          {pipelineQuarters.map((quarter) => (
+            <col key={quarter} />
+          ))}
+        </colgroup>
         <thead className="bg-muted/40 text-muted-foreground">
           <tr>
             <th className="border px-1 py-1 text-left font-medium" scope="col">
