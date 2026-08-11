@@ -5,6 +5,7 @@ import { AniProductionChart } from "@/components/ani-production-chart"
 import { CumulativeProductionChart } from "@/components/cumulative-production-chart"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { ExecutiveSummary } from "@/components/executive-summary"
+import { FlagshipSalesChart } from "@/components/flagship-sales-chart"
 import { MiInsightWeeklyReport } from "@/components/mi-insight-weekly-report"
 import { MiWeeklySellThroughSummary } from "@/components/mi-weekly-sell-through-summary"
 import { PortalSidebar, type PortalPage } from "@/components/portal-sidebar"
@@ -194,6 +195,31 @@ function SellThroughPage() {
   )
 }
 
+function FlagshipSalesPage() {
+  return (
+    <>
+      <header
+        className="flex items-end justify-between border-b pb-4"
+        id="flagship-sales"
+      >
+        <div>
+          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+            Counterpoint / Flagship Sales
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            Flagship Sales
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            2025년 9월–2026년 8월 월별 모델 판매량 · 출시월 기준 Lifecycle 비교
+          </p>
+        </div>
+        <PageActions page="flagship-sales" />
+      </header>
+      <FlagshipSalesChart />
+    </>
+  )
+}
+
 function MiInsightPage() {
   return (
     <>
@@ -268,6 +294,7 @@ export function App() {
         activePage === "weekly" ||
         activePage === "ani" ||
         activePage === "sell-through" ||
+        activePage === "flagship-sales" ||
         activePage === "mi-weekly-sell-through"
       }
       sidebar={
@@ -280,6 +307,8 @@ export function App() {
         <WeeklyPage />
       ) : activePage === "sell-through" ? (
         <SellThroughPage />
+      ) : activePage === "flagship-sales" ? (
+        <FlagshipSalesPage />
       ) : activePage === "ani" ? (
         <AniPage />
       ) : activePage === "mi-insight" ? (

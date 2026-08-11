@@ -47,6 +47,13 @@ import {
   miInsightReports,
 } from "../src/data/mi-insight.ts"
 import { miWeeklySellThroughDetails } from "../src/data/mi-weekly-sell-through.ts"
+import {
+  flagshipSalesMonths,
+  flagshipSalesModels,
+  flagshipSalesVendors,
+  getFlagshipSalesChartData,
+  getFlagshipSalesLifecycle,
+} from "../src/data/flagship-sales.ts"
 
 assert.equal(miInsightInsights.length, 3)
 assert.ok(miInsightReports.length >= 1)
@@ -108,6 +115,29 @@ assert.equal(getSellThroughRatio(120, 100), 120)
 assert.equal(getSellThroughRatio(120, 0), null)
 assert.equal(inventorySnapshots.length, 7)
 assert.ok(inventorySnapshots.every((row) => row.inventory.length === 3 && row.wos.length === 3))
+
+assert.deepEqual(flagshipSalesMonths, [
+  "2025-09", "2025-10", "2025-11", "2025-12",
+  "2026-01", "2026-02", "2026-03", "2026-04",
+  "2026-05", "2026-06", "2026-07", "2026-08",
+])
+assert.deepEqual(flagshipSalesVendors.map(({ key }) => key), [
+  "apple", "samsung", "xiaomi", "oppo", "vivo", "honor", "google",
+])
+assert.equal(flagshipSalesVendors.length, 7)
+assert.ok(flagshipSalesModels.every((model) => flagshipSalesMonths.includes(model.releaseMonth)))
+for (const vendor of flagshipSalesVendors) {
+  assert.ok(vendor.models.length >= 2)
+  const selectedKeys = vendor.models.map(({ key }) => key)
+  const calendar = getFlagshipSalesChartData(vendor.key, "calendar", selectedKeys)
+  const lifecycle = getFlagshipSalesChartData(vendor.key, "launch", selectedKeys)
+  assert.equal(calendar.length, 12)
+  assert.equal(lifecycle.length, 12)
+  assert.equal(calendar[0].period, "2025-09")
+  assert.equal(lifecycle[0].period, "M0")
+  assert.equal(lifecycle.at(-1).period, "M+11")
+  assert.ok(vendor.models.every((model) => getFlagshipSalesLifecycle(model).length === 12))
+}
 
 assert.equal(cumulativeProduction.length, 14)
 assert.equal(productionYAxisDomain[0], 0)
@@ -397,6 +427,10 @@ const sellThroughSource = readFileSync(
   new URL("../src/components/sell-through-analysis.tsx", import.meta.url),
   "utf8"
 )
+const flagshipSalesSource = readFileSync(
+  new URL("../src/components/flagship-sales-chart.tsx", import.meta.url),
+  "utf8"
+)
 const miWeeklySummarySource = readFileSync(
   new URL("../src/components/mi-weekly-sell-through-summary.tsx", import.meta.url),
   "utf8"
@@ -404,10 +438,28 @@ const miWeeklySummarySource = readFileSync(
 
 assert.match(sidebarSource, /Sell-in \/ Sell-through/)
 assert.match(sidebarSource, /#sell-through/)
+assert.match(sidebarSource, /child: "Flagship Sales"/)
+assert.match(sidebarSource, /page: "flagship-sales"/)
+assert.match(sidebarSource, /href: "#flagship-sales"/)
 assert.match(pageConfigSource, /"hash": "#sell-through"/)
+assert.match(pageConfigSource, /"hash": "#flagship-sales"/)
+assert.match(pageConfigSource, /"exportFileName": "MI_Counterpoint_Flagship_Sales\.html"/)
+assert.match(pageConfigSource, /"originalExcelUrl": null/)
 assert.match(appSource, /SellThroughAnalysis/)
 assert.match(appSource, /Counterpoint \/ Sell-in · Sell-through/)
 assert.match(appSource, /스마트폰 Sell-in \/ Sell-through/)
+assert.match(appSource, /function FlagshipSalesPage()/)
+assert.match(appSource, /<FlagshipSalesChart \/>/)
+assert.match(appSource, /Counterpoint \/ Flagship Sales/)
+assert.match(appSource, /PageActions page="flagship-sales" \/>/)
+assert.match(flagshipSalesSource, /useState<FlagshipSalesVendorKey>\("apple"\)/)
+assert.match(flagshipSalesSource, /flagshipSalesVendors/)
+assert.match(flagshipSalesSource, /Calendar Month/)
+assert.match(flagshipSalesSource, /Since Launch/)
+assert.match(flagshipSalesSource, /ONLY/)
+assert.match(flagshipSalesSource, /getFlagshipSalesChartData/)
+assert.match(flagshipSalesSource, /stackId="flagship-sales"/)
+assert.match(flagshipSalesSource, /LabelList/)
 assert.match(sellThroughSource, /58fr.*42fr/)
 assert.match(sellThroughSource, /Vendor.*Total/)
 assert.match(sellThroughSource, /Inventory/)

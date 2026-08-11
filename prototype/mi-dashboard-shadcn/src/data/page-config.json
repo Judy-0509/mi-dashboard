@@ -14,6 +14,11 @@
     "exportFileName": "MI_SellThrough.html",
     "originalExcelUrl": null
   },
+  "flagship-sales": {
+    "hash": "#flagship-sales",
+    "exportFileName": "MI_Counterpoint_Flagship_Sales.html",
+    "originalExcelUrl": null
+  },
   "mi-insight": {
     "hash": "#mi-insight",
     "exportFileName": "MI_Insight_Weekly_Report.html",

@@ -5,6 +5,7 @@ export type PortalPage =
   | "weekly"
   | "ani"
   | "sell-through"
+  | "flagship-sales"
   | "mi-insight"
   | "mi-weekly-sell-through"
 
@@ -34,6 +35,11 @@ const providers: Array<{
         child: "Sell-in / Sell-through",
         page: "sell-through",
         href: "#sell-through",
+      },
+      {
+        child: "Flagship Sales",
+        page: "flagship-sales",
+        href: "#flagship-sales",
       },
     ],
   },
