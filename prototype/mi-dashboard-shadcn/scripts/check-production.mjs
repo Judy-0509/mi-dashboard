@@ -125,7 +125,73 @@ assert.deepEqual(flagshipSalesVendors.map(({ key }) => key), [
   "apple", "samsung", "xiaomi", "oppo", "vivo", "honor", "google",
 ])
 assert.equal(flagshipSalesVendors.length, 7)
-assert.ok(flagshipSalesModels.every((model) => flagshipSalesMonths.includes(model.releaseMonth)))
+assert.deepEqual(flagshipSalesVendors.map(({ label }) => label), [
+  "Apple", "Samsung", "Xiaomi", "OPPO", "vivo", "HONOR", "Google",
+])
+const expectedFlagshipModels = {
+  apple: ["iPhone 17", "iPhone Air", "iPhone 17 Pro", "iPhone 17 Pro Max"],
+  samsung: [
+    "Galaxy S25", "Galaxy S25+", "Galaxy S25 Ultra",
+    "Galaxy Z Fold7", "Galaxy Z Flip7",
+    "Galaxy S26", "Galaxy S26+", "Galaxy S26 Ultra",
+  ],
+  xiaomi: ["Xiaomi 15T Pro", "Xiaomi 17", "Xiaomi 17 Ultra"],
+  oppo: ["OPPO Find X9", "OPPO Find X9 Pro", "OPPO Find N6", "OPPO Find X9 Ultra"],
+  vivo: ["vivo X Fold5", "vivo X300", "vivo X300 Pro", "vivo X300 Ultra"],
+  honor: ["HONOR Magic V5", "HONOR Magic8 Pro", "HONOR Magic V6"],
+  google: ["Pixel 10", "Pixel 10 Pro", "Pixel 10 Pro XL", "Pixel 10 Pro Fold"],
+}
+const expectedFlagshipReleaseMonths = {
+  "iPhone 17": "2025-09",
+  "iPhone Air": "2025-09",
+  "iPhone 17 Pro": "2025-09",
+  "iPhone 17 Pro Max": "2025-09",
+  "Galaxy S25": "2025-02",
+  "Galaxy S25+": "2025-02",
+  "Galaxy S25 Ultra": "2025-02",
+  "Galaxy Z Fold7": "2025-07",
+  "Galaxy Z Flip7": "2025-07",
+  "Galaxy S26": "2026-03",
+  "Galaxy S26+": "2026-03",
+  "Galaxy S26 Ultra": "2026-03",
+  "Xiaomi 15T Pro": "2025-09",
+  "Xiaomi 17": "2026-02",
+  "Xiaomi 17 Ultra": "2026-02",
+  "OPPO Find X9": "2025-10",
+  "OPPO Find X9 Pro": "2025-10",
+  "OPPO Find N6": "2026-03",
+  "OPPO Find X9 Ultra": "2026-04",
+  "vivo X Fold5": "2025-06",
+  "vivo X300": "2025-10",
+  "vivo X300 Pro": "2025-10",
+  "vivo X300 Ultra": "2026-04",
+  "HONOR Magic V5": "2025-08",
+  "HONOR Magic8 Pro": "2026-01",
+  "HONOR Magic V6": "2026-06",
+  "Pixel 10": "2025-08",
+  "Pixel 10 Pro": "2025-08",
+  "Pixel 10 Pro XL": "2025-08",
+  "Pixel 10 Pro Fold": "2025-10",
+}
+for (const vendor of flagshipSalesVendors) {
+  assert.deepEqual(vendor.models.map(({ label }) => label), expectedFlagshipModels[vendor.key])
+}
+assert.equal(flagshipSalesModels.length, 30)
+for (const model of flagshipSalesModels) {
+  assert.equal(model.releaseMonth, expectedFlagshipReleaseMonths[model.label])
+  assert.equal(model.salesFromLaunch.length, 12)
+  assert.equal(model.source.isEstimated, true)
+  assert.ok(model.source.marketScope.trim())
+  assert.match(model.source.url, /^https:\/\//)
+}
+assert.equal(
+  flagshipSalesModels.find(({ label }) => label === "Xiaomi 17").source.url,
+  "https://www.mi.com/global/product/xiaomi-17/",
+)
+assert.equal(
+  flagshipSalesModels.find(({ label }) => label === "Galaxy S25").source.url,
+  "https://news.samsung.com/global/samsung-galaxy-s25-series-arrives-worldwide/",
+)
 for (const vendor of flagshipSalesVendors) {
   assert.ok(vendor.models.length >= 2)
   const selectedKeys = vendor.models.map(({ key }) => key)
@@ -141,13 +207,20 @@ for (const vendor of flagshipSalesVendors) {
 const xiaomiCalendar = getFlagshipSalesChartData(
   "xiaomi",
   "calendar",
-  ["xiaomi16Ultra", "xiaomi16Pro", "xiaomiMixFold"],
+  ["xiaomi15TPro", "xiaomi17", "xiaomi17Ultra"],
 )
-const xiaomiPreFoldLaunch = xiaomiCalendar.find((point) => point.period === "2026-03")
-assert.ok(xiaomiPreFoldLaunch)
-assert.ok(xiaomiPreFoldLaunch.total > 0)
-assert.equal(xiaomiPreFoldLaunch.xiaomiMixFold, 0)
-assert.equal(xiaomiPreFoldLaunch.topModelKey, "xiaomi16Pro")
+const xiaomiPreLaunch = xiaomiCalendar.find((point) => point.period === "2025-09")
+assert.ok(xiaomiPreLaunch)
+assert.equal(xiaomiPreLaunch.xiaomi17, 0)
+assert.equal(xiaomiPreLaunch.xiaomi17Ultra, 0)
+const s25 = flagshipSalesModels.find(({ label }) => label === "Galaxy S25")
+assert.ok(s25)
+const samsungCalendar = getFlagshipSalesChartData("samsung", "calendar", [s25.key])
+assert.equal(samsungCalendar[0].galaxyS25, s25.salesFromLaunch[7])
+assert.deepEqual(
+  getFlagshipSalesLifecycle(s25),
+  s25.salesFromLaunch,
+)
 
 assert.equal(cumulativeProduction.length, 14)
 assert.equal(productionYAxisDomain[0], 0)

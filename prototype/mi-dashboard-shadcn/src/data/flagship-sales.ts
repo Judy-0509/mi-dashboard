@@ -12,6 +12,8 @@ export type FlagshipSalesMonth =
   | "2026-07"
   | "2026-08"
 
+export type FlagshipSalesReleaseMonth = `${number}-${number}`
+
 export type FlagshipSalesVendorKey =
   | "apple"
   | "samsung"
@@ -23,13 +25,20 @@ export type FlagshipSalesVendorKey =
 
 export type FlagshipSalesView = "calendar" | "launch"
 
+export interface FlagshipSalesSourceMetadata {
+  url: string
+  marketScope: string
+  isEstimated: boolean
+}
+
 export interface FlagshipSalesModel {
   key: string
   vendor: FlagshipSalesVendorKey
   label: string
-  releaseMonth: FlagshipSalesMonth
+  releaseMonth: FlagshipSalesReleaseMonth
   color: string
-  monthlySales: Readonly<Record<FlagshipSalesMonth, number>>
+  salesFromLaunch: readonly number[]
+  source: FlagshipSalesSourceMetadata
 }
 
 export interface FlagshipSalesVendor {
@@ -62,76 +71,91 @@ export const flagshipSalesMonths = [
   "2026-08",
 ] as const satisfies readonly FlagshipSalesMonth[]
 
-const monthIndex = new Map(
-  flagshipSalesMonths.map((month, index) => [month, index]),
-)
+function monthOrdinal(month: string) {
+  const [year, monthNumber] = month.split("-").map(Number)
+  return year * 12 + monthNumber
+}
+
+function getMonthAge(releaseMonth: string, calendarMonth: FlagshipSalesMonth) {
+  return monthOrdinal(calendarMonth) - monthOrdinal(releaseMonth)
+}
+
+function makeSource(
+  url: string,
+  marketScope: string,
+): FlagshipSalesSourceMetadata {
+  return { url, marketScope, isEstimated: true }
+}
 
 function makeModel(
   vendor: FlagshipSalesVendorKey,
   key: string,
   label: string,
-  releaseMonth: FlagshipSalesMonth,
+  releaseMonth: FlagshipSalesReleaseMonth,
   color: string,
   salesFromLaunch: readonly number[],
+  source: FlagshipSalesSourceMetadata,
 ): FlagshipSalesModel {
-  const releaseIndex = monthIndex.get(releaseMonth) ?? 0
-  const monthlySales = Object.fromEntries(
-    flagshipSalesMonths.map((month, index) => [
-      month,
-      index < releaseIndex ? 0 : (salesFromLaunch[index - releaseIndex] ?? 0),
-    ]),
-  ) as Record<FlagshipSalesMonth, number>
-
   return {
     key,
     vendor,
     label,
     releaseMonth,
     color,
-    monthlySales,
+    salesFromLaunch,
+    source,
   }
 }
 
 const appleModels = [
-  makeModel("apple", "iphone17ProMax", "iPhone 17 Pro Max", "2025-09", "#1e3a8a", [28, 32, 29, 24, 22, 20, 17, 15, 13, 12, 10, 9]),
-  makeModel("apple", "iphone17Pro", "iPhone 17 Pro", "2025-09", "#2563eb", [24, 27, 25, 21, 19, 17, 15, 13, 12, 10, 9, 8]),
-  makeModel("apple", "iphone17", "iPhone 17", "2025-09", "#93c5fd", [19, 22, 20, 17, 16, 14, 12, 11, 10, 9, 8, 7]),
+  makeModel("apple", "iphone17", "iPhone 17", "2025-09", "#93c5fd", [19, 22, 20, 17, 16, 14, 12, 11, 10, 9, 8, 7], makeSource("https://www.apple.com/newsroom/2025/09/apple-debuts-iphone-17/", "Global")),
+  makeModel("apple", "iphoneAir", "iPhone Air", "2025-09", "#60a5fa", [12, 15, 14, 12, 11, 10, 9, 8, 7, 6, 5, 4], makeSource("https://www.apple.com/newsroom/2025/09/introducing-iphone-air-a-powerful-new-iphone-with-a-breakthrough-design/", "Global")),
+  makeModel("apple", "iphone17Pro", "iPhone 17 Pro", "2025-09", "#2563eb", [24, 27, 25, 21, 19, 17, 15, 13, 12, 10, 9, 8], makeSource("https://www.apple.com/newsroom/2025/09/apple-unveils-iphone-17-pro-and-iphone-17-pro-max/", "Global")),
+  makeModel("apple", "iphone17ProMax", "iPhone 17 Pro Max", "2025-09", "#1e3a8a", [28, 32, 29, 24, 22, 20, 17, 15, 13, 12, 10, 9], makeSource("https://www.apple.com/newsroom/2025/09/apple-unveils-iphone-17-pro-and-iphone-17-pro-max/", "Global")),
 ] as const
 
 const samsungModels = [
-  makeModel("samsung", "galaxyS26Ultra", "Galaxy S26 Ultra", "2026-02", "#134e4a", [30, 35, 32, 28, 25, 22, 20]),
-  makeModel("samsung", "galaxyS26Plus", "Galaxy S26+", "2026-02", "#0d9488", [23, 27, 25, 22, 19, 17, 15]),
-  makeModel("samsung", "galaxyZFold7", "Galaxy Z Fold7", "2025-09", "#5eead4", [14, 16, 15, 13, 12, 11, 10, 9, 8, 7, 6, 5]),
+  makeModel("samsung", "galaxyS25", "Galaxy S25", "2025-02", "#99f6e4", [24, 28, 26, 22, 19, 17, 15, 13, 12, 11, 10, 9], makeSource("https://news.samsung.com/global/samsung-galaxy-s25-series-arrives-worldwide/", "Global")),
+  makeModel("samsung", "galaxyS25Plus", "Galaxy S25+", "2025-02", "#5eead4", [20, 24, 22, 19, 17, 15, 13, 12, 10, 9, 8, 7], makeSource("https://news.samsung.com/global/samsung-galaxy-s25-series-arrives-worldwide/", "Global")),
+  makeModel("samsung", "galaxyS25Ultra", "Galaxy S25 Ultra", "2025-02", "#0d9488", [30, 35, 32, 28, 25, 22, 20, 18, 16, 14, 12, 11], makeSource("https://news.samsung.com/global/samsung-galaxy-s25-series-arrives-worldwide/", "Global")),
+  makeModel("samsung", "galaxyZFold7", "Galaxy Z Fold7", "2025-07", "#134e4a", [14, 17, 16, 14, 12, 11, 10, 9, 8, 7, 6, 5], makeSource("https://news.samsung.com/us/samsung-elevates-foldable-era-everyday-well-being-global-launch-galaxy-z-fold7-galaxy-z-flip7-galaxy-watch8-series/", "Global")),
+  makeModel("samsung", "galaxyZFlip7", "Galaxy Z Flip7", "2025-07", "#2dd4bf", [18, 21, 20, 17, 15, 13, 12, 10, 9, 8, 7, 6], makeSource("https://news.samsung.com/us/samsung-elevates-foldable-era-everyday-well-being-global-launch-galaxy-z-fold7-galaxy-z-flip7-galaxy-watch8-series/", "Global")),
+  makeModel("samsung", "galaxyS26", "Galaxy S26", "2026-03", "#164e63", [23, 27, 25, 22, 19, 17, 15, 13, 12, 11, 10, 9], makeSource("https://news.samsung.com/us/samsung-galaxy-s26-series-galaxy-buds4-series-now-available-worldwide/", "Global")),
+  makeModel("samsung", "galaxyS26Plus", "Galaxy S26+", "2026-03", "#0f766e", [20, 24, 22, 19, 17, 15, 13, 12, 10, 9, 8, 7], makeSource("https://news.samsung.com/us/samsung-galaxy-s26-series-galaxy-buds4-series-now-available-worldwide/", "Global")),
+  makeModel("samsung", "galaxyS26Ultra", "Galaxy S26 Ultra", "2026-03", "#115e59", [31, 36, 33, 29, 26, 23, 20, 18, 16, 14, 12, 10], makeSource("https://news.samsung.com/us/samsung-galaxy-s26-series-galaxy-buds4-series-now-available-worldwide/", "Global")),
 ] as const
 
 const xiaomiModels = [
-  makeModel("xiaomi", "xiaomi16Ultra", "Xiaomi 16 Ultra", "2025-10", "#c2410c", [22, 27, 25, 22, 19, 17, 15, 13, 12, 10, 9]),
-  makeModel("xiaomi", "xiaomi16Pro", "Xiaomi 16 Pro", "2025-10", "#ea580c", [18, 22, 20, 18, 16, 14, 12, 11, 10, 8, 7]),
-  makeModel("xiaomi", "xiaomiMixFold", "Xiaomi Mix Fold 5", "2026-04", "#fdba74", [12, 14, 13, 11, 10]),
+  makeModel("xiaomi", "xiaomi15TPro", "Xiaomi 15T Pro", "2025-09", "#fdba74", [18, 22, 20, 18, 16, 14, 12, 11, 10, 9, 8, 7], makeSource("https://www.mi.com/global/event/2025/xiaomi-launch-september-2025/", "Global")),
+  makeModel("xiaomi", "xiaomi17", "Xiaomi 17", "2026-02", "#ea580c", [25, 30, 28, 24, 21, 19, 17, 15, 13, 12, 10, 9], makeSource("https://www.mi.com/global/product/xiaomi-17/", "Global")),
+  makeModel("xiaomi", "xiaomi17Ultra", "Xiaomi 17 Ultra", "2026-02", "#9a3412", [32, 38, 35, 30, 27, 24, 21, 19, 17, 15, 13, 11], makeSource("https://www.mi.com/global/product/xiaomi-17-ultra/", "Global")),
 ] as const
 
 const oppoModels = [
-  makeModel("oppo", "oppoFindX9Ultra", "Find X9 Ultra", "2025-11", "#15803d", [20, 24, 22, 19, 17, 15, 13, 12, 10, 9]),
-  makeModel("oppo", "oppoFindX9Pro", "Find X9 Pro", "2025-11", "#16a34a", [16, 19, 18, 16, 14, 12, 11, 10, 9, 8]),
-  makeModel("oppo", "oppoFindN6", "Find N6", "2026-03", "#86efac", [11, 14, 13, 11, 10, 9]),
+  makeModel("oppo", "oppoFindX9", "OPPO Find X9", "2025-10", "#86efac", [17, 21, 19, 17, 15, 13, 12, 10, 9, 8, 7, 6], makeSource("https://www.oppo.com/en/newsroom/press/oppo-find-x9-global-launch-redefines-premium-smartphone-experience/", "Global")),
+  makeModel("oppo", "oppoFindX9Pro", "OPPO Find X9 Pro", "2025-10", "#16a34a", [22, 27, 24, 21, 19, 17, 15, 13, 12, 10, 9, 8], makeSource("https://www.oppo.com/en/newsroom/press/oppo-find-x9-global-launch-redefines-premium-smartphone-experience/", "Global")),
+  makeModel("oppo", "oppoFindN6", "OPPO Find N6", "2026-03", "#4ade80", [13, 16, 15, 13, 11, 10, 9, 8, 7, 6, 5, 4], makeSource("https://www.oppo.com/en/newsroom/press/oppo-launches-find-n6/", "Global")),
+  makeModel("oppo", "oppoFindX9Ultra", "OPPO Find X9 Ultra", "2026-04", "#15803d", [24, 29, 27, 23, 20, 18, 16, 14, 12, 11, 9, 8], makeSource("https://www.oppo.com/sg/newsroom/press/oppo-find-x9-ultra-launches-globally-meet-your-next-camera/", "Global")),
 ] as const
 
 const vivoModels = [
-  makeModel("vivo", "vivoX300Ultra", "vivo X300 Ultra", "2025-10", "#5b21b6", [19, 23, 21, 18, 16, 14, 12, 11, 10, 9, 8]),
-  makeModel("vivo", "vivoX300Pro", "vivo X300 Pro", "2025-10", "#7c3aed", [15, 18, 17, 15, 13, 12, 10, 9, 8, 7, 6]),
-  makeModel("vivo", "vivoXFold5", "vivo X Fold5", "2026-05", "#c4b5fd", [10, 12, 11, 10]),
+  makeModel("vivo", "vivoXFold5", "vivo X Fold5", "2025-06", "#c4b5fd", [12, 15, 14, 12, 11, 10, 9, 8, 7, 6, 5, 4], makeSource("https://www.vivo.com.cn/vivo/param/xfold5", "China; carryover")),
+  makeModel("vivo", "vivoX300", "vivo X300", "2025-10", "#a78bfa", [19, 24, 22, 19, 17, 15, 13, 12, 10, 9, 8, 7], makeSource("https://www.vivo.com/at/about-vivo/news/x300-launch", "China and selected global markets")),
+  makeModel("vivo", "vivoX300Pro", "vivo X300 Pro", "2025-10", "#7c3aed", [24, 29, 27, 23, 21, 18, 16, 14, 12, 11, 9, 8], makeSource("https://www.vivo.com/at/about-vivo/news/x300-launch", "China and selected global markets")),
+  makeModel("vivo", "vivoX300Ultra", "vivo X300 Ultra", "2026-04", "#5b21b6", [28, 34, 31, 27, 24, 21, 19, 17, 15, 13, 11, 10], makeSource("https://www.vivo.com/at/about-vivo/news-detail?id=804", "China and selected global markets")),
 ] as const
 
 const honorModels = [
-  makeModel("honor", "honorMagic8Pro", "Magic8 Pro", "2025-12", "#9d174d", [17, 21, 19, 17, 15, 13, 12, 10, 9]),
-  makeModel("honor", "honorMagic8", "Magic8", "2025-12", "#db2777", [13, 16, 15, 13, 12, 10, 9, 8, 7]),
-  makeModel("honor", "honorMagicV6", "Magic V6", "2026-06", "#f9a8d4", [9, 11, 10]),
+  makeModel("honor", "honorMagicV5", "HONOR Magic V5", "2025-08", "#f9a8d4", [13, 16, 15, 13, 11, 10, 9, 8, 7, 6, 5, 4], makeSource("https://www.honor.com/global/news/honor-ai-magic-v5-west-europe-launch/", "Western Europe; carryover")),
+  makeModel("honor", "honorMagic8Pro", "HONOR Magic8 Pro", "2026-01", "#db2777", [22, 27, 25, 22, 19, 17, 15, 13, 12, 10, 9, 8], makeSource("https://www.honor.com/global/news/honor-magic8-launch-uk/", "UK and selected global markets")),
+  makeModel("honor", "honorMagicV6", "HONOR Magic V6", "2026-06", "#9d174d", [15, 19, 17, 15, 13, 11, 10, 9, 8, 7, 6, 5], makeSource("https://www.honor.com/global/news/honor-magic-v6-launch/", "Malaysia and selected global markets")),
 ] as const
 
 const googleModels = [
-  makeModel("google", "pixel10ProXL", "Pixel 10 Pro XL", "2025-09", "#a16207", [14, 17, 16, 14, 12, 11, 10, 9, 8, 7, 6, 5]),
-  makeModel("google", "pixel10Pro", "Pixel 10 Pro", "2025-09", "#ca8a04", [11, 14, 13, 11, 10, 9, 8, 7, 6, 5, 5, 4]),
-  makeModel("google", "pixel10Fold", "Pixel 10 Pro Fold", "2026-06", "#fde68a", [8, 10, 9]),
+  makeModel("google", "pixel10", "Pixel 10", "2025-08", "#fde68a", [15, 19, 18, 16, 14, 12, 11, 10, 9, 8, 7, 6], makeSource("https://blog.google/products-and-platforms/devices/pixel/google-pixel-10-pro-xl/", "Global and selected markets; carryover")),
+  makeModel("google", "pixel10Pro", "Pixel 10 Pro", "2025-08", "#fbbf24", [19, 24, 22, 20, 17, 15, 13, 12, 10, 9, 8, 7], makeSource("https://blog.google/products-and-platforms/devices/pixel/google-pixel-10-pro-xl/", "Global and selected markets; carryover")),
+  makeModel("google", "pixel10ProXL", "Pixel 10 Pro XL", "2025-08", "#ca8a04", [22, 28, 26, 23, 20, 18, 16, 14, 12, 11, 9, 8], makeSource("https://blog.google/products-and-platforms/devices/pixel/google-pixel-10-pro-xl/", "Global and selected markets; carryover")),
+  makeModel("google", "pixel10ProFold", "Pixel 10 Pro Fold", "2025-10", "#a16207", [12, 15, 14, 12, 11, 10, 9, 8, 7, 6, 5, 4], makeSource("https://blog.google/products-and-platforms/devices/pixel/google-pixel-10-pro-fold/", "Global and selected markets")),
 ] as const
 
 export const flagshipSalesVendors = [
@@ -140,7 +164,7 @@ export const flagshipSalesVendors = [
   { key: "xiaomi", label: "Xiaomi", color: "#ea580c", models: xiaomiModels },
   { key: "oppo", label: "OPPO", color: "#16a34a", models: oppoModels },
   { key: "vivo", label: "vivo", color: "#7c3aed", models: vivoModels },
-  { key: "honor", label: "Honor", color: "#db2777", models: honorModels },
+  { key: "honor", label: "HONOR", color: "#db2777", models: honorModels },
   { key: "google", label: "Google", color: "#ca8a04", models: googleModels },
 ] as const satisfies readonly FlagshipSalesVendor[]
 
@@ -155,10 +179,15 @@ function getVendor(vendorKey: FlagshipSalesVendorKey) {
 export function getFlagshipSalesLifecycle(
   model: FlagshipSalesModel,
 ): readonly number[] {
-  const releaseIndex = monthIndex.get(model.releaseMonth) ?? 0
-  return Array.from({ length: 12 }, (_, age) =>
-    model.monthlySales[flagshipSalesMonths[releaseIndex + age]] ?? 0,
-  )
+  return model.salesFromLaunch
+}
+
+function getFlagshipSalesCalendarValue(
+  model: FlagshipSalesModel,
+  month: FlagshipSalesMonth,
+) {
+  const age = getMonthAge(model.releaseMonth, month)
+  return age < 0 ? 0 : (model.salesFromLaunch[age] ?? 0)
 }
 
 export function getFlagshipSalesChartData(
@@ -182,8 +211,8 @@ export function getFlagshipSalesChartData(
     visibleModels.forEach((model) => {
       const value =
         view === "calendar"
-          ? model.monthlySales[period as FlagshipSalesMonth]
-          : getFlagshipSalesLifecycle(model)[periodIndex]
+          ? getFlagshipSalesCalendarValue(model, period as FlagshipSalesMonth)
+          : model.salesFromLaunch[periodIndex]
       point[model.key] = value ?? 0
       point.total += value ?? 0
       if (value && value > 0) point.topModelKey = model.key

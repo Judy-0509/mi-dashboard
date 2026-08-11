@@ -190,6 +190,9 @@ export function FlagshipSalesChart() {
           <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
             월별 플래그십 모델 판매량
           </CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">
+            모델명·출시월은 제조사 공식 출처, 판매량은 예시 추정치입니다.
+          </p>
         </div>
         <ToggleGroup
           aria-label="Flagship Sales axis"
