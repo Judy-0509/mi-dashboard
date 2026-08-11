@@ -752,10 +752,19 @@ assert.match(sidebarSource, /#sell-through/)
 assert.match(sidebarSource, /child: "Flagship Sales"/)
 assert.match(sidebarSource, /page: "flagship-sales"/)
 assert.match(sidebarSource, /href: "#flagship-sales"/)
+assert.match(sidebarSource, /label: "MI TAM"/)
+assert.match(sidebarSource, /child: "Pipeline Check"/)
+assert.match(sidebarSource, /page: "pipeline-check"/)
+assert.match(sidebarSource, /href: "#pipeline-check"/)
 assert.match(pageConfigSource, /"hash": "#sell-through"/)
 assert.match(pageConfigSource, /"hash": "#flagship-sales"/)
 assert.match(pageConfigSource, /"exportFileName": "MI_Counterpoint_Flagship_Sales\.html"/)
 assert.match(pageConfigSource, /"originalExcelUrl": null/)
+assert.deepEqual(JSON.parse(pageConfigSource)["pipeline-check"], {
+  hash: "#pipeline-check",
+  exportFileName: "MI_TAM_Pipeline_Check.html",
+  originalExcelUrl: null,
+})
 assert.match(appSource, /SellThroughAnalysis/)
 assert.match(appSource, /Counterpoint \/ Sell-in · Sell-through/)
 assert.match(appSource, /스마트폰 Sell-in \/ Sell-through/)
@@ -763,6 +772,15 @@ assert.match(appSource, /function FlagshipSalesPage()/)
 assert.match(appSource, /<FlagshipSalesChart \/>/)
 assert.match(appSource, /Counterpoint \/ Flagship Sales/)
 assert.match(appSource, /PageActions page="flagship-sales" \/>/)
+assert.match(appSource, /MI TAM \/ PIPELINE CHECK/)
+assert.match(appSource, /분기별 Pipeline Check/)
+assert.match(appSource, /2025 Q1–2026 Q2 Production · Inventory · Sell-in · Sell-out/)
+assert.match(appSource, /<PageActions page="pipeline-check" \/>/)
+assert.match(appSource, /<PipelineCheck \/>/)
+assert.match(
+  appSource,
+  /activePage === "pipeline-check" \? \(\s*<PipelineCheckPage \/>/,
+)
 assert.match(flagshipSalesSource, /useState<FlagshipSalesVendorKey>\("apple"\)/)
 assert.match(flagshipSalesSource, /flagshipSalesVendors/)
 assert.match(flagshipSalesSource, /Calendar Month/)

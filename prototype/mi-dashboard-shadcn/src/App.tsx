@@ -1,3 +1,4 @@
+import type * as React from "react"
 import { useEffect, useState } from "react"
 import { Download, FileSpreadsheet } from "lucide-react"
 
@@ -8,6 +9,7 @@ import { ExecutiveSummary } from "@/components/executive-summary"
 import { FlagshipSalesChart } from "@/components/flagship-sales-chart"
 import { MiInsightWeeklyReport } from "@/components/mi-insight-weekly-report"
 import { MiWeeklySellThroughSummary } from "@/components/mi-weekly-sell-through-summary"
+import { PipelineCheck } from "@/components/pipeline-check"
 import { PortalSidebar, type PortalPage } from "@/components/portal-sidebar"
 import { SellThroughAnalysis } from "@/components/sell-through-analysis"
 import { buttonVariants } from "@/components/ui/button"
@@ -271,6 +273,31 @@ function MiInsightWeeklySellThroughPage() {
   )
 }
 
+function PipelineCheckPage(): React.ReactElement {
+  return (
+    <>
+      <header
+        className="flex items-end justify-between border-b pb-4"
+        id="pipeline-check"
+      >
+        <div>
+          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+            MI TAM / PIPELINE CHECK
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            분기별 Pipeline Check
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            2025 Q1–2026 Q2 Production · Inventory · Sell-in · Sell-out
+          </p>
+        </div>
+        <PageActions page="pipeline-check" />
+      </header>
+      <PipelineCheck />
+    </>
+  )
+}
+
 export function App() {
   const [activePage, setActivePage] = useState<PortalPage>(pageFromHash)
 
@@ -315,6 +342,8 @@ export function App() {
         <MiInsightPage />
       ) : activePage === "mi-weekly-sell-through" ? (
         <MiInsightWeeklySellThroughPage />
+      ) : activePage === "pipeline-check" ? (
+        <PipelineCheckPage />
       ) : (
         <SigmaPage />
       )}

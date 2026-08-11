@@ -63,8 +63,8 @@ const formatSignedMu = (value: number) =>
 
 function getPipelineMetricTotal(
   values: PipelineValues | PipelineInventoryValues,
-) {
-  return Object.values(values).reduce(
+): number {
+  return Object.values(values).reduce<number>(
     (total, value) => total + (value ?? 0),
     0,
   )

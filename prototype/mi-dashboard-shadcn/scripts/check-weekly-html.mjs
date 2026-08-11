@@ -114,6 +114,25 @@ try {
     /<link\b(?=[^>]*\brel=["']icon["'])(?=[^>]*\bhref=["'](?!data:))[^>]*>/i,
   )
 
+  const pipelineTarget = pageExportTargets.find(
+    ({ page }) => page === "pipeline-check",
+  )
+  assert.deepEqual(pipelineTarget, {
+    page: "pipeline-check",
+    hash: "#pipeline-check",
+    outputName: "MI_TAM_Pipeline_Check.html",
+  })
+  const pipelineHtml = readFileSync(
+    path.join(siteDir, pipelineTarget.outputName),
+    "utf8",
+  )
+  assert.match(pipelineHtml, /window\.__MI_EXPORT_PAGE__ = "pipeline-check"/)
+  assert.match(pipelineHtml, /window\.location\.hash = "#pipeline-check"/)
+  assert.doesNotMatch(pipelineHtml, /<aside\b/i)
+  assert.doesNotMatch(pipelineHtml, /PageActions/)
+  assert.doesNotMatch(pipelineHtml, /<script[^>]+\bsrc=/i)
+  assert.doesNotMatch(pipelineHtml, /<link[^>]+rel=["']stylesheet["']/i)
+
   const missingJsDir = path.join(tempDir, "missing-js-site")
   mkdirSync(path.join(missingJsDir, "assets"), { recursive: true })
   writeFileSync(

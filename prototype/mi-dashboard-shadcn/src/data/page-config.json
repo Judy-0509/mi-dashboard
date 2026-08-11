@@ -19,6 +19,11 @@
     "exportFileName": "MI_Counterpoint_Flagship_Sales.html",
     "originalExcelUrl": null
   },
+  "pipeline-check": {
+    "hash": "#pipeline-check",
+    "exportFileName": "MI_TAM_Pipeline_Check.html",
+    "originalExcelUrl": null
+  },
   "mi-insight": {
     "hash": "#mi-insight",
     "exportFileName": "MI_Insight_Weekly_Report.html",
