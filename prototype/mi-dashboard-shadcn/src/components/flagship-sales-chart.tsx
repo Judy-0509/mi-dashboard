@@ -242,12 +242,13 @@ export function FlagshipSalesChart() {
               Vendor
             </span>
             <div className="flex flex-wrap gap-2">
-              {flagshipSalesVendors.map(({ key, label, color }) => {
+              {flagshipSalesVendors.map(({ key, label, color, availability }) => {
                 const isSelected = key === selectedVendor
                 return (
                   <Button
                     aria-pressed={isSelected}
                     className="h-7 gap-1.5 px-2 text-xs"
+                    isDisabled={availability === "unavailable"}
                     key={key}
                     onPress={() => selectVendor(key)}
                     size="sm"
@@ -260,6 +261,11 @@ export function FlagshipSalesChart() {
                       style={{ backgroundColor: color }}
                     />
                     {label}
+                    {availability === "unavailable" ? (
+                      <span aria-label="데이터 없음">
+                        —<span className="sr-only">데이터 없음</span>
+                      </span>
+                    ) : null}
                   </Button>
                 )
               })}
@@ -405,8 +411,9 @@ export function FlagshipSalesChart() {
                 세대별 판매 비교
               </h3>
               <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
-                {comparison.currentGenerationLabel} vs{" "}
-                {comparison.previousGenerationLabel} · 동일 출시 후 기간
+                {comparison
+                  ? `${comparison.currentGenerationLabel} vs ${comparison.previousGenerationLabel} · 동일 출시 후 기간`
+                  : "— 데이터 없음"}
               </p>
             </div>
             <div className="overflow-hidden border">
@@ -459,7 +466,7 @@ export function FlagshipSalesChart() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {comparison.rows.map((row, index) => {
+                  {comparison ? comparison.rows.map((row, index) => {
                     const deltaClassName = getComparisonDeltaClassName(
                       row.deltaMu
                     )
@@ -500,7 +507,16 @@ export function FlagshipSalesChart() {
                         </td>
                       </tr>
                     )
-                  })}
+                  }) : (
+                    <tr>
+                      <th className="px-1.5 py-1.5 text-left font-medium" scope="row">
+                        —<span className="sr-only">데이터 없음</span>
+                      </th>
+                      <td className="px-1 py-1.5 text-right" colSpan={4}>
+                        데이터 없음
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

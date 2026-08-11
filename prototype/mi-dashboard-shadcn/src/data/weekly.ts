@@ -1,3 +1,10 @@
+import {
+  withVendorAdditions,
+  type CanonicalVendorKey,
+  type VendorCatalogEntry,
+  type VendorStatus,
+} from "./vendor-catalog.ts"
+
 export const weeklyTitle = "Global Smartphone Weekly Sell-out 현황 & Trend"
 export const weeklyDescription =
   "최근 4년 주간 Sell-out 추이 · 누적 지역/OEM 구성을 M/S와 Mu 기준으로 비교합니다."
@@ -11,15 +18,38 @@ export const weeklyRegions = [
 ] as const
 export const weeklyYears = [2023, 2024, 2025, 2026] as const
 export const weeklySelectedWeek = 32
-export const weeklyVendors = [
-  "Apple",
-  "Samsung",
-  "Xiaomi",
-  "OPPO",
+
+export type WeeklyVendorKey = CanonicalVendorKey | "others"
+
+const providerVendorKeys = [
+  "apple",
+  "samsung",
+  "xiaomi",
+  "oppo",
   "vivo",
-  "Honor",
-  "Others",
-] as const
+  "honor",
+  "others",
+] as const satisfies readonly WeeklyVendorKey[]
+
+const providerIndexByKey = Object.fromEntries(
+  providerVendorKeys.map((key, index) => [key, index]),
+) as Record<string, number>
+
+const vendorEntries = withVendorAdditions([
+  { key: "others", label: "Others", color: "var(--chart-7)" },
+]) as readonly (VendorCatalogEntry & { readonly key: WeeklyVendorKey })[]
+
+export const weeklyVendors = vendorEntries.map((vendor) => ({
+  ...vendor,
+  availability: providerIndexByKey[vendor.key] === undefined
+    ? ("unavailable" as const)
+    : ("available" as const),
+  providerIndex: providerIndexByKey[vendor.key] ?? null,
+})) as readonly (VendorCatalogEntry & {
+  readonly key: WeeklyVendorKey
+  readonly availability: VendorStatus
+  readonly providerIndex: number | null
+})[]
 
 export type WeeklyRegion = (typeof weeklyRegions)[number]
 export type WeeklyMetric = "yoy" | "wow"
@@ -59,18 +89,9 @@ export const weeklyRegionColors: Record<Country, string> = {
   India: "var(--chart-7)",
 }
 
-export const weeklyVendorColors: Record<
-  (typeof weeklyVendors)[number],
-  string
-> = {
-  Apple: "var(--chart-1)",
-  Samsung: "var(--chart-2)",
-  Xiaomi: "var(--chart-3)",
-  OPPO: "var(--chart-4)",
-  vivo: "var(--chart-5)",
-  Honor: "var(--chart-6)",
-  Others: "var(--chart-7)",
-}
+export const weeklyVendorColors = Object.fromEntries(
+  weeklyVendors.map(({ key, color }) => [key, color]),
+) as Record<WeeklyVendorKey, string>
 
 const round3 = (value: number) => Math.round(value * 1000) / 1000
 
@@ -82,7 +103,7 @@ function weeklyUnits(
   year: number,
   country: Country,
   vendorIndex: number,
-  week: number
+  week: number,
 ) {
   const seasonal =
     1 +
@@ -100,14 +121,26 @@ function weeklyUnits(
   return round3(vendorBase[country][vendorIndex] * seasonal * factor * spike)
 }
 
+function providerIndexesFor(vendorKey: WeeklyVendorKey | null) {
+  if (vendorKey === null) {
+    return weeklyVendors
+      .map(({ providerIndex }) => providerIndex)
+      .filter((index): index is number => index !== null)
+  }
+  const providerIndex = providerIndexByKey[vendorKey]
+  return providerIndex === undefined ? [] : [providerIndex]
+}
+
 export function sumWeeklySellOut(
   year: number,
   week: number,
   region: WeeklyRegion,
-  vendorIndex: number | null,
-  cumulative: boolean
+  vendorKey: WeeklyVendorKey | null,
+  cumulative: boolean,
 ) {
+  const providerIndexes = providerIndexesFor(vendorKey)
   let total = 0
+  let hasAvailableValue = false
 
   for (const country of countriesFor(region)) {
     for (
@@ -115,25 +148,21 @@ export function sumWeeklySellOut(
       currentWeek <= week;
       currentWeek += 1
     ) {
-      const indices =
-        vendorIndex === null
-          ? weeklyVendors.map((_, index) => index)
-          : [vendorIndex]
-
-      for (const index of indices) {
-        total += weeklyUnits(year, country, index, currentWeek)
+      for (const providerIndex of providerIndexes) {
+        total += weeklyUnits(year, country, providerIndex, currentWeek)
+        hasAvailableValue = true
       }
     }
   }
 
-  return total
+  return hasAvailableValue ? total : null
 }
 
 export function getWeeklyMetric(
   week: number,
   region: WeeklyRegion,
-  vendorIndex: number | null,
-  metric: WeeklyMetric
+  vendorKey: WeeklyVendorKey | null,
+  metric: WeeklyMetric,
 ) {
   if (metric === "wow" && week <= 1) {
     return null
@@ -143,35 +172,43 @@ export function getWeeklyMetric(
     2026,
     week,
     region,
-    vendorIndex,
-    metric === "yoy"
+    vendorKey,
+    metric === "yoy",
   )
   const previous =
     metric === "yoy"
-      ? sumWeeklySellOut(2025, week, region, vendorIndex, true)
-      : sumWeeklySellOut(2026, week - 1, region, vendorIndex, false)
+      ? sumWeeklySellOut(2025, week, region, vendorKey, true)
+      : sumWeeklySellOut(2026, week - 1, region, vendorKey, false)
 
-  return previous === 0
+  return current === null || previous === null || previous === 0
     ? null
     : Math.round((current / previous - 1) * 1000) / 10
 }
 
 export function getWeeklyHeatmap(metric: WeeklyMetric) {
-  return ["Total", ...weeklyVendors].map((label) => {
-    const vendorIndex =
-      label === "Total"
-        ? null
-        : weeklyVendors.indexOf(label as (typeof weeklyVendors)[number])
-    return {
-      label,
-      values: weeklyRegions.map((region) =>
-        getWeeklyMetric(weeklySelectedWeek, region, vendorIndex, metric)
+  return [
+    { key: "total" as const, label: "Total" },
+    ...weeklyVendors.map(({ key, label }) => ({ key, label })),
+  ].map(({ key, label }) => ({
+    key,
+    label,
+    values: weeklyRegions.map((region) =>
+      getWeeklyMetric(
+        weeklySelectedWeek,
+        region,
+        key === "total" ? null : key,
+        metric,
       ),
-    }
-  })
+    ),
+  }))
 }
 
-export function getWeeklyRegionalCumulative(vendorIndex: number | null) {
+function sumAvailable(values: readonly (number | null)[]) {
+  const available = values.filter((value): value is number => value !== null)
+  return available.length ? available.reduce((sum, value) => sum + value, 0) : null
+}
+
+export function getWeeklyRegionalCumulative(vendorKey: WeeklyVendorKey | null) {
   const segmentNames = weeklyRegions.slice(1)
   const years = weeklyYears.map((year) => {
     const segments = segmentNames.map((name) => {
@@ -179,20 +216,20 @@ export function getWeeklyRegionalCumulative(vendorIndex: number | null) {
         year,
         weeklySelectedWeek,
         name as Country,
-        vendorIndex,
-        true
+        vendorKey,
+        true,
       )
 
       return {
         name,
-        value: round3(value),
+        value: value === null ? null : round3(value),
         color: weeklyRegionColors[name as Country],
       }
     })
 
     return {
       year,
-      total: round3(segments.reduce((sum, segment) => sum + segment.value, 0)),
+      total: sumAvailable(segments.map(({ value }) => value)),
       segments,
     }
   })
@@ -201,27 +238,27 @@ export function getWeeklyRegionalCumulative(vendorIndex: number | null) {
 }
 
 export function getWeeklyVendorCumulative(region: WeeklyRegion) {
-  const segmentNames = weeklyVendors
+  const segmentNames = weeklyVendors.map(({ label }) => label)
   const years = weeklyYears.map((year) => {
-    const segments = segmentNames.map((name) => {
+    const segments = weeklyVendors.map(({ key, label, color }) => {
       const value = sumWeeklySellOut(
         year,
         weeklySelectedWeek,
         region,
-        weeklyVendors.indexOf(name),
-        true
+        key,
+        true,
       )
 
       return {
-        name,
-        value: round3(value),
-        color: weeklyVendorColors[name],
+        name: label,
+        value: value === null ? null : round3(value),
+        color,
       }
     })
 
     return {
       year,
-      total: round3(segments.reduce((sum, segment) => sum + segment.value, 0)),
+      total: sumAvailable(segments.map(({ value }) => value)),
       segments,
     }
   })
@@ -237,8 +274,8 @@ export function getWeeklyCumulative(region: WeeklyRegion) {
 
 export function getWeeklyTrend(
   region: WeeklyRegion,
-  vendorIndex: number | null,
-  metric: WeeklyTrendMetric
+  vendorKey: WeeklyVendorKey | null,
+  metric: WeeklyTrendMetric,
 ): WeeklyTrendPoint[] {
   return Array.from({ length: 52 }, (_, index) => {
     const week = index + 1
@@ -248,9 +285,10 @@ export function getWeeklyTrend(
       }
 
       const total = sumWeeklySellOut(year, week, region, null, false)
-      const value = sumWeeklySellOut(year, week, region, vendorIndex, false)
+      const value = sumWeeklySellOut(year, week, region, vendorKey, false)
+      if (total === null || value === null) return null
 
-      return metric === "share" && vendorIndex !== null
+      return metric === "share" && vendorKey !== null
         ? round3((value / total) * 100)
         : round3(value)
     }

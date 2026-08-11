@@ -82,7 +82,7 @@ export function normalizeProviderValue<T>(
 export function withVendorAdditions(
   additions: readonly VendorCatalogEntry[],
 ): readonly VendorCatalogEntry[] {
-  const canonicalKeys = new Set(canonicalVendors.map(({ key }) => key))
+  const canonicalKeys = new Set<string>(canonicalVendors.map(({ key }) => key))
   const seen = new Set<string>()
   for (const addition of additions) {
     if (canonicalKeys.has(addition.key) || seen.has(addition.key)) {

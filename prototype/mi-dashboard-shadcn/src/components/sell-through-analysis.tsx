@@ -23,6 +23,7 @@ import {
   sellThroughMonthly,
   sellThroughVendors,
 } from "@/data/sell-through"
+import type { VendorValue } from "@/data/vendor-catalog"
 
 type SellThroughView = "vendor" | "total"
 
@@ -30,8 +31,8 @@ type SellThroughChartPoint = {
   month: string
   label: string
   ratio: number | null
-  sellInTotal: number
-  sellThroughTotal: number
+  sellInTotal: number | null
+  sellThroughTotal: number | null
   [key: string]: number | string | null
 }
 
@@ -56,7 +57,7 @@ function formatMonth(month: string) {
 }
 
 function formatBarTotal(value: unknown) {
-  return value === null || value === undefined ? "" : Number(value).toFixed(0)
+  return value === null || value === undefined ? "—" : Number(value).toFixed(0)
 }
 
 function formatRatio(value: unknown) {
@@ -70,8 +71,18 @@ const sellThroughChartData: SellThroughChartPoint[] = sellThroughMonthly.map(
     const totals = getSellThroughTotals(point)
     const vendorValues = Object.fromEntries(
       sellThroughVendors.flatMap(({ key }) => [
-        [`si_${key}`, point.sellIn[key] as number],
-        [`st_${key}`, point.sellThrough[key] as number],
+        [
+          `si_${key}`,
+          point.sellIn[key].status === "available"
+            ? point.sellIn[key].value
+            : null,
+        ],
+        [
+          `st_${key}`,
+          point.sellThrough[key].status === "available"
+            ? point.sellThrough[key].value
+            : null,
+        ],
       ])
     )
 
@@ -102,14 +113,14 @@ function SellThroughTooltip({ view }: { view: SellThroughView }) {
                   color: "var(--chart-1)",
                   dataKey: "sellInTotal",
                   name: "SI total",
-                  value: point.sellInTotal,
+                  value: point.sellInTotal ?? undefined,
                 },
                 {
                   ...firstPayload,
                   color: "var(--chart-2)",
                   dataKey: "sellThroughTotal",
                   name: "ST total",
-                  value: point.sellThroughTotal,
+                  value: point.sellThroughTotal ?? undefined,
                 },
               ]
             : []
@@ -179,6 +190,7 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
               <Bar
                 dataKey={`si_${vendor.key}`}
                 fill={vendor.color}
+                hide={vendor.availability === "unavailable"}
                 isAnimationActive={false}
                 name={`SI · ${vendor.label}`}
                 stackId="sell-in"
@@ -205,6 +217,7 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
                 dataKey={`st_${vendor.key}`}
                 fill={vendor.color}
                 fillOpacity={0.55}
+                hide={vendor.availability === "unavailable"}
                 isAnimationActive={false}
                 name={`ST · ${vendor.label}`}
                 stackId="sell-through"
@@ -289,6 +302,10 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
 }
 
 function InventoryTable() {
+  function formatVendorValue(value: VendorValue<number>) {
+    return value.status === "available" ? value.value : "—"
+  }
+
   return (
     <div className="min-w-0 overflow-hidden border">
       <table
@@ -343,12 +360,22 @@ function InventoryTable() {
                 </th>
                 {row.inventory.map((value, index) => (
                   <td className="px-2 py-1.5 text-right font-mono tabular-nums" key={`inventory-${index}`}>
-                    {value}
+                    <span aria-label={value.status === "available" ? undefined : "데이터 없음"}>
+                      {formatVendorValue(value)}
+                      {value.status === "unavailable" ? (
+                        <span className="sr-only">데이터 없음</span>
+                      ) : null}
+                    </span>
                   </td>
                 ))}
                 {row.wos.map((value, index) => (
                   <td className="px-2 py-1.5 text-right font-mono tabular-nums" key={`wos-${index}`}>
-                    {value}
+                    <span aria-label={value.status === "available" ? undefined : "데이터 없음"}>
+                      {formatVendorValue(value)}
+                      {value.status === "unavailable" ? (
+                        <span className="sr-only">데이터 없음</span>
+                      ) : null}
+                    </span>
                   </td>
                 ))}
               </tr>
@@ -363,10 +390,15 @@ function InventoryTable() {
 function SellThroughLegend({ view }: { view: SellThroughView }) {
   return view === "vendor" ? (
     <ul aria-label="Vendor legend" className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-      {sellThroughVendors.map(({ label, color }) => (
+      {sellThroughVendors.map(({ label, color, availability }) => (
         <li className="flex items-center gap-1.5" key={label}>
           <i aria-hidden="true" className="size-1.5 shrink-0" style={{ backgroundColor: color }} />
           {label}
+          {availability === "unavailable" ? (
+            <span aria-label="데이터 없음">
+              —<span className="sr-only">데이터 없음</span>
+            </span>
+          ) : null}
         </li>
       ))}
     </ul>

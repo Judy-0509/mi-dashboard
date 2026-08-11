@@ -1,3 +1,10 @@
+import {
+  canonicalVendors,
+  type CanonicalVendorKey,
+  type VendorCatalogEntry,
+  type VendorStatus,
+} from "./vendor-catalog.ts"
+
 export type FlagshipSalesMonth =
   | "2024-09"
   | "2024-10"
@@ -26,14 +33,7 @@ export type FlagshipSalesMonth =
 
 export type FlagshipSalesReleaseMonth = `${number}-${number}`
 
-export type FlagshipSalesVendorKey =
-  | "apple"
-  | "samsung"
-  | "xiaomi"
-  | "oppo"
-  | "vivo"
-  | "honor"
-  | "google"
+export type FlagshipSalesVendorKey = CanonicalVendorKey
 
 export type FlagshipSalesView = "calendar" | "launch"
 
@@ -53,10 +53,9 @@ export interface FlagshipSalesModel {
   source: FlagshipSalesSourceMetadata
 }
 
-export interface FlagshipSalesVendor {
+export interface FlagshipSalesVendor extends VendorCatalogEntry {
   key: FlagshipSalesVendorKey
-  label: string
-  color: string
+  availability: VendorStatus
   models: readonly FlagshipSalesModel[]
 }
 
@@ -234,15 +233,26 @@ const googleModels = [
   makeModel("google", "pixel10ProFold", "Pixel 10 Pro Fold", "2025-10", "#a16207", [12, 15, 14, 12, 11, 10, 9, 8, 7, 6, 5, 4, 4, 4, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, ], makeSource("https://blog.google/products-and-platforms/devices/pixel/google-pixel-10-pro-fold/", "Global and selected markets")),
 ] as const
 
-export const flagshipSalesVendors = [
-  { key: "apple", label: "Apple", color: "#2563eb", models: appleModels },
-  { key: "samsung", label: "Samsung", color: "#0d9488", models: samsungModels },
-  { key: "xiaomi", label: "Xiaomi", color: "#ea580c", models: xiaomiModels },
-  { key: "oppo", label: "OPPO", color: "#16a34a", models: oppoModels },
-  { key: "vivo", label: "vivo", color: "#7c3aed", models: vivoModels },
-  { key: "honor", label: "HONOR", color: "#db2777", models: honorModels },
-  { key: "google", label: "Google", color: "#ca8a04", models: googleModels },
-] as const satisfies readonly FlagshipSalesVendor[]
+const modelsByVendor: Record<CanonicalVendorKey, readonly FlagshipSalesModel[]> = {
+  apple: appleModels,
+  samsung: samsungModels,
+  xiaomi: xiaomiModels,
+  huawei: [],
+  honor: honorModels,
+  oppo: oppoModels,
+  vivo: vivoModels,
+  transsion: [],
+  lenovo: [],
+  google: googleModels,
+}
+
+export const flagshipSalesVendors = canonicalVendors.map((vendor) => ({
+  ...vendor,
+  availability: modelsByVendor[vendor.key].length
+    ? ("available" as const)
+    : ("unavailable" as const),
+  models: modelsByVendor[vendor.key],
+})) as readonly FlagshipSalesVendor[]
 
 export const flagshipSalesModels = flagshipSalesVendors.flatMap(
   ({ models }) => models,
@@ -309,10 +319,12 @@ export const flagshipSalesComparisonConfigs = {
       { rowLabel: "Pro Fold", currentModelKey: "pixel10ProFold", previousModelKey: "pixel9ProFold" },
     ],
   },
-} as const satisfies Record<FlagshipSalesVendorKey, FlagshipSalesComparisonConfig>
+} as const satisfies Partial<
+  Record<FlagshipSalesVendorKey, FlagshipSalesComparisonConfig>
+>
 
 function getVendor(vendorKey: FlagshipSalesVendorKey) {
-  return flagshipSalesVendors.find(({ key }) => key === vendorKey) ?? flagshipSalesVendors[0]
+  return flagshipSalesVendors.find(({ key }) => key === vendorKey)
 }
 
 export function getFlagshipSalesLifecycle(
@@ -335,6 +347,7 @@ export function getFlagshipSalesChartData(
   modelKeys: readonly string[],
 ): readonly FlagshipSalesChartPoint[] {
   const vendor = getVendor(vendorKey)
+  if (!vendor || vendor.availability === "unavailable") return []
   const visibleModels = vendor.models.filter(({ key }) => modelKeys.includes(key))
   const periods =
     view === "calendar"
@@ -365,8 +378,10 @@ export function getFlagshipSalesVendorTotal(
   vendorKey: FlagshipSalesVendorKey,
   view: FlagshipSalesView,
   modelKeys: readonly string[],
-): number {
-  return getFlagshipSalesChartData(vendorKey, view, modelKeys).reduce(
+): number | null {
+  const chartData = getFlagshipSalesChartData(vendorKey, view, modelKeys)
+  if (!chartData.length) return null
+  return chartData.reduce(
     (total, point) => total + point.total,
     0,
   )
@@ -413,8 +428,14 @@ function makeComparisonRow(
 
 export function getFlagshipSalesGenerationComparison(
   vendorKey: FlagshipSalesVendorKey,
-): FlagshipSalesComparison {
-  const config = flagshipSalesComparisonConfigs[vendorKey]
+): FlagshipSalesComparison | null {
+  const config = (
+    flagshipSalesComparisonConfigs as Partial<
+      Record<FlagshipSalesVendorKey, FlagshipSalesComparisonConfig>
+    >
+  )[vendorKey]
+  const vendor = getVendor(vendorKey)
+  if (!config || !vendor || vendor.availability === "unavailable") return null
   const rows = config.pairs.map(
     ({ rowLabel, currentModelKey, previousModelKey }) => {
       const currentModel = getFlagshipSalesModel(currentModelKey)

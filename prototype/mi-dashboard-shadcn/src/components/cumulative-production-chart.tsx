@@ -29,6 +29,7 @@ import {
   vendors,
   type VendorKey,
 } from "@/data/production"
+import type { VendorValue } from "@/data/vendor-catalog"
 
 const chartConfig = Object.fromEntries(
   vendors.map((vendor) => [
@@ -37,7 +38,17 @@ const chartConfig = Object.fromEntries(
   ])
 ) satisfies ChartConfig
 
-const allVendorKeys = vendors.map((vendor) => vendor.key)
+const allVendorKeys = vendors
+  .filter((vendor) => vendor.availability === "available")
+  .map((vendor) => vendor.key)
+
+function toChartValue(value: VendorValue<number>) {
+  return value.status === "available" ? value.value : null
+}
+
+function formatChartValue(value: unknown) {
+  return value === null || value === undefined ? "—" : Number(value).toFixed(1)
+}
 
 function formatSignedMu(value: number) {
   return `${value > 0 ? "+" : ""}${value.toFixed(1)}Mu`
@@ -60,13 +71,19 @@ export function CumulativeProductionChart() {
     .map((vendor) => vendor.key)
   const topVisibleVendorKey = visibleVendorKeys.at(-1)
   const productionWithVisibleTotals = cumulativeProduction.map((item) => ({
-    ...item,
+    quarter: item.quarter,
+    ...Object.fromEntries(
+      vendors.map((vendor) => [vendor.key, toChartValue(item[vendor.key])]),
+    ),
     visibleTotal: getVisibleVendorTotal(item, visibleVendorKeys),
   }))
   const historyWithTotals = useMemo(
     () =>
       history.map((item) => ({
-        ...item,
+        period: item.period,
+        ...Object.fromEntries(
+          vendors.map((vendor) => [vendor.key, toChartValue(item[vendor.key])]),
+        ),
         total: getProductionTotal(item),
       })),
     [history]
@@ -79,6 +96,13 @@ export function CumulativeProductionChart() {
   const toggleVendor = (vendorKey: VendorKey) => {
     setVisibleVendors((current) => {
       const next = new Set(current)
+
+      if (
+        vendors.find((vendor) => vendor.key === vendorKey)?.availability !==
+        "available"
+      ) {
+        return current
+      }
 
       if (next.has(vendorKey)) {
         if (next.size > 1) {
@@ -123,11 +147,14 @@ export function CumulativeProductionChart() {
             className="flex flex-wrap gap-2"
             role="group"
           >
-            {vendors.map((vendor) => (
+            {vendors.map((vendor) => {
+              const unavailable = vendor.availability === "unavailable"
+              return (
               <div className="flex" key={vendor.key}>
                 <Button
                   aria-pressed={visibleVendors.has(vendor.key)}
                   className="h-7 gap-1.5 px-2 text-xs"
+                  isDisabled={unavailable}
                   onPress={() => toggleVendor(vendor.key)}
                   size="sm"
                   variant={
@@ -140,10 +167,16 @@ export function CumulativeProductionChart() {
                     style={{ backgroundColor: vendor.color }}
                   />
                   {vendor.label}
+                  {unavailable ? (
+                    <span aria-label="데이터 없음" className="ms-0.5">
+                      —<span className="sr-only">데이터 없음</span>
+                    </span>
+                  ) : null}
                 </Button>
                 <Button
                   aria-label={`${vendor.label}만 표시`}
                   className="h-7 px-2 text-[10px] font-semibold tracking-wide"
+                  isDisabled={unavailable}
                   onPress={() => setVisibleVendors(new Set([vendor.key]))}
                   size="sm"
                   variant="outline"
@@ -151,7 +184,8 @@ export function CumulativeProductionChart() {
                   ONLY
                 </Button>
               </div>
-            ))}
+              )
+            })}
           </div>
           <p className="pt-1 text-right text-xs leading-5 text-muted-foreground">
             {vendors.length}개 중 {visibleVendors.size}개 업체 표시
@@ -215,7 +249,10 @@ export function CumulativeProductionChart() {
                     className="cursor-pointer"
                     dataKey={vendor.key}
                     fill={`var(--color-${vendor.key})`}
-                    hide={!visibleVendors.has(vendor.key)}
+                    hide={
+                      vendor.availability === "unavailable" ||
+                      !visibleVendors.has(vendor.key)
+                    }
                     isAnimationActive={false}
                     key={vendor.key}
                     stackId="production"
@@ -233,7 +270,7 @@ export function CumulativeProductionChart() {
                     ))}
                     <LabelList
                       dataKey={vendor.key}
-                      formatter={(value) => Number(value).toFixed(1)}
+                      formatter={formatChartValue}
                       fill={
                         vendorIndex === 0 || vendorIndex === 5
                           ? "var(--foreground)"
@@ -246,7 +283,11 @@ export function CumulativeProductionChart() {
                     {vendor.key === topVisibleVendorKey ? (
                       <LabelList
                         dataKey="visibleTotal"
-                        formatter={(value) => `${Number(value).toFixed(1)}Mu`}
+                        formatter={(value) =>
+                          value === null || value === undefined
+                            ? "—"
+                            : `${Number(value).toFixed(1)}Mu`
+                        }
                         fill="var(--foreground)"
                         fontSize={9}
                         fontWeight={600}
@@ -298,13 +339,14 @@ export function CumulativeProductionChart() {
                     <Bar
                       dataKey={vendor.key}
                       fill={`var(--color-${vendor.key})`}
+                      hide={vendor.availability === "unavailable"}
                       isAnimationActive={false}
                       key={vendor.key}
                       stackId="history"
                     >
                       <LabelList
                         dataKey={vendor.key}
-                        formatter={(value) => Number(value).toFixed(1)}
+                        formatter={formatChartValue}
                         fill={
                           vendorIndex === 0 || vendorIndex === 5
                             ? "var(--foreground)"
@@ -316,7 +358,11 @@ export function CumulativeProductionChart() {
                       {vendorIndex === vendors.length - 1 ? (
                         <LabelList
                           dataKey="total"
-                          formatter={(value) => `${Number(value).toFixed(1)}Mu`}
+                          formatter={(value) =>
+                            value === null || value === undefined
+                              ? "—"
+                              : `${Number(value).toFixed(1)}Mu`
+                          }
                           fill="var(--foreground)"
                           fontSize={8}
                           fontWeight={600}
@@ -340,7 +386,9 @@ export function CumulativeProductionChart() {
                   {vendors.map((vendor) => {
                     const delta = historyDeltas[vendor.key]
                     const deltaClassName =
-                      delta > 0
+                      delta === null
+                        ? "text-muted-foreground"
+                        : delta > 0
                         ? "text-primary"
                         : delta < 0
                           ? "text-destructive"
@@ -359,7 +407,10 @@ export function CumulativeProductionChart() {
                         <span
                           className={`shrink-0 font-medium ${deltaClassName}`}
                         >
-                          {formatSignedMu(delta)}
+                          {delta === null ? "—" : formatSignedMu(delta)}
+                          {delta === null ? (
+                            <span className="sr-only">데이터 없음</span>
+                          ) : null}
                         </span>
                       </div>
                     )

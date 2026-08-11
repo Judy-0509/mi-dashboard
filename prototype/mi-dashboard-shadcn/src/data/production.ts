@@ -1,28 +1,79 @@
 import dashboardData from "./dashboard.json" with { type: "json" }
+import {
+  canonicalVendors,
+  normalizeProviderValue,
+  normalizeProviderVendorName,
+  withVendorAdditions,
+  type CanonicalVendorKey,
+  type VendorCatalogEntry,
+  type VendorStatus,
+  type VendorValue,
+} from "./vendor-catalog.ts"
 
-export const vendors = [
-  { key: "apple", label: "Apple", color: "var(--chart-1)" },
-  { key: "samsung", label: "Samsung", color: "var(--chart-2)" },
-  { key: "xiaomi", label: "Xiaomi", color: "var(--chart-3)" },
-  { key: "oppo", label: "OPPO", color: "var(--chart-4)" },
-  { key: "vivo", label: "vivo", color: "var(--chart-5)" },
-  { key: "transsion", label: "Transsion", color: "var(--chart-6)" },
+export type VendorKey = CanonicalVendorKey | "others"
+
+const vendorEntries = withVendorAdditions([
   { key: "others", label: "Others", color: "var(--chart-7)" },
-] as const
+]) as readonly (VendorCatalogEntry & { readonly key: VendorKey })[]
 
-export type VendorKey = (typeof vendors)[number]["key"]
+const providerAliases = Object.fromEntries(
+  canonicalVendors.map(({ key }) => [key, key]),
+) as Record<string, CanonicalVendorKey>
+
+function parseNumber(raw: unknown) {
+  if (typeof raw === "number") {
+    return Number.isFinite(raw) && raw >= 0 ? raw : null
+  }
+  if (typeof raw === "string" && raw.trim()) {
+    const value = Number(raw)
+    return Number.isFinite(value) && value >= 0 ? value : null
+  }
+  return null
+}
+
+function normalizeValue(raw: unknown, key: VendorKey): VendorValue<number> {
+  if (key === "others") {
+    return normalizeProviderValue(raw, parseNumber)
+  }
+
+  const normalizedKey = normalizeProviderVendorName(key, providerAliases)
+  return normalizedKey === key
+    ? normalizeProviderValue(raw, parseNumber)
+    : { status: "unavailable", value: null }
+}
 
 export type QuarterlyProduction = { quarter: string } & Record<
   VendorKey,
-  number
+  VendorValue<number>
 >
 
 export type ForecastHistoryPoint = QuarterlyProduction & {
   period: string
 }
 
-export const cumulativeProduction =
-  dashboardData.quarterlyProduction as QuarterlyProduction[]
+function normalizeQuarterlyProduction(raw: Record<string, unknown>) {
+  const normalized = { quarter: String(raw.quarter ?? "") } as QuarterlyProduction
+  for (const vendor of vendorEntries) {
+    normalized[vendor.key] = normalizeValue(raw[vendor.key], vendor.key)
+  }
+  return normalized
+}
+
+export const cumulativeProduction = (
+  dashboardData.quarterlyProduction as readonly Record<string, unknown>[]
+).map(normalizeQuarterlyProduction)
+
+export const vendors = vendorEntries.map((vendor) => ({
+  ...vendor,
+  availability: cumulativeProduction.some(
+    (item) => item[vendor.key].status === "available",
+  )
+    ? ("available" as const)
+    : ("unavailable" as const),
+})) as readonly (VendorCatalogEntry & {
+  readonly key: VendorKey
+  readonly availability: VendorStatus
+})[]
 
 export const dashboardMeta = {
   asOf: dashboardData.asOf,
@@ -33,27 +84,58 @@ export const dashboardMeta = {
 
 export const executiveSummary = dashboardData.executiveSummary
 
+function availableValues(
+  item: QuarterlyProduction | ForecastHistoryPoint,
+  keys: readonly VendorKey[] = vendors.map(({ key }) => key),
+) {
+  return keys
+    .map((key) => item[key])
+    .filter(
+      (value): value is { status: "available"; value: number } =>
+        value.status === "available",
+    )
+}
+
 export function getProductionTotal(item: QuarterlyProduction) {
-  return vendors.reduce((total, vendor) => total + item[vendor.key], 0)
+  const values = availableValues(item)
+  return values.length
+    ? values.reduce((total, value) => total + value.value, 0)
+    : null
 }
 
 export function getVisibleVendorTotal(
   item: QuarterlyProduction,
-  visibleVendorKeys: readonly VendorKey[]
+  visibleVendorKeys: readonly VendorKey[],
 ) {
-  return visibleVendorKeys.reduce(
-    (total, vendorKey) => total + item[vendorKey],
-    0
-  )
+  const values = availableValues(item, visibleVendorKeys)
+  return values.length
+    ? values.reduce((total, value) => total + value.value, 0)
+    : null
 }
+
+const productionTotals = cumulativeProduction
+  .map(getProductionTotal)
+  .filter((value): value is number => value !== null)
 
 export const productionYAxisDomain = [
   0,
-  Math.ceil(Math.max(...cumulativeProduction.map(getProductionTotal)) / 100) *
-    100,
+  Math.ceil((Math.max(...productionTotals, 0) || 0) / 100) * 100,
 ] as const
 
 const revisionFactors = [0.91, 0.93, 0.95, 0.97, 0.985, 1]
+const revisionVendorIndex: Record<VendorKey, number> = {
+  apple: 0,
+  samsung: 1,
+  xiaomi: 2,
+  huawei: 3,
+  honor: 4,
+  oppo: 3,
+  vivo: 4,
+  transsion: 5,
+  lenovo: 7,
+  google: 8,
+  others: 6,
+}
 
 function getHistoryPeriods(quarter: string) {
   const [year, quarterLabel] = quarter.split(" ")
@@ -61,7 +143,7 @@ function getHistoryPeriods(quarter: string) {
 
   return revisionFactors.map((_, index) => {
     const date = new Date(
-      Date.UTC(Number(year), lastRevisionMonth - 1 - (5 - index), 1)
+      Date.UTC(Number(year), lastRevisionMonth - 1 - (5 - index), 1),
     )
     const shortYear = String(date.getUTCFullYear()).slice(-2)
     const month = String(date.getUTCMonth() + 1).padStart(2, "0")
@@ -81,11 +163,23 @@ export function getForecastHistory(quarter: string): ForecastHistoryPoint[] {
       period: historyPeriods[periodIndex],
     } as ForecastHistoryPoint
 
-    vendors.forEach((vendor, vendorIndex) => {
+    vendors.forEach((vendor) => {
+      const source = current[vendor.key]
+      if (source.status === "unavailable") {
+        point[vendor.key] = { status: "unavailable", value: null }
+        return
+      }
+
       const vendorAdjustment =
-        (vendorIndex - 3) * 0.003 * (revisionFactors.length - 1 - periodIndex)
-      point[vendor.key] = Number(
-        (current[vendor.key] * (factor + vendorAdjustment)).toFixed(1)
+        (revisionVendorIndex[vendor.key] - 3) *
+        0.003 *
+        (revisionFactors.length - 1 - periodIndex)
+      point[vendor.key] = normalizeProviderValue(
+        source.value * (factor + vendorAdjustment),
+        (raw) =>
+          typeof raw === "number" && Number.isFinite(raw)
+            ? Number(raw.toFixed(1))
+            : null,
       )
     })
 
@@ -94,15 +188,22 @@ export function getForecastHistory(quarter: string): ForecastHistoryPoint[] {
 }
 
 export function getVendorHistoryDeltas(
-  history: readonly ForecastHistoryPoint[]
+  history: readonly ForecastHistoryPoint[],
 ) {
-  const previous = history.at(-2)!
-  const current = history.at(-1)!
+  const previous = history.at(-2)
+  const current = history.at(-1)
 
   return Object.fromEntries(
-    vendors.map((vendor) => [
-      vendor.key,
-      Number((current[vendor.key] - previous[vendor.key]).toFixed(1)),
-    ])
-  ) as Record<VendorKey, number>
+    vendors.map((vendor) => {
+      const previousValue = previous?.[vendor.key]
+      const currentValue = current?.[vendor.key]
+      return [
+        vendor.key,
+        previousValue?.status === "available" &&
+        currentValue?.status === "available"
+          ? Number((currentValue.value - previousValue.value).toFixed(1))
+          : null,
+      ]
+    }),
+  ) as Record<VendorKey, number | null>
 }

@@ -1,27 +1,34 @@
+import {
+  normalizeProviderValue,
+  withVendorAdditions,
+  type CanonicalVendorKey,
+  type VendorCatalogEntry,
+  type VendorStatus,
+  type VendorValue,
+} from "./vendor-catalog.ts"
+
 export type SellThroughMonth =
   | "2025-09" | "2025-10" | "2025-11" | "2025-12"
   | "2026-01" | "2026-02" | "2026-03" | "2026-04"
   | "2026-05" | "2026-06" | "2026-07" | "2026-08"
 
-export type SellThroughVendorKey =
-  | "apple" | "samsung" | "xiaomi" | "oppo"
-  | "vivo" | "transsion" | "others"
+export type SellThroughVendorKey = CanonicalVendorKey | "others"
 
 export interface SellThroughVendorMonth {
   month: SellThroughMonth
-  sellIn: Record<SellThroughVendorKey, number>
-  sellThrough: Record<SellThroughVendorKey, number>
+  sellIn: Record<SellThroughVendorKey, VendorValue<number>>
+  sellThrough: Record<SellThroughVendorKey, VendorValue<number>>
 }
 
 export interface InventorySnapshotRow {
   vendor: SellThroughVendorKey
-  inventory: readonly [number, number, number]
-  wos: readonly [number, number, number]
+  inventory: readonly [VendorValue<number>, VendorValue<number>, VendorValue<number>]
+  wos: readonly [VendorValue<number>, VendorValue<number>, VendorValue<number>]
 }
 
 export interface SellThroughTotals {
-  sellIn: number
-  sellThrough: number
+  sellIn: number | null
+  sellThrough: number | null
   ratio: number | null
 }
 
@@ -31,21 +38,26 @@ export const sellThroughMonths = [
   "2026-05", "2026-06", "2026-07", "2026-08",
 ] as const satisfies readonly SellThroughMonth[]
 
-export const sellThroughVendors = [
-  { key: "apple", label: "Apple", color: "var(--chart-1)" },
-  { key: "samsung", label: "Samsung", color: "var(--chart-2)" },
-  { key: "xiaomi", label: "Xiaomi", color: "var(--chart-3)" },
-  { key: "oppo", label: "OPPO", color: "var(--chart-4)" },
-  { key: "vivo", label: "vivo", color: "var(--chart-5)" },
-  { key: "transsion", label: "Transsion", color: "var(--chart-6)" },
+const vendorEntries = withVendorAdditions([
   { key: "others", label: "Others", color: "var(--chart-7)" },
-] as const satisfies readonly {
-  key: SellThroughVendorKey
-  label: string
-  color: string
-}[]
+]) as readonly (VendorCatalogEntry & { readonly key: SellThroughVendorKey })[]
 
-export const sellThroughMonthly: readonly SellThroughVendorMonth[] = [
+const parseNumber = (raw: unknown) =>
+  typeof raw === "number" && Number.isFinite(raw) && raw >= 0 ? raw : null
+
+type RawSellThroughVendorMonth = {
+  month: SellThroughMonth
+  sellIn: Partial<Record<SellThroughVendorKey, unknown>>
+  sellThrough: Partial<Record<SellThroughVendorKey, unknown>>
+}
+
+type RawInventorySnapshotRow = {
+  vendor: SellThroughVendorKey
+  inventory: readonly [unknown, unknown, unknown]
+  wos: readonly [unknown, unknown, unknown]
+}
+
+const rawSellThroughMonthly: readonly RawSellThroughVendorMonth[] = [
   {
     month: "2025-09",
     sellIn: { apple: 49, samsung: 57, xiaomi: 33, oppo: 24, vivo: 19, transsion: 23, others: 15 },
@@ -108,7 +120,36 @@ export const sellThroughMonthly: readonly SellThroughVendorMonth[] = [
   },
 ]
 
-export const inventorySnapshots: readonly InventorySnapshotRow[] = [
+function normalizeVendorValues(
+  values: Partial<Record<SellThroughVendorKey, unknown>>,
+) {
+  return Object.fromEntries(
+    vendorEntries.map(({ key }) => [key, normalizeProviderValue(values[key], parseNumber)]),
+  ) as Record<SellThroughVendorKey, VendorValue<number>>
+}
+
+export const sellThroughMonthly: readonly SellThroughVendorMonth[] =
+  rawSellThroughMonthly.map((point) => ({
+    month: point.month,
+    sellIn: normalizeVendorValues(point.sellIn),
+    sellThrough: normalizeVendorValues(point.sellThrough),
+  }))
+
+export const sellThroughVendors = vendorEntries.map((vendor) => ({
+  ...vendor,
+  availability: sellThroughMonthly.some(
+    (point) =>
+      point.sellIn[vendor.key].status === "available" ||
+      point.sellThrough[vendor.key].status === "available",
+  )
+    ? ("available" as const)
+    : ("unavailable" as const),
+})) as readonly (VendorCatalogEntry & {
+  readonly key: SellThroughVendorKey
+  readonly availability: VendorStatus
+})[]
+
+const rawInventorySnapshots: readonly RawInventorySnapshotRow[] = [
   { vendor: "apple", inventory: [12, 10, 8], wos: [4.2, 3.5, 2.8] },
   { vendor: "samsung", inventory: [14, 12, 10], wos: [4.8, 4.1, 3.4] },
   { vendor: "xiaomi", inventory: [9, 8, 7], wos: [3.6, 3.1, 2.7] },
@@ -117,6 +158,24 @@ export const inventorySnapshots: readonly InventorySnapshotRow[] = [
   { vendor: "transsion", inventory: [8, 7, 6], wos: [3.8, 3.3, 2.9] },
   { vendor: "others", inventory: [5, 4, 3], wos: [2.7, 2.3, 1.9] },
 ]
+
+const normalizeSnapshotValues = (values: readonly unknown[]) =>
+  values.map((value) => normalizeProviderValue(value, parseNumber)) as [
+    VendorValue<number>,
+    VendorValue<number>,
+    VendorValue<number>,
+  ]
+
+export const inventorySnapshots: readonly InventorySnapshotRow[] = vendorEntries.map(
+  ({ key }) => {
+    const source = rawInventorySnapshots.find((row) => row.vendor === key)
+    return {
+      vendor: key,
+      inventory: normalizeSnapshotValues(source?.inventory ?? [null, null, null]),
+      wos: normalizeSnapshotValues(source?.wos ?? [null, null, null]),
+    }
+  },
+)
 
 export function getSellThroughRatio(
   sellIn: number,
@@ -138,18 +197,31 @@ export function getSellThroughVendorTotals(
     ({ key }) => key,
   ),
 ): SellThroughTotals {
-  const sellIn = vendorKeys.reduce(
-    (total, vendorKey) => total + point.sellIn[vendorKey],
-    0,
-  )
-  const sellThrough = vendorKeys.reduce(
-    (total, vendorKey) => total + point.sellThrough[vendorKey],
-    0,
-  )
+  const sellInValues = vendorKeys
+    .map((vendorKey) => point.sellIn[vendorKey])
+    .filter(
+      (value): value is { status: "available"; value: number } =>
+        value.status === "available",
+    )
+  const sellThroughValues = vendorKeys
+    .map((vendorKey) => point.sellThrough[vendorKey])
+    .filter(
+      (value): value is { status: "available"; value: number } =>
+        value.status === "available",
+    )
+  const sellIn = sellInValues.length
+    ? sellInValues.reduce((total, value) => total + value.value, 0)
+    : null
+  const sellThrough = sellThroughValues.length
+    ? sellThroughValues.reduce((total, value) => total + value.value, 0)
+    : null
 
   return {
     sellIn,
     sellThrough,
-    ratio: getSellThroughRatio(sellIn, sellThrough),
+    ratio:
+      sellIn === null || sellThrough === null
+        ? null
+        : getSellThroughRatio(sellIn, sellThrough),
   }
 }

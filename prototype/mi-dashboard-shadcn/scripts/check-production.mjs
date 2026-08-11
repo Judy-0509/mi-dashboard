@@ -41,6 +41,7 @@ import {
   weeklySelectedWeek,
 } from "../src/data/weekly.ts"
 import {
+  getSellThroughVendorTotals,
   getSellThroughRatio,
   inventorySnapshots,
   sellThroughMonthly,
@@ -170,11 +171,12 @@ assert.deepEqual(sellThroughMonths, [
 ])
 assert.equal(sellThroughMonthly.length, 12)
 assert.deepEqual(sellThroughVendors.map(({ key }) => key), [
-  "apple", "samsung", "xiaomi", "oppo", "vivo", "transsion", "others",
+  "apple", "samsung", "xiaomi", "huawei", "honor", "oppo", "vivo",
+  "transsion", "lenovo", "google", "others",
 ])
 assert.equal(getSellThroughRatio(120, 100), 120)
 assert.equal(getSellThroughRatio(120, 0), null)
-assert.equal(inventorySnapshots.length, 7)
+assert.equal(inventorySnapshots.length, 11)
 assert.ok(inventorySnapshots.every((row) => row.inventory.length === 3 && row.wos.length === 3))
 
 assert.deepEqual(flagshipSalesMonths, [
@@ -205,12 +207,18 @@ assert.deepEqual(flagshipSalesMonths, [
 ])
 assert.deepEqual(
   flagshipSalesVendors.map(({ key }) => key),
-  ["apple", "samsung", "xiaomi", "oppo", "vivo", "honor", "google"]
+  [
+    "apple", "samsung", "xiaomi", "huawei", "honor", "oppo", "vivo",
+    "transsion", "lenovo", "google",
+  ]
 )
-assert.equal(flagshipSalesVendors.length, 7)
+assert.equal(flagshipSalesVendors.length, 10)
 assert.deepEqual(
   flagshipSalesVendors.map(({ label }) => label),
-  ["Apple", "Samsung", "Xiaomi", "OPPO", "vivo", "HONOR", "Google"]
+  [
+    "Apple", "Samsung", "Xiaomi", "Huawei", "Honor", "OPPO", "vivo",
+    "Transsion", "Lenovo", "Google",
+  ]
 )
 const expectedFlagshipModels = {
   apple: [
@@ -337,6 +345,7 @@ const expectedFlagshipReleaseMonths = {
   "Pixel 10 Pro Fold": "2025-10",
 }
 for (const vendor of flagshipSalesVendors) {
+  if (vendor.availability === "unavailable") continue
   assert.deepEqual(
     vendor.models.map(({ label }) => label),
     expectedFlagshipModels[vendor.key]
@@ -359,6 +368,10 @@ assert.equal(
   "https://news.samsung.com/global/samsung-galaxy-s25-series-arrives-worldwide/"
 )
 for (const vendor of flagshipSalesVendors) {
+  if (vendor.availability === "unavailable") {
+    assert.equal(vendor.models.length, 0)
+    continue
+  }
   assert.ok(vendor.models.length >= 2)
   const selectedKeys = vendor.models.map(({ key }) => key)
   const calendar = getFlagshipSalesChartData(
@@ -459,6 +472,7 @@ assert.deepEqual(flagshipSalesComparisonConfigs.apple.pairs, [
   },
 ])
 for (const vendor of flagshipSalesVendors) {
+  if (vendor.availability === "unavailable") continue
   assert.ok(flagshipSalesComparisonConfigs[vendor.key].pairs.length >= 1)
   const comparison = getFlagshipSalesGenerationComparison(vendor.key)
   assert.equal(comparison.rows[0].rowLabel, "전체 시리즈")
@@ -504,7 +518,11 @@ assert.equal(cumulativeProduction.length, 14)
 assert.equal(productionYAxisDomain[0], 0)
 assert.ok(
   productionYAxisDomain[1] >=
-    Math.max(...cumulativeProduction.map(getProductionTotal))
+    Math.max(
+      ...cumulativeProduction
+        .map(getProductionTotal)
+        .filter((value) => value !== null),
+    )
 )
 
 for (const quarter of cumulativeProduction) {
@@ -512,7 +530,7 @@ for (const quarter of cumulativeProduction) {
   assert.equal(history.length, 6)
   assert.deepEqual(
     vendors.map((vendor) => history.at(-1)[vendor.key]),
-    vendors.map((vendor) => quarter[vendor.key])
+    vendors.map((vendor) => quarter[vendor.key]),
   )
 
   const totals = history.map(getProductionTotal)
@@ -541,9 +559,13 @@ assert.deepEqual(getVendorHistoryDeltas(getForecastHistory("2026 Q3")), {
   apple: 1.5,
   samsung: 1.4,
   xiaomi: 0.8,
+  huawei: null,
+  honor: null,
   oppo: 0.5,
   vivo: 0.4,
   transsion: 0.3,
+  lenovo: null,
+  google: null,
   others: 0.5,
 })
 
@@ -683,27 +705,31 @@ assert.deepEqual(csvRows.at(-1), {
   apple: 11,
   samsung: 12,
   xiaomi: 13,
+  huawei: null,
+  honor: null,
   oppo: 14,
   vivo: 15,
   transsion: 16,
+  lenovo: null,
+  google: null,
   others: 17,
 })
 
 const approximatelyEqual = (actual, expected, tolerance = 0.0005) =>
   Math.abs(actual - expected) <= tolerance
 const weeklyTotal = getWeeklyCumulative("Total")
-const appleRegional = getWeeklyRegionalCumulative(0)
+const appleRegional = getWeeklyRegionalCumulative("apple")
 const usaVendor = getWeeklyVendorCumulative("USA")
 
-assert.equal(getWeeklyHeatmap("yoy").length, 8)
+assert.equal(getWeeklyHeatmap("yoy").length, 12)
 assert.ok(getWeeklyHeatmap("wow").every((row) => row.values.length === 6))
 assert.deepEqual(appleRegional.segmentNames, weeklyRegions.slice(1))
-assert.deepEqual(usaVendor.segmentNames, weeklyVendors)
+assert.deepEqual(usaVendor.segmentNames, weeklyVendors.map(({ label }) => label))
 const appleUsa = sumWeeklySellOut(
   2026,
   weeklySelectedWeek,
   "USA",
-  0,
+  "apple",
   true,
 )
 assert.ok(
@@ -757,14 +783,14 @@ assert.ok(totalWeeklyTrend[51].y2023 > 0)
 assert.ok(totalWeeklyTrend[51].y2024 > 0)
 assert.ok(totalWeeklyTrend[51].y2025 > 0)
 
-const usaAppleShareTrend = getWeeklyTrend("USA", 0, "share")
+const usaAppleShareTrend = getWeeklyTrend("USA", "apple", "share")
 assert.ok(
   usaAppleShareTrend
     .slice(0, weeklySelectedWeek)
     .every((point) => point.y2026 > 0 && point.y2026 < 100)
 )
 assert.equal(usaAppleShareTrend[weeklySelectedWeek].y2026, null)
-const usaAppleMuTrend = getWeeklyTrend("USA", 0, "mu")
+const usaAppleMuTrend = getWeeklyTrend("USA", "apple", "mu")
 assert.equal(usaAppleMuTrend.length, 52)
 assert.ok(usaAppleMuTrend[0].y2023 > 0)
 
@@ -796,6 +822,109 @@ const miWeeklySummarySource = readFileSync(
   new URL("../src/components/mi-weekly-sell-through-summary.tsx", import.meta.url),
   "utf8"
 )
+const productionSource = readFileSync(
+  new URL("../src/components/cumulative-production-chart.tsx", import.meta.url),
+  "utf8",
+)
+
+assert.deepEqual(vendors.map(({ key }) => key), [
+  "apple",
+  "samsung",
+  "xiaomi",
+  "huawei",
+  "honor",
+  "oppo",
+  "vivo",
+  "transsion",
+  "lenovo",
+  "google",
+  "others",
+])
+assert.deepEqual(weeklyVendors.map(({ key }) => key), [
+  "apple",
+  "samsung",
+  "xiaomi",
+  "huawei",
+  "honor",
+  "oppo",
+  "vivo",
+  "transsion",
+  "lenovo",
+  "google",
+  "others",
+])
+assert.deepEqual(sellThroughVendors.map(({ key }) => key), [
+  "apple",
+  "samsung",
+  "xiaomi",
+  "huawei",
+  "honor",
+  "oppo",
+  "vivo",
+  "transsion",
+  "lenovo",
+  "google",
+  "others",
+])
+assert.deepEqual(flagshipSalesVendors.map(({ key }) => key), [
+  "apple",
+  "samsung",
+  "xiaomi",
+  "huawei",
+  "honor",
+  "oppo",
+  "vivo",
+  "transsion",
+  "lenovo",
+  "google",
+])
+assert.equal(
+  normalizeProviderValue(0, (raw) =>
+    typeof raw === "number" ? raw : null,
+  ).value,
+  0,
+)
+const unavailable = Object.fromEntries(
+  [...canonicalVendors, { key: "others" }].map(({ key }) => [key, {
+    status: "unavailable",
+    value: null,
+  }]),
+)
+const zero = Object.fromEntries(
+  [...canonicalVendors, { key: "others" }].map(({ key }) => [key, {
+    status: "available",
+    value: 0,
+  }]),
+)
+assert.equal(
+  getSellThroughVendorTotals({
+    month: "2026-08",
+    sellIn: unavailable,
+    sellThrough: unavailable,
+  }).sellIn,
+  null,
+)
+assert.equal(
+  getSellThroughVendorTotals({
+    month: "2026-08",
+    sellIn: zero,
+    sellThrough: zero,
+  }).sellIn,
+  0,
+)
+assert.equal(getFlagshipSalesGenerationComparison("transsion"), null)
+for (const source of [
+  productionSource,
+  weeklyAnalysisSource,
+  sellThroughSource,
+  flagshipSalesSource,
+]) {
+  assert.match(source, /—/)
+  assert.match(source, /데이터 없음/)
+}
+assert.match(weeklyAnalysisSource, /weeklyVendors\.map/)
+assert.match(sellThroughSource, /sellThroughVendors\.map/)
+assert.match(flagshipSalesSource, /disabled|isDisabled/)
 
 assert.match(sidebarSource, /Sell-in \/ Sell-through/)
 assert.match(sidebarSource, /#sell-through/)
@@ -1232,5 +1361,8 @@ assert.deepEqual(
   ),
 )
 assert.ok(pipelineOrder.every((marker) => pipelineSource.indexOf(marker) >= 0))
+assert.doesNotMatch(aniChartSource, /vendor-catalog|canonicalVendors/)
+assert.doesNotMatch(pipelineSource, /canonicalVendors/)
+assert.doesNotMatch(miWeeklySummarySource, /vendor-catalog|canonicalVendors/)
 
 console.log("production and weekly data checks passed")

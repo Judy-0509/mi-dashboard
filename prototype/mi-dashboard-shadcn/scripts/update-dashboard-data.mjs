@@ -2,24 +2,20 @@ import { readdir, readFile, stat, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 
-const vendorKeys = [
-  "apple",
-  "samsung",
-  "xiaomi",
-  "oppo",
-  "vivo",
-  "transsion",
-  "others",
-]
-const vendorLabels = {
-  apple: "Apple",
-  samsung: "Samsung",
-  xiaomi: "Xiaomi",
-  oppo: "OPPO",
-  vivo: "vivo",
-  transsion: "Transsion",
-  others: "Others",
-}
+import {
+  canonicalVendors,
+  normalizeProviderValue,
+  normalizeProviderVendorName,
+} from "../src/data/vendor-catalog.ts"
+
+const vendorKeys = [...canonicalVendors.map(({ key }) => key), "others"]
+const vendorLabels = Object.fromEntries([
+  ...canonicalVendors.map(({ key, label }) => [key, label]),
+  ["others", "Others"],
+])
+const providerAliases = Object.fromEntries(
+  canonicalVendors.map(({ key }) => [key, key]),
+)
 const appRoot = path.resolve(import.meta.dirname, "..")
 const repositoryRoot = path.resolve(appRoot, "../..")
 const outputPath = path.join(appRoot, "src", "data", "dashboard.json")
@@ -145,15 +141,48 @@ export function normalizeRow(input, index) {
     )
   }
 
-  const normalized = { quarter }
-  for (const key of vendorKeys) {
-    const value = Number(row[key])
-    if (!Number.isFinite(value) || value < 0) {
-      throw new Error(`${quarter}의 ${key} 값은 0 이상의 숫자여야 합니다`)
+  const normalized = Object.fromEntries([
+    ["quarter", quarter],
+    ...vendorKeys.map((key) => [key, null]),
+  ])
+  const dataErrors = []
+  const seenKeys = new Set()
+  for (const [providerKey, rawValue] of Object.entries(row)) {
+    if (providerKey === "quarter") continue
+    const normalizedProviderKey = providerKey
+      .trim()
+      .toLowerCase()
+      .replace(/[\s\p{P}\p{S}]+/gu, "")
+    const key =
+      normalizedProviderKey === "others"
+        ? "others"
+        : normalizeProviderVendorName(providerKey, providerAliases)
+    if (!key) {
+      dataErrors.push(`${quarter}: unmapped vendor column ${providerKey}`)
+      continue
     }
-    normalized[key] = value
+    if (seenKeys.has(key)) {
+      dataErrors.push(`${quarter}: conflicting vendor column ${providerKey}`)
+      continue
+    }
+    seenKeys.add(key)
+    const value = normalizeProviderValue(rawValue, (raw) => {
+      if (typeof raw === "number") {
+        return Number.isFinite(raw) && raw >= 0 ? raw : null
+      }
+      if (typeof raw === "string" && raw.trim()) {
+        const parsed = Number(raw)
+        return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+      }
+      return null
+    })
+    if (value.status === "available") {
+      normalized[key] = value.value
+    } else if (rawValue !== "" && rawValue !== null && rawValue !== undefined) {
+      dataErrors.push(`${quarter}: malformed value for ${providerKey}`)
+    }
   }
-  return normalized
+  return dataErrors.length ? { ...normalized, dataErrors } : normalized
 }
 
 function quarterIndex(quarter) {
@@ -162,7 +191,10 @@ function quarterIndex(quarter) {
 }
 
 function total(row) {
-  return vendorKeys.reduce((sum, key) => sum + row[key], 0)
+  const values = vendorKeys
+    .map((key) => row[key])
+    .filter((value) => typeof value === "number" && Number.isFinite(value))
+  return values.length ? values.reduce((sum, value) => sum + value, 0) : null
 }
 
 function createSummary(rows, focusQuarter) {
@@ -170,17 +202,26 @@ function createSummary(rows, focusQuarter) {
   const focus = rows[index]
   const previous = rows[index - 1]
   const focusTotal = total(focus)
-  const largestKey = vendorKeys.reduce((largest, key) =>
-    focus[key] > focus[largest] ? key : largest
-  )
-  const change = previous ? focusTotal - total(previous) : 0
+  const largestKey = vendorKeys
+    .filter((key) => typeof focus[key] === "number")
+    .reduce((largest, key) =>
+      focus[key] > focus[largest] ? key : largest
+    , vendorKeys[0])
+  const change =
+    previous && focusTotal !== null && total(previous) !== null
+      ? focusTotal - total(previous)
+      : null
   const changeText = previous
-    ? `직전 분기 대비 ${change >= 0 ? "+" : ""}${change.toFixed(1)}Mu 조정됨`
+    ? change === null
+      ? "직전 분기와 비교 가능한 데이터가 없음"
+      : `직전 분기 대비 ${change >= 0 ? "+" : ""}${change.toFixed(1)}Mu 조정됨`
     : "비교 가능한 직전 분기 데이터가 없음"
 
   return [
-    `${focusQuarter} 현재 누적 Forecast는 ${focusTotal.toFixed(1)}Mu, ${changeText}`,
-    `${vendorLabels[largestKey]} ${focus[largestKey].toFixed(1)}Mu로 업체 중 가장 큰 비중임`,
+    `${focusQuarter} 현재 누적 Forecast는 ${focusTotal === null ? "데이터 없음" : `${focusTotal.toFixed(1)}Mu`}, ${changeText}`,
+    largestKey && typeof focus[largestKey] === "number"
+      ? `${vendorLabels[largestKey]} ${focus[largestKey].toFixed(1)}Mu로 업체 중 가장 큰 비중임`
+      : "업체별 데이터 없음",
   ]
 }
 
@@ -200,11 +241,13 @@ async function main() {
     throw new Error("quarterlyProduction 데이터가 비어 있습니다")
   }
 
-  const quarterlyProduction = inputRows
+  const normalizedRows = inputRows
     .map(normalizeRow)
-    .sort(
-      (left, right) => quarterIndex(left.quarter) - quarterIndex(right.quarter)
-    )
+  const dataErrors = normalizedRows.flatMap((row) => row.dataErrors ?? [])
+  const quarterlyProduction = normalizedRows.map(({ dataErrors: _dataErrors, ...row }) => row)
+  quarterlyProduction.sort(
+    (left, right) => quarterIndex(left.quarter) - quarterIndex(right.quarter)
+  )
   if (
     new Set(quarterlyProduction.map((row) => row.quarter)).size !==
     quarterlyProduction.length
@@ -242,6 +285,7 @@ async function main() {
     focusQuarter,
     executiveSummary,
     quarterlyProduction,
+    ...(dataErrors.length ? { dataErrors } : {}),
   }
   if (!checkOnly)
     await writeFile(

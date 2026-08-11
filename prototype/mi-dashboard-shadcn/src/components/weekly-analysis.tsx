@@ -24,12 +24,12 @@ import {
   getWeeklyVendorCumulative,
   weeklyRegionColors,
   weeklyRegions,
-  weeklyVendorColors,
   type WeeklyMetric,
   type WeeklyRegion,
   type WeeklyTrendMetric,
   getWeeklyTrend,
   weeklyVendors,
+  type WeeklyVendorKey,
 } from "@/data/weekly"
 
 const weeklyChartConfig = {
@@ -38,13 +38,12 @@ const weeklyChartConfig = {
   Japan: { label: "Japan", color: weeklyRegionColors.Japan },
   Europe: { label: "Europe", color: weeklyRegionColors.Europe },
   India: { label: "India", color: weeklyRegionColors.India },
-  Apple: { label: "Apple", color: weeklyVendorColors.Apple },
-  Samsung: { label: "Samsung", color: weeklyVendorColors.Samsung },
-  Xiaomi: { label: "Xiaomi", color: weeklyVendorColors.Xiaomi },
-  OPPO: { label: "OPPO", color: weeklyVendorColors.OPPO },
-  vivo: { label: "vivo", color: weeklyVendorColors.vivo },
-  Honor: { label: "Honor", color: weeklyVendorColors.Honor },
-  Others: { label: "Others", color: weeklyVendorColors.Others },
+  ...Object.fromEntries(
+    weeklyVendors.map(({ key, label, color }) => [key, { label, color }]),
+  ),
+  ...Object.fromEntries(
+    weeklyVendors.map(({ label, color }) => [label, { label, color }]),
+  ),
 } satisfies ChartConfig
 
 const weeklyTrendConfig = {
@@ -63,16 +62,14 @@ const weeklyTrendLines = [
 
 function formatMetric(value: number | null) {
   if (value === null) {
-    return "N/A"
+    return "—"
   }
 
   return `${value < 0 ? "△" : value > 0 ? "+" : ""}${Math.abs(value).toFixed(1)}%`
 }
 
-function isWeeklyVendor(value: string): value is (typeof weeklyVendors)[number] {
-  return (
-    weeklyVendors.includes(value as (typeof weeklyVendors)[number])
-  )
+function isWeeklyVendor(value: string): value is WeeklyVendorKey {
+  return weeklyVendors.some(({ key }) => key === value)
 }
 
 function WeeklyTrendChart({
@@ -143,13 +140,18 @@ function WeeklyCumulativeChart({
 }) {
   const chartData = data.years.map((year) => ({
     year: String(year.year),
-    total: metric === "share" ? 100 : year.total,
+    total:
+      metric === "share"
+        ? year.total === null
+          ? null
+          : 100
+        : year.total,
     ...Object.fromEntries(
       year.segments.map((segment) => [
         segment.name,
         metric === "share"
-          ? year.total === 0
-            ? 0
+          ? year.total === null || year.total === 0 || segment.value === null
+            ? null
             : (segment.value / year.total) * 100
           : segment.value,
       ])
@@ -195,7 +197,9 @@ function WeeklyCumulativeChart({
                 }
                 fontSize={9}
                 formatter={(value) =>
-                  `${Number(value).toFixed(1)}${metric === "share" ? "%" : ""}`
+                  value === null
+                    ? "—"
+                    : `${Number(value).toFixed(1)}${metric === "share" ? "%" : ""}`
                 }
                 position="center"
               />
@@ -205,7 +209,9 @@ function WeeklyCumulativeChart({
                   fill="var(--foreground)"
                   fontSize={10}
                   formatter={(value) =>
-                    `${Number(value).toFixed(1)}${metric === "share" ? "%" : "Mu"}`
+                    value === null
+                      ? "—"
+                      : `${Number(value).toFixed(1)}${metric === "share" ? "%" : "Mu"}`
                   }
                   position="top"
                 />
@@ -226,6 +232,11 @@ function WeeklyCumulativeChart({
               style={{ backgroundColor: segment.color }}
             />
             {segment.name}
+            {segment.value === null ? (
+              <span aria-label="데이터 없음">
+                —<span className="sr-only">데이터 없음</span>
+              </span>
+            ) : null}
           </li>
         ))}
       </ul>
@@ -235,15 +246,14 @@ function WeeklyCumulativeChart({
 
 export function WeeklyAnalysis() {
   const [metric, setMetric] = useState<WeeklyMetric>("yoy")
-  const [selectedVendor, setSelectedVendor] = useState<
-    (typeof weeklyVendors)[number] | null
-  >(null)
+  const [selectedVendor, setSelectedVendor] =
+    useState<WeeklyVendorKey | null>(null)
   const [selectedRegion, setSelectedRegion] = useState<WeeklyRegion>("Total")
   const heatmap = useMemo(() => getWeeklyHeatmap(metric), [metric])
   const regionalCumulative = useMemo(
     () =>
       getWeeklyRegionalCumulative(
-        selectedVendor === null ? null : weeklyVendors.indexOf(selectedVendor)
+        selectedVendor,
       ),
     [selectedVendor]
   )
@@ -255,14 +265,15 @@ export function WeeklyAnalysis() {
     () =>
       getWeeklyTrend(
         selectedRegion,
-        selectedVendor === null ? null : weeklyVendors.indexOf(selectedVendor),
+        selectedVendor,
         "mu"
       ),
     [selectedRegion, selectedVendor]
   )
   const [cumulativeMetric, setCumulativeMetric] =
     useState<WeeklyTrendMetric>("mu")
-  const selectedVendorLabel = selectedVendor ?? "Total"
+  const selectedVendorLabel =
+    weeklyVendors.find(({ key }) => key === selectedVendor)?.label ?? "Total"
   const selectedRegionLabel = selectedRegion
 
   return (
@@ -325,10 +336,10 @@ export function WeeklyAnalysis() {
                     {row.values.map((value, index) => {
                       const regionName = weeklyRegions[index]
                       const vendor =
-                        row.label === "Total"
-                          ? null
-                          : isWeeklyVendor(row.label)
-                            ? row.label
+                          row.key === "total"
+                            ? null
+                            : isWeeklyVendor(row.key)
+                            ? row.key
                             : null
                       const isSelected =
                         vendor === selectedVendor &&
@@ -340,13 +351,14 @@ export function WeeklyAnalysis() {
                           key={`${row.label}-${regionName}`}
                         >
                           <button
-                            aria-label={`${row.label} × ${regionName}: ${formatMetric(value)}`}
+                            aria-label={`${row.label} × ${regionName}: ${value === null ? "데이터 없음" : formatMetric(value)}`}
                             aria-pressed={isSelected}
                             className={`block w-full rounded-sm border border-transparent px-2 py-1.5 text-right tabular-nums transition-colors hover:bg-muted/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold ${
                               value !== null && value < 0
                                 ? "text-destructive"
                                 : "text-foreground"
                             }`}
+                            disabled={value === null}
                             onClick={() => {
                               setSelectedVendor(vendor)
                               setSelectedRegion(regionName)
