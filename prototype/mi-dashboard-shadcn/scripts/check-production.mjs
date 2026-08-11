@@ -756,6 +756,18 @@ assert.match(sidebarSource, /label: "MI TAM"/)
 assert.match(sidebarSource, /child: "Pipeline Check"/)
 assert.match(sidebarSource, /page: "pipeline-check"/)
 assert.match(sidebarSource, /href: "#pipeline-check"/)
+assert.match(sidebarSource, /useState\(false\)/)
+assert.match(sidebarSource, /collapsed \? "w-10" : "w-64"/)
+assert.match(sidebarSource, /transition-\[width\]/)
+assert.match(sidebarSource, /aria-expanded={!collapsed}/)
+assert.match(
+  sidebarSource,
+  /collapsed \? "네비게이션바 펼치기" : "네비게이션바 접기"/
+)
+assert.match(sidebarSource, /collapsed \? <PanelLeftOpen/)
+assert.match(sidebarSource, /: <PanelLeftClose/)
+assert.match(sidebarSource, /{!collapsed && \(/)
+assert.doesNotMatch(sidebarSource, /localStorage|sessionStorage/)
 assert.match(pageConfigSource, /"hash": "#sell-through"/)
 assert.match(pageConfigSource, /"hash": "#flagship-sales"/)
 assert.match(pageConfigSource, /"exportFileName": "MI_Counterpoint_Flagship_Sales\.html"/)
