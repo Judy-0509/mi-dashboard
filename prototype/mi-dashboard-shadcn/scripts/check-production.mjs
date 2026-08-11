@@ -326,6 +326,10 @@ const sidebarSource = readFileSync(
   new URL("../src/components/portal-sidebar.tsx", import.meta.url),
   "utf8"
 )
+const pageConfigSource = readFileSync(
+  new URL("../src/data/page-config.json", import.meta.url),
+  "utf8"
+)
 const sellThroughSource = readFileSync(
   new URL("../src/components/sell-through-analysis.tsx", import.meta.url),
   "utf8"
@@ -333,7 +337,7 @@ const sellThroughSource = readFileSync(
 
 assert.match(sidebarSource, /Sell-in \/ Sell-through/)
 assert.match(sidebarSource, /#sell-through/)
-assert.match(appSource, /#sell-through/)
+assert.match(pageConfigSource, /"hash": "#sell-through"/)
 assert.match(appSource, /SellThroughAnalysis/)
 assert.match(appSource, /Counterpoint \/ Sell-in · Sell-through/)
 assert.match(appSource, /스마트폰 Sell-in \/ Sell-through/)
@@ -379,8 +383,8 @@ assert.match(sidebarSource, /label: "ANI"/)
 assert.match(sidebarSource, /child: "iPhone Model Production"/)
 assert.match(sidebarSource, /page: "ani"/)
 assert.match(sidebarSource, /href: "#ani"/)
-assert.match(appSource, /window\.location\.hash === "#ani"/)
-assert.match(appSource, /page === "ani"/)
+assert.match(pageConfigSource, /"hash": "#ani"/)
+assert.match(appSource, /const hash = PAGE_CONFIG\[page\]\.hash/)
 assert.match(appSource, /function AniPage\(\)/)
 assert.match(appSource, /<AniPage \/>/)
 assert.match(appSource, /<AniProductionChart \/>/)
@@ -500,14 +504,18 @@ assert.doesNotMatch(aniChartSource, /getVendorHistoryDeltas/)
 assert.doesNotMatch(aniChartSource, /업체별 전망 변화/)
 
 assert.doesNotMatch(appSource, /기준: 2026 W32 · 단위: Mu/)
-assert.match(appSource, /window\.__MI_WEEKLY_EXPORT__ === true/)
-assert.match(appSource, /download="MI_Weekly_2026W32\.html"/)
-assert.match(appSource, /href="\.\/MI_Weekly_2026W32\.html"/)
-assert.match(appSource, /!isWeeklyExport/)
-assert.match(appSource, /isWeeklyExport \? null/)
+assert.match(appSource, /__MI_EXPORT_PAGE__\?: PortalPage/)
+assert.match(appSource, /const PAGE_CONFIG = pageConfig as Record<PortalPage, PageConfig>/)
+assert.match(appSource, /function PageActions\(\{ page \}: \{ page: PortalPage \}\)/)
+assert.match(appSource, /download=\{config\.exportFileName\}/)
+assert.match(appSource, /href=\{`\.\/\$\{config\.exportFileName\}`\}/)
+assert.match(appSource, /aria-disabled=\{excelDisabled\}/)
+assert.match(appSource, /isExport \? null/)
 assert.match(appSource, /원본 엑셀 보기/)
-assert.match(appSource, /aria-disabled="true"/)
-assert.match(appSource, /사내 EDM 원본 엑셀 링크가 아직 설정되지 않았습니다\./)
+assert.match(pageConfigSource, /"MI_Weekly_2026W32\.html"/)
+assert.match(pageConfigSource, /"MI_SigmaIntel\.html"/)
+assert.match(pageConfigSource, /"MI_SellThrough\.html"/)
+assert.match(pageConfigSource, /"MI_ANI\.html"/)
 assert.doesNotMatch(sidebarSource, /weeklyOnly/)
 assert.doesNotMatch(sidebarSource, /provider\.page === "weekly"/)
 assert.match(

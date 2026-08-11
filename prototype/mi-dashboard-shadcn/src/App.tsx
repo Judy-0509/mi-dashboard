@@ -8,6 +8,7 @@ import { ExecutiveSummary } from "@/components/executive-summary"
 import { PortalSidebar, type PortalPage } from "@/components/portal-sidebar"
 import { SellThroughAnalysis } from "@/components/sell-through-analysis"
 import { buttonVariants } from "@/components/ui/button"
+import pageConfig from "@/data/page-config.json"
 import { WeeklyAnalysis } from "@/components/weekly-analysis"
 import { WeeklyExecutiveSummary } from "@/components/weekly-executive-summary"
 import { dashboardMeta } from "@/data/production"
@@ -15,20 +16,75 @@ import { weeklyDescription, weeklyTitle } from "@/data/weekly"
 
 declare global {
   interface Window {
-    __MI_WEEKLY_EXPORT__?: boolean
+    __MI_EXPORT_PAGE__?: PortalPage
   }
 }
 
-const isWeeklyExport = window.__MI_WEEKLY_EXPORT__ === true
+type PageConfig = {
+  hash: string
+  exportFileName: string
+  originalExcelUrl: string | null
+}
+
+const PAGE_CONFIG = pageConfig as Record<PortalPage, PageConfig>
+const exportPage = window.__MI_EXPORT_PAGE__
+const isExport = exportPage !== undefined
 
 function pageFromHash(): PortalPage {
-  return isWeeklyExport || window.location.hash === "#weekly"
-    ? "weekly"
-    : window.location.hash === "#sell-through"
-      ? "sell-through"
-    : window.location.hash === "#ani"
-      ? "ani"
-      : "sigma"
+  if (exportPage) {
+    return exportPage
+  }
+
+  return (
+    (Object.entries(PAGE_CONFIG).find(([, config]) => config.hash === window.location.hash)?.[0] as
+      | PortalPage
+      | undefined) ?? "sigma"
+  )
+}
+
+function PageActions({ page }: { page: PortalPage }) {
+  if (isExport) {
+    return null
+  }
+
+  const config = PAGE_CONFIG[page]
+  const excelDisabled = config.originalExcelUrl === null
+
+  return (
+    <div className="flex items-center gap-2">
+      <a
+        aria-disabled={excelDisabled}
+        className={buttonVariants({
+          variant: "outline",
+          size: "sm",
+          className: "text-sm leading-5 font-normal",
+        })}
+        href={config.originalExcelUrl ?? undefined}
+        onClick={excelDisabled ? (event) => event.preventDefault() : undefined}
+        tabIndex={excelDisabled ? -1 : undefined}
+        title={
+          excelDisabled
+            ? "사내 원본 엑셀 링크가 아직 설정되지 않았습니다."
+            : undefined
+        }
+      >
+        <FileSpreadsheet aria-hidden="true" />
+        원본 엑셀 보기
+      </a>
+      <a
+        className={buttonVariants({
+          variant: "outline",
+          size: "sm",
+          className: "text-sm leading-5 font-normal",
+        })}
+        download={config.exportFileName}
+        href={`./${config.exportFileName}`}
+      >
+        <Download aria-hidden="true" />
+        Download as HTML
+      </a>
+    </div>
+  )
 }
 
 function SigmaPage() {
@@ -47,9 +103,12 @@ function SigmaPage() {
             Forecast
           </p>
         </div>
-        <p className="font-mono text-xs text-muted-foreground">
-          기준: {dashboardMeta.asOf.replaceAll("-", ".")}
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="font-mono text-xs text-muted-foreground">
+            기준: {dashboardMeta.asOf.replaceAll("-", ".")}
+          </p>
+          <PageActions page="sigma" />
+        </div>
       </header>
       <ExecutiveSummary />
       <CumulativeProductionChart />
@@ -75,34 +134,7 @@ function WeeklyPage() {
             {weeklyDescription}
           </p>
         </div>
-        {!isWeeklyExport && (
-          <div className="flex items-center gap-2">
-            <a
-              aria-disabled="true"
-              className={buttonVariants({
-                variant: "outline",
-                size: "sm",
-                className: "text-sm leading-5 font-normal",
-              })}
-              title="사내 EDM 원본 엑셀 링크가 아직 설정되지 않았습니다."
-            >
-              <FileSpreadsheet aria-hidden="true" />
-              원본 엑셀 보기
-            </a>
-            <a
-              className={buttonVariants({
-                variant: "outline",
-                size: "sm",
-                className: "text-sm leading-5 font-normal",
-              })}
-              download="MI_Weekly_2026W32.html"
-              href="./MI_Weekly_2026W32.html"
-            >
-              <Download aria-hidden="true" />
-              Download as HTML
-            </a>
-          </div>
-        )}
+        <PageActions page="weekly" />
       </header>
       <WeeklyExecutiveSummary />
       <WeeklyAnalysis />
@@ -128,6 +160,7 @@ function AniPage() {
             2024 Q1–2027 Q2 분기별 Forecast · 단위: Mu
           </p>
         </div>
+        <PageActions page="ani" />
       </header>
       <AniProductionChart />
     </>
@@ -152,6 +185,7 @@ function SellThroughPage() {
             2025년 9월–2026년 8월 월별 흐름 · Inventory / WoS 비교
           </p>
         </div>
+        <PageActions page="sell-through" />
       </header>
       <SellThroughAnalysis />
     </>
@@ -168,14 +202,7 @@ export function App() {
   }, [])
 
   const navigate = (page: PortalPage) => {
-    const hash =
-      page === "weekly"
-        ? "#weekly"
-        : page === "sell-through"
-          ? "#sell-through"
-          : page === "ani"
-            ? "#ani"
-            : "#overview"
+    const hash = PAGE_CONFIG[page].hash
     setActivePage(page)
     if (window.location.hash !== hash) {
       window.location.hash = hash
@@ -190,7 +217,7 @@ export function App() {
         activePage === "sell-through"
       }
       sidebar={
-        isWeeklyExport ? null : (
+        isExport ? null : (
           <PortalSidebar activePage={activePage} onNavigate={navigate} />
         )
       }

@@ -9,6 +9,16 @@ const normalizeLineEndings = (value) => value.replace(/\r\n?/g, "\n")
 const normalizeIndexHtml = (value) => normalizeLineEndings(value).replace(/\n[ \t]*\n([ \t]*<\/body>)/, "\n$1")
 export const defaultSiteDir = path.resolve(import.meta.dirname, "../../../site")
 
+const pageConfigPath = path.resolve(import.meta.dirname, "../src/data/page-config.json")
+const pageConfig = JSON.parse(readFileSync(pageConfigPath, "utf8"))
+export const pageExportTargets = Object.entries(pageConfig).map(
+  ([page, config]) => ({
+    page,
+    hash: config.hash,
+    outputName: config.exportFileName,
+  }),
+)
+
 const readAsset = (siteDir, html, tagName, attribute, extension) => {
   const entryAttribute = `\\b${attribute}=["']([^"']*assets/index-[^"']+\\.${extension})["']`
   const matcher = new RegExp(
@@ -31,7 +41,16 @@ const readAsset = (siteDir, html, tagName, attribute, extension) => {
   return { assetPath, tag: matches[0][0] }
 }
 
-export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html" }) {
+function getPageExportTarget(page) {
+  const target = pageExportTargets.find((item) => item.page === page)
+  if (!target) {
+    throw new Error(`Unknown export page: ${page}`)
+  }
+  return target
+}
+
+export function buildPageHtml({ siteDir, page, outputName }) {
+  const target = getPageExportTarget(page)
   const resolvedSiteDir = path.resolve(siteDir)
   const indexPath = path.join(resolvedSiteDir, "index.html")
   let html = normalizeIndexHtml(readFileSync(indexPath, "utf8"))
@@ -43,16 +62,19 @@ export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html"
   const cssDir = path.dirname(css.assetPath)
   const cssSource = escapeInlineStyle(readFileSync(css.assetPath, "utf8")).replace(
     /url\((["']?)(\.\/[^)'"\s]+\.woff2)\1\)/gi,
-    (_, _quote, fontUrl) => `url(data:font/woff2;base64,${readFileSync(path.resolve(cssDir, fontUrl), "base64")})`,
+    (_, _quote, fontUrl) =>
+      `url(data:font/woff2;base64,${readFileSync(path.resolve(cssDir, fontUrl), "base64")})`,
   )
-  const icon = Buffer.from(normalizeLineEndings(readFileSync(path.join(resolvedSiteDir, "mi-mark.svg"), "utf8"))).toString("base64")
+  const icon = Buffer.from(
+    normalizeLineEndings(readFileSync(path.join(resolvedSiteDir, "mi-mark.svg"), "utf8")),
+  ).toString("base64")
   let iconCount = 0
   html = html.replace(/<link\b(?=[^>]*\brel=["']icon["'])[^>]*>/gi, (iconTag) => {
     iconCount += 1
-    if (!/\bhref=(["'])[^"']*\1/i.test(iconTag)) {
+    if (!/\bhref=(['"])[^"']*\1/i.test(iconTag)) {
       throw new Error("Expected every favicon link to have an href")
     }
-    return iconTag.replace(/\bhref=(["'])[^"']*\1/i, `href="data:image/svg+xml;base64,${icon}"`)
+    return iconTag.replace(/\bhref=(['"])[^"']*\1/i, `href="data:image/svg+xml;base64,${icon}"`)
   })
   if (iconCount === 0) {
     throw new Error("Expected a favicon link")
@@ -62,7 +84,7 @@ export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html"
   html = html.replace(
     js.tag,
     () =>
-      '<script>window.__MI_WEEKLY_EXPORT__ = true; window.location.hash = "#weekly";</script>' +
+      `<script>window.__MI_EXPORT_PAGE__ = ${JSON.stringify(target.page)}; window.location.hash = ${JSON.stringify(target.hash)};</script>` +
       `<script type="module">${jsSource}</script>`,
   )
   assert.doesNotMatch(html, /<script[^>]+\bsrc=/i)
@@ -70,13 +92,21 @@ export function buildWeeklyHtml({ siteDir, outputName = "MI_Weekly_2026W32.html"
   assert.doesNotMatch(html, /<link\b(?=[^>]*\brel=["']icon["'])(?=[^>]*\bhref=["'](?!data:))[^>]*>/i)
   assert.doesNotMatch(html, /url\(["']?(?!data:)[^)]+\.woff2/i)
 
-  const outputPath = path.join(resolvedSiteDir, outputName)
+  const outputPath = path.join(resolvedSiteDir, outputName ?? target.outputName)
   html = normalizeLineEndings(html)
-  assert.doesNotMatch(html, /\r/, `${outputName} must use LF`)
+  assert.doesNotMatch(html, /\r/, `${outputName ?? target.outputName} must use LF`)
   writeFileSync(outputPath, html)
   return outputPath
 }
 
+export function buildAllPageHtml({ siteDir }) {
+  return pageExportTargets.map(({ page }) => buildPageHtml({ siteDir, page }))
+}
+
+export function buildWeeklyHtml({ siteDir, outputName }) {
+  return buildPageHtml({ siteDir, page: "weekly", outputName })
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  console.log(buildWeeklyHtml({ siteDir: defaultSiteDir }))
+  console.log(buildAllPageHtml({ siteDir: defaultSiteDir }).join("\n"))
 }

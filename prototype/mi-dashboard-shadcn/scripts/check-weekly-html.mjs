@@ -2,9 +2,14 @@ import assert from "node:assert/strict"
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import os from "node:os"
 import path, { basename } from "node:path"
-import { buildWeeklyHtml, defaultSiteDir } from "./build-weekly-html.mjs"
+import {
+  buildAllPageHtml,
+  buildPageHtml,
+  defaultSiteDir,
+  pageExportTargets,
+} from "./build-weekly-html.mjs"
 
-const tempDir = mkdtempSync(path.join(os.tmpdir(), "mi-weekly-html-"))
+const tempDir = mkdtempSync(path.join(os.tmpdir(), "mi-page-html-"))
 
 try {
   assert.equal(defaultSiteDir, path.resolve(import.meta.dirname, "../../../site"))
@@ -21,13 +26,13 @@ try {
   writeFileSync(path.join(assetsDir, "test.woff2"), Buffer.from([0, 1, 2, 3]))
   writeFileSync(path.join(siteDir, "mi-mark.svg"), iconSource)
 
-  const outputPath = buildWeeklyHtml({ siteDir })
+  const outputPath = buildPageHtml({ siteDir, page: "weekly" })
   const html = readFileSync(outputPath, "utf8")
-  const indexHtml = readFileSync(path.join(siteDir, "index.html"), "utf8")
   assert.equal(basename(outputPath), "MI_Weekly_2026W32.html")
-  assert.doesNotMatch(indexHtml, /\r/)
+  assert.doesNotMatch(readFileSync(path.join(siteDir, "index.html"), "utf8"), /\r/)
   assert.doesNotMatch(html, /\r/)
-  assert.match(html, /window\.__MI_WEEKLY_EXPORT__ = true/)
+  assert.match(html, /window\.__MI_EXPORT_PAGE__ = "weekly"/)
+  assert.match(html, /window\.location\.hash = "#weekly"/)
   assert.match(html, /<script type="module">[\s\S]*<\\\/script>/)
   assert.match(html, /console\.log\("<\\\/script>\$&"\)/)
   assert.match(html, /<style>[\s\S]*data:font\/woff2;base64,/)
@@ -37,12 +42,21 @@ try {
   assert.doesNotMatch(html, /https:\/\/example\.test\/icon\.svg/)
   assert.doesNotMatch(html, /<script[^>]+\bsrc=/i)
   assert.doesNotMatch(html, /rel=["']stylesheet["']/i)
+  assert.doesNotMatch(html, /<aside\b/i)
 
-  writeFileSync(path.join(siteDir, "index.html"), indexSource.replaceAll("\r\n", "\n"))
-  writeFileSync(path.join(siteDir, "mi-mark.svg"), iconSource.replaceAll("\r\n", "\n"))
-  const lfOutput = readFileSync(buildWeeklyHtml({ siteDir }), "utf8")
-  assert.equal(readFileSync(path.join(siteDir, "index.html"), "utf8"), indexHtml)
-  assert.equal(lfOutput, html)
+  const outputPaths = buildAllPageHtml({ siteDir })
+  assert.deepEqual(
+    outputPaths.map((item) => basename(item)),
+    pageExportTargets.map(({ outputName }) => outputName),
+  )
+  for (const target of pageExportTargets) {
+    const targetHtml = readFileSync(path.join(siteDir, target.outputName), "utf8")
+    assert.match(targetHtml, new RegExp(`window\\.__MI_EXPORT_PAGE__ = "${target.page}"`))
+    assert.match(targetHtml, new RegExp(`window\\.location\\.hash = "${target.hash}"`))
+    assert.doesNotMatch(targetHtml, /<script[^>]+\bsrc=/i)
+    assert.doesNotMatch(targetHtml, /<link[^>]+rel=["']stylesheet["']/i)
+    assert.doesNotMatch(targetHtml, /url\(["']?(?!data:)[^)]+\.woff2/i)
+  }
 
   const missingJsDir = path.join(tempDir, "missing-js-site")
   mkdirSync(path.join(missingJsDir, "assets"), { recursive: true })
@@ -52,7 +66,7 @@ try {
   )
   writeFileSync(path.join(missingJsDir, "assets", "index-test.css"), "body {}")
   writeFileSync(path.join(missingJsDir, "mi-mark.svg"), "<svg></svg>")
-  assert.throws(() => buildWeeklyHtml({ siteDir: missingJsDir }))
+  assert.throws(() => buildPageHtml({ siteDir: missingJsDir, page: "weekly" }))
 } finally {
   rmSync(tempDir, { recursive: true, force: true })
 }

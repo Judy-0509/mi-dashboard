@@ -1,0 +1,22 @@
+{
+  "sigma": {
+    "hash": "#overview",
+    "exportFileName": "MI_SigmaIntel.html",
+    "originalExcelUrl": null
+  },
+  "weekly": {
+    "hash": "#weekly",
+    "exportFileName": "MI_Weekly_2026W32.html",
+    "originalExcelUrl": null
+  },
+  "sell-through": {
+    "hash": "#sell-through",
+    "exportFileName": "MI_SellThrough.html",
+    "originalExcelUrl": null
+  },
+  "ani": {
+    "hash": "#ani",
+    "exportFileName": "MI_ANI.html",
+    "originalExcelUrl": null
+  }
+}
