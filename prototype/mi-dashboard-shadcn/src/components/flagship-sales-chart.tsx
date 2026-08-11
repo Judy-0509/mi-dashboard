@@ -194,26 +194,31 @@ export function FlagshipSalesChart() {
             모델명·출시월은 제조사 공식 출처, 판매량은 예시 추정치입니다.
           </p>
         </div>
-        <ToggleGroup
-          aria-label="Flagship Sales axis"
-          onSelectionChange={(selection) => {
-            const next = Array.from(selection)[0]
-            if (next === "calendar" || next === "launch") setView(next)
-          }}
-          selectedKeys={new Set([view])}
-          selectionMode="single"
-          size="sm"
-          variant="outline"
-        >
-          {viewOptions.map(({ key, label }) => (
-            <ToggleGroupItem id={key} key={key}>
-              {label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
       </CardHeader>
       <CardContent className="min-w-0 pt-3">
         <div className="mb-3 grid min-w-0 gap-2">
+          <div className="flex min-w-0 flex-wrap items-start gap-2" role="group">
+            <span className="w-16 pt-1 text-xs font-medium text-muted-foreground">
+              View
+            </span>
+            <ToggleGroup
+              aria-label="Flagship Sales axis"
+              onSelectionChange={(selection) => {
+                const next = Array.from(selection)[0]
+                if (next === "calendar" || next === "launch") setView(next)
+              }}
+              selectedKeys={new Set([view])}
+              selectionMode="single"
+              size="sm"
+              variant="outline"
+            >
+              {viewOptions.map(({ key, label }) => (
+                <ToggleGroupItem id={key} key={key}>
+                  {label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
           <div
             aria-label="Flagship Sales vendor filter"
             className="flex min-w-0 flex-wrap items-start gap-2"
