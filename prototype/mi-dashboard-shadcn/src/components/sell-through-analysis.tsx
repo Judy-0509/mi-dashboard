@@ -40,7 +40,7 @@ const inventoryPeriods = ["25년 말", "26년 4월", "26년 8월"] as const
 const ratioColor = "#d97706"
 
 const chartConfig: ChartConfig = {
-  ratio: { label: "SI / ST ratio", color: ratioColor },
+  ratio: { label: "SI/ST Ratio(%)", color: ratioColor },
   sellInTotal: { label: "SI total", color: "var(--chart-1)" },
   sellThroughTotal: { label: "ST total", color: "var(--chart-2)" },
   ...Object.fromEntries(
@@ -155,7 +155,7 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
         />
         <YAxis
           axisLine={false}
-          domain={[0, "auto"]}
+          domain={[0, 400]}
           tickFormatter={(value) => Number(value).toFixed(0)}
           tickLine={false}
           tickMargin={7}
@@ -164,7 +164,7 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
         />
         <YAxis
           axisLine={false}
-          domain={["dataMin - 2", "dataMax + 2"]}
+          domain={[0, 120]}
           orientation="right"
           tickFormatter={(value) => `${Number(value).toFixed(0)}%`}
           tickLine={false}
@@ -255,7 +255,7 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
           dataKey="ratio"
           dot={{ fill: ratioColor, r: 3, stroke: ratioColor }}
           isAnimationActive={false}
-          name="SI / ST ratio"
+          name="SI/ST Ratio(%)"
           stroke={ratioColor}
           strokeWidth={2}
           type="monotone"
@@ -279,7 +279,7 @@ function InventoryTable() {
     <div className="min-w-0 overflow-hidden border">
       <table
         aria-label="Inventory and WoS vendor snapshots"
-        className="w-full table-fixed border-collapse text-[10px]"
+        className="w-full table-fixed border-collapse text-xs"
       >
         <caption className="sr-only">Inventory and WoS vendor snapshots</caption>
         <colgroup>
@@ -288,24 +288,24 @@ function InventoryTable() {
         </colgroup>
         <thead className="bg-muted/40 text-muted-foreground">
           <tr>
-            <th className="border-b px-2 py-1.5 text-left font-medium" rowSpan={2} scope="col">
+            <th className="border-b px-3 py-1.5 text-left font-medium" rowSpan={2} scope="col">
               Vendor
             </th>
-            <th className="border-b px-1 py-1.5 text-center font-medium" colSpan={3} scope="colgroup">
+            <th className="border-b px-2 py-1.5 text-center font-medium" colSpan={3} scope="colgroup">
               Inventory
             </th>
-            <th className="border-b px-1 py-1.5 text-center font-medium" colSpan={3} scope="colgroup">
+            <th className="border-b px-2 py-1.5 text-center font-medium" colSpan={3} scope="colgroup">
               WoS
             </th>
           </tr>
           <tr>
             {inventoryPeriods.map((period) => (
-              <th className="px-1 py-1.5 text-right font-medium" key={`inventory-${period}`} scope="col">
+              <th className="px-2 py-1.5 text-right font-medium" key={`inventory-${period}`} scope="col">
                 {period}
               </th>
             ))}
             {inventoryPeriods.map((period) => (
-              <th className="px-1 py-1.5 text-right font-medium" key={`wos-${period}`} scope="col">
+              <th className="px-2 py-1.5 text-right font-medium" key={`wos-${period}`} scope="col">
                 {period}
               </th>
             ))}
@@ -317,7 +317,7 @@ function InventoryTable() {
 
             return (
               <tr className="border-t" key={row.vendor}>
-                <th className="px-2 py-1.5 text-left font-medium" scope="row">
+                <th className="px-3 py-1.5 text-left font-medium" scope="row">
                   <span className="inline-flex items-center gap-1.5">
                     <i
                       aria-hidden="true"
@@ -328,12 +328,12 @@ function InventoryTable() {
                   </span>
                 </th>
                 {row.inventory.map((value, index) => (
-                  <td className="px-1 py-1.5 text-right font-mono tabular-nums" key={`inventory-${index}`}>
+                  <td className="px-2 py-1.5 text-right font-mono tabular-nums" key={`inventory-${index}`}>
                     {value}
                   </td>
                 ))}
                 {row.wos.map((value, index) => (
-                  <td className="px-1 py-1.5 text-right font-mono tabular-nums" key={`wos-${index}`}>
+                  <td className="px-2 py-1.5 text-right font-mono tabular-nums" key={`wos-${index}`}>
                     {value}
                   </td>
                 ))}
@@ -371,7 +371,7 @@ function SellThroughLegend({ view }: { view: SellThroughView }) {
 }
 
 export function SellThroughAnalysis(): React.JSX.Element {
-  const [view, setView] = useState<SellThroughView>("vendor")
+  const [view, setView] = useState<SellThroughView>("total")
 
   return (
     <section
@@ -415,7 +415,7 @@ export function SellThroughAnalysis(): React.JSX.Element {
             </p>
             <p className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
               <i aria-hidden="true" className="size-2 rounded-full" style={{ backgroundColor: ratioColor }} />
-              Ratio
+              SI/ST Ratio(%)
             </p>
           </div>
           <SellThroughChart view={view} />

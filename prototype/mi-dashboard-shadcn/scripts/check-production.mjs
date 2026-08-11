@@ -348,6 +348,11 @@ assert.match(
 
 assert.match(sellThroughSource, /Sell-in.*Sell-through/)
 assert.match(sellThroughSource, /ratio/)
+assert.match(sellThroughSource, /SI\/ST Ratio\(%\)/)
+assert.match(sellThroughSource, /useState<SellThroughView>\("total"\)/)
+assert.match(sellThroughSource, /domain=\{\[0, 400\]\}/)
+assert.match(sellThroughSource, /domain=\{\[0, 120\]\}/)
+assert.match(sellThroughSource, /table-fixed border-collapse text-xs/)
 assert.match(sellThroughSource, /#d97706/)
 assert.match(
   sellThroughSource,
