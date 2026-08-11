@@ -8,10 +8,31 @@ export type MiInsightReport = {
   edmUrl: string | null
 }
 
-export const miInsightInsights: readonly string[] = [
-  "글로벌 스마트폰 출하는 중저가 5G와 신흥 시장을 중심으로 회복세를 이어가고 있습니다.",
-  "프리미엄 수요는 견조하지만 교체 주기 연장으로 전체 성장 폭은 제한적입니다.",
-  "하반기에는 메모리 원가와 환율이 제조사 수익성의 핵심 변수가 될 전망입니다.",
+export type MiInsightInsight = {
+  title: string
+  details: readonly string[]
+}
+
+export const miInsightInsights: readonly MiInsightInsight[] = [
+  {
+    title: "5G 중심 수요 회복",
+    details: [
+      "중저가 5G와 신흥 시장이 글로벌 스마트폰 출하 회복을 견인함",
+      "프리미엄 수요는 견조하지만 교체 주기 연장으로 전체 성장 폭은 제한적임",
+    ],
+  },
+  {
+    title: "지역별 회복 온도차",
+    details: [
+      "북미와 인도 수요가 출하를 지지하고 중국 내수도 전년 대비 회복 흐름을 보임",
+    ],
+  },
+  {
+    title: "원가와 환율 관리 필요",
+    details: [
+      "하반기 메모리 원가와 환율이 제조사 수익성의 핵심 변수로 작용할 전망임",
+    ],
+  },
 ]
 
 export const miInsightReports: readonly MiInsightReport[] = [

@@ -17,13 +17,20 @@ export function MiInsightWeeklyReport(): JSX.Element {
         </CardHeader>
         <CardContent>
           <ul className="grid gap-2 text-sm leading-5 text-muted-foreground">
-            {miInsightInsights.map((insight) => (
-              <li className="flex gap-3" key={insight}>
+            {miInsightInsights.map(({ title, details }) => (
+              <li className="flex gap-3" key={title}>
                 <span
                   aria-hidden="true"
                   className="mt-2 size-1.5 shrink-0 bg-primary"
                 />
-                <span>{insight}</span>
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground">{title}</p>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                    {details.map((detail) => (
+                      <li key={detail}>{detail}</li>
+                    ))}
+                  </ul>
+                </div>
               </li>
             ))}
           </ul>

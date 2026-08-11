@@ -47,11 +47,16 @@ import {
   miInsightReports,
 } from "../src/data/mi-insight.ts"
 
-assert.ok(miInsightInsights.length >= 1 && miInsightInsights.length <= 3)
+assert.equal(miInsightInsights.length, 3)
 assert.ok(miInsightReports.length >= 1)
 assert.ok(
   miInsightInsights.every(
-    (insight) => typeof insight === "string" && insight.trim()
+    ({ title, details }) =>
+      typeof title === "string" &&
+      title.trim() &&
+      details.length >= 1 &&
+      details.length <= 2 &&
+      details.every((detail) => typeof detail === "string" && detail.trim())
   )
 )
 
