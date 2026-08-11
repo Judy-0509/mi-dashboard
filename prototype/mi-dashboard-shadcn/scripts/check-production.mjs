@@ -41,6 +41,53 @@ import {
   sellThroughVendors,
 } from "../src/data/sell-through.ts"
 import { normalizeRow, parseCsv } from "./update-dashboard-data.mjs"
+import {
+  getMiInsightReports,
+  miInsightInsights,
+  miInsightReports,
+} from "../src/data/mi-insight.ts"
+
+assert.ok(miInsightInsights.length >= 1 && miInsightInsights.length <= 3)
+assert.ok(miInsightReports.length >= 1)
+assert.ok(
+  miInsightInsights.every(
+    (insight) => typeof insight === "string" && insight.trim()
+  )
+)
+
+const miInsightRequiredFields = [
+  "fileName",
+  "researchProvider",
+  "useCase",
+  "cadence",
+  "uploadDate",
+  "sharedContent",
+  "edmUrl",
+]
+
+for (const report of miInsightReports) {
+  for (const field of miInsightRequiredFields) {
+    assert.ok(field in report)
+  }
+  assert.match(report.uploadDate, /^\d{4}-\d{2}-\d{2}$/)
+  assert.ok(report.edmUrl === null || typeof report.edmUrl === "string")
+}
+
+const copiedMiInsightReports = getMiInsightReports()
+assert.notStrictEqual(copiedMiInsightReports, miInsightReports)
+assert.deepEqual(
+  copiedMiInsightReports,
+  [...miInsightReports].sort((left, right) =>
+    right.uploadDate.localeCompare(left.uploadDate)
+  )
+)
+assert.ok(
+  copiedMiInsightReports.every(
+    (report, index) =>
+      index === 0 ||
+      report.uploadDate <= copiedMiInsightReports[index - 1].uploadDate
+  )
+)
 
 assert.deepEqual(sellThroughMonths, [
   "2025-09", "2025-10", "2025-11", "2025-12",
