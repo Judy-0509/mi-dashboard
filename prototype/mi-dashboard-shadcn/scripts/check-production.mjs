@@ -430,13 +430,15 @@ assert.match(sidebarSource, /label: "ANI"/)
 assert.match(sidebarSource, /child: "iPhone Model Production"/)
 assert.match(sidebarSource, /page: "ani"/)
 assert.match(sidebarSource, /href: "#ani"/)
-assert.match(sidebarSource, /label: "MI Insight"/)
-assert.match(sidebarSource, /child: "Weekly Report"/)
-assert.match(sidebarSource, /page: "mi-insight"/)
-assert.match(sidebarSource, /href: "#mi-insight"/)
+assert.match(
+  sidebarSource,
+  /label: "Counterpoint"[\s\S]*label: "MI Insight"[\s\S]*child: "Weekly Report"[\s\S]*page: "mi-insight"[\s\S]*href: "#mi-insight"[\s\S]*label: "ANI"/,
+)
 assert.match(pageConfigSource, /"hash": "#ani"/)
-assert.match(pageConfigSource, /"hash": "#mi-insight"/)
-assert.match(pageConfigSource, /"MI_Insight_Weekly_Report\.html"/)
+assert.match(
+  pageConfigSource,
+  /"mi-insight": \{\s*"hash": "#mi-insight",\s*"exportFileName": "MI_Insight_Weekly_Report\.html",\s*"originalExcelUrl": null\s*\}/,
+)
 assert.match(appSource, /const hash = PAGE_CONFIG\[page\]\.hash/)
 assert.match(appSource, /function AniPage\(\)/)
 assert.match(appSource, /<AniPage \/>/)
@@ -445,8 +447,10 @@ assert.match(appSource, /ANI \/ iPhone Model Production/)
 assert.match(appSource, /iPhone 모델 생산 전망/)
 assert.match(appSource, /2024 Q1–2027 Q2 분기별 Forecast · 단위: Mu/)
 assert.match(appSource, /activePage === "ani"/)
-assert.match(appSource, /<PageActions page="mi-insight" \/>/)
-assert.match(appSource, /MI Insight \/ Weekly Report/)
+assert.match(
+  appSource,
+  /function MiInsightPage\(\)[\s\S]*?<p[^>]*>\s*MI Insight \/ Weekly Report\s*<\/p>[\s\S]*?<h1[^>]*>\s*Weekly Report\s*<\/h1>[\s\S]*?<p[^>]*>\s*EDM 업데이트 자료와 공유 내용\s*<\/p>[\s\S]*?<PageActions page="mi-insight" \/>/,
+)
 
 const aniChartSource = readFileSync(
   new URL("../src/components/ani-production-chart.tsx", import.meta.url),
