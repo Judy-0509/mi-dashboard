@@ -43,6 +43,7 @@ export interface FlagshipSalesChartPoint {
   period: string
   label: string
   total: number
+  topModelKey: string
   [modelKey: string]: number | string
 }
 
@@ -176,7 +177,7 @@ export function getFlagshipSalesChartData(
         }))
 
   return periods.map(({ period, label }, periodIndex) => {
-    const point = { period, label, total: 0 } as FlagshipSalesChartPoint
+    const point = { period, label, total: 0, topModelKey: "" } as FlagshipSalesChartPoint
 
     visibleModels.forEach((model) => {
       const value =
@@ -185,6 +186,7 @@ export function getFlagshipSalesChartData(
           : getFlagshipSalesLifecycle(model)[periodIndex]
       point[model.key] = value ?? 0
       point.total += value ?? 0
+      if (value && value > 0) point.topModelKey = model.key
     })
 
     return point

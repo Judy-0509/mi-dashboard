@@ -138,6 +138,16 @@ for (const vendor of flagshipSalesVendors) {
   assert.equal(lifecycle.at(-1).period, "M+11")
   assert.ok(vendor.models.every((model) => getFlagshipSalesLifecycle(model).length === 12))
 }
+const xiaomiCalendar = getFlagshipSalesChartData(
+  "xiaomi",
+  "calendar",
+  ["xiaomi16Ultra", "xiaomi16Pro", "xiaomiMixFold"],
+)
+const xiaomiPreFoldLaunch = xiaomiCalendar.find((point) => point.period === "2026-03")
+assert.ok(xiaomiPreFoldLaunch)
+assert.ok(xiaomiPreFoldLaunch.total > 0)
+assert.equal(xiaomiPreFoldLaunch.xiaomiMixFold, 0)
+assert.equal(xiaomiPreFoldLaunch.topModelKey, "xiaomi16Pro")
 
 assert.equal(cumulativeProduction.length, 14)
 assert.equal(productionYAxisDomain[0], 0)

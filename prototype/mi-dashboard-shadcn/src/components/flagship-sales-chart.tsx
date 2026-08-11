@@ -85,6 +85,10 @@ function renderFlagshipSegmentLabel(props: LabelProps) {
 }
 
 function renderFlagshipTotalLabel(props: LabelProps) {
+  if (props.value === "" || props.value === null || props.value === undefined) {
+    return ""
+  }
+
   const value = Number(props.value)
   const x = Number(props.x)
   const y = Number(props.y)
@@ -349,13 +353,15 @@ export function FlagshipSalesChart() {
                   fill={getSegmentLabelColor(model.color)}
                   position="center"
                 />
-                {model.key === visibleModels.at(-1)?.key ? (
-                  <LabelList
-                    content={renderFlagshipTotalLabel}
-                    dataKey="total"
-                    position="top"
-                  />
-                ) : null}
+                <LabelList
+                  content={renderFlagshipTotalLabel}
+                  position="top"
+                  valueAccessor={(entry) =>
+                    entry.payload.topModelKey === model.key
+                      ? entry.payload.total
+                      : ""
+                  }
+                />
               </Bar>
             ))}
           </BarChart>
