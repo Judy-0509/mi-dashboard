@@ -1110,4 +1110,39 @@ assert.match(pipelineExecutiveSummary[0], /309\.0Mu.*298\.0Mu.*291\.0Mu/)
 assert.match(pipelineExecutiveSummary[1], /80\.0Mu.*90\.0Mu.*\+7\.0Mu/)
 assert.match(pipelineExecutiveSummary[2], /CN OEM.*45\.0Mu.*확인 필요/)
 
+const pipelineSource = readFileSync(
+  new URL("../src/components/pipeline-check.tsx", import.meta.url),
+  "utf8",
+)
+assert.match(pipelineSource, /pipelineExecutiveSummary\.map/)
+assert.match(
+  pipelineSource,
+  /grid-cols-\[minmax\(0,1fr\)_210px_minmax\(0,1fr\)_210px_minmax\(0,1fr\)\]/,
+)
+assert.equal(pipelineSource.match(/domain=\{pipelineYAxisDomain\}/g)?.length, 1)
+assert.equal(pipelineSource.match(/ticks=\{pipelineYAxisTicks\}/g)?.length, 1)
+assert.match(pipelineSource, /pipelineVendors\.map/)
+assert.match(pipelineSource, /accessibilityLayer/)
+assert.match(pipelineSource, /<caption/)
+assert.match(pipelineSource, /scope="col"/)
+assert.match(pipelineSource, /scope="row"/)
+assert.match(
+  pipelineSource,
+  /value === null \? "N\/A" : `\$\{value\.toFixed\(1\)\}Mu`/,
+)
+const pipelineOrder = [
+  'title="Production"',
+  'title="Production Inventory"',
+  'title="Sell-in"',
+  'title="Channel Inventory"',
+  'title="Sell-out"',
+]
+assert.deepEqual(
+  pipelineOrder.map((marker) => pipelineSource.indexOf(marker)),
+  [...pipelineOrder.map((marker) => pipelineSource.indexOf(marker))].sort(
+    (a, b) => a - b,
+  ),
+)
+assert.ok(pipelineOrder.every((marker) => pipelineSource.indexOf(marker) >= 0))
+
 console.log("production and weekly data checks passed")
