@@ -218,6 +218,32 @@ function MiInsightPage() {
   )
 }
 
+function MiInsightWeeklySellThroughPage() {
+  return (
+    <>
+      <header
+        className="flex items-end justify-between border-b pb-4"
+        id="mi-weekly-sell-through"
+      >
+        <div>
+          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+            MI Insight / Weekly Sell-through
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            Weekly Sell-through
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Counterpoint Weekly 데이터 기반 Sell-out 현황과 Trend
+          </p>
+        </div>
+        <PageActions page="mi-weekly-sell-through" />
+      </header>
+      <WeeklyExecutiveSummary />
+      <WeeklyAnalysis />
+    </>
+  )
+}
+
 export function App() {
   const [activePage, setActivePage] = useState<PortalPage>(pageFromHash)
 
@@ -240,7 +266,8 @@ export function App() {
       scrollable={
         activePage === "weekly" ||
         activePage === "ani" ||
-        activePage === "sell-through"
+        activePage === "sell-through" ||
+        activePage === "mi-weekly-sell-through"
       }
       sidebar={
         isExport ? null : (
@@ -256,6 +283,8 @@ export function App() {
         <AniPage />
       ) : activePage === "mi-insight" ? (
         <MiInsightPage />
+      ) : activePage === "mi-weekly-sell-through" ? (
+        <MiInsightWeeklySellThroughPage />
       ) : (
         <SigmaPage />
       )}

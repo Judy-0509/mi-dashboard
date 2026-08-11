@@ -437,12 +437,16 @@ assert.match(sidebarSource, /page: "ani"/)
 assert.match(sidebarSource, /href: "#ani"/)
 assert.match(
   sidebarSource,
-  /label: "Counterpoint"[\s\S]*label: "MI Insight"[\s\S]*child: "Weekly Report"[\s\S]*page: "mi-insight"[\s\S]*href: "#mi-insight"[\s\S]*label: "ANI"/,
+  /label: "Counterpoint"[\s\S]*label: "MI Insight"[\s\S]*child: "Weekly Report"[\s\S]*page: "mi-insight"[\s\S]*href: "#mi-insight"[\s\S]*child: "Weekly Sell-through"[\s\S]*page: "mi-weekly-sell-through"[\s\S]*href: "#mi-weekly-sell-through"[\s\S]*label: "ANI"/,
 )
 assert.match(pageConfigSource, /"hash": "#ani"/)
 assert.match(
   pageConfigSource,
   /"mi-insight": \{\s*"hash": "#mi-insight",\s*"exportFileName": "MI_Insight_Weekly_Report\.html",\s*"originalExcelUrl": null\s*\}/,
+)
+assert.match(
+  pageConfigSource,
+  /"mi-weekly-sell-through": \{\s*"hash": "#mi-weekly-sell-through",\s*"exportFileName": "MI_Insight_Weekly_SellThrough\.html",\s*"originalExcelUrl": null\s*\}/,
 )
 assert.match(appSource, /const hash = PAGE_CONFIG\[page\]\.hash/)
 assert.match(appSource, /function AniPage\(\)/)
@@ -455,6 +459,10 @@ assert.match(appSource, /activePage === "ani"/)
 assert.match(
   appSource,
   /function MiInsightPage\(\)[\s\S]*?<p[^>]*>\s*MI Insight \/ Weekly Report\s*<\/p>[\s\S]*?<h1[^>]*>\s*Weekly Report\s*<\/h1>[\s\S]*?<p[^>]*>\s*EDM 업데이트 자료와 공유 내용\s*<\/p>[\s\S]*?<PageActions page="mi-insight" \/>/,
+)
+assert.match(
+  appSource,
+  /function MiInsightWeeklySellThroughPage\(\)[\s\S]*?<p[^>]*>\s*MI Insight \/ Weekly Sell-through\s*<\/p>[\s\S]*?<h1[^>]*>\s*Weekly Sell-through\s*<\/h1>[\s\S]*?<PageActions page="mi-weekly-sell-through" \/>[\s\S]*?<WeeklyExecutiveSummary \/>[\s\S]*?<WeeklyAnalysis \/>/,
 )
 
 const aniChartSource = readFileSync(
@@ -580,6 +588,7 @@ assert.match(pageConfigSource, /"MI_Weekly_2026W32\.html"/)
 assert.match(pageConfigSource, /"MI_SigmaIntel\.html"/)
 assert.match(pageConfigSource, /"MI_SellThrough\.html"/)
 assert.match(pageConfigSource, /"MI_ANI\.html"/)
+assert.match(pageConfigSource, /"MI_Insight_Weekly_SellThrough\.html"/)
 assert.doesNotMatch(sidebarSource, /weeklyOnly/)
 assert.doesNotMatch(sidebarSource, /provider\.page === "weekly"/)
 assert.match(

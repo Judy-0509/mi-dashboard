@@ -6,6 +6,7 @@ export type PortalPage =
   | "ani"
   | "sell-through"
   | "mi-insight"
+  | "mi-weekly-sell-through"
 
 const providers: Array<{
   label: string
@@ -43,6 +44,11 @@ const providers: Array<{
         child: "Weekly Report",
         page: "mi-insight",
         href: "#mi-insight",
+      },
+      {
+        child: "Weekly Sell-through",
+        page: "mi-weekly-sell-through",
+        href: "#mi-weekly-sell-through",
       },
     ],
   },

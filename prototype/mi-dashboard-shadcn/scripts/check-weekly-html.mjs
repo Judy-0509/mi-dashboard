@@ -56,6 +56,10 @@ try {
     assert.doesNotMatch(targetHtml, /<script[^>]+\bsrc=/i)
     assert.doesNotMatch(targetHtml, /<link[^>]+rel=["']stylesheet["']/i)
     assert.doesNotMatch(targetHtml, /url\(["']?(?!data:)[^)]+\.woff2/i)
+    if (target.page === "mi-insight" || target.page === "mi-weekly-sell-through") {
+      assert.doesNotMatch(targetHtml, /<aside\b/i)
+      assert.doesNotMatch(targetHtml, /PageActions/)
+    }
   }
 
   const miInsightTarget = pageExportTargets.find(
@@ -80,6 +84,31 @@ try {
     miInsightHtml,
     /url\(["']?(?!data:)[^)]+\.(?:woff2?|ttf|otf)/i,
   )
+
+  const miWeeklySellThroughTarget = pageExportTargets.find(
+    ({ page }) => page === "mi-weekly-sell-through",
+  )
+  assert.deepEqual(miWeeklySellThroughTarget, {
+    page: "mi-weekly-sell-through",
+    hash: "#mi-weekly-sell-through",
+    outputName: "MI_Insight_Weekly_SellThrough.html",
+  })
+  const miWeeklySellThroughHtml = readFileSync(
+    path.join(siteDir, miWeeklySellThroughTarget.outputName),
+    "utf8",
+  )
+  assert.match(
+    miWeeklySellThroughHtml,
+    /window\.__MI_EXPORT_PAGE__ = "mi-weekly-sell-through"/,
+  )
+  assert.match(
+    miWeeklySellThroughHtml,
+    /window\.location\.hash = "#mi-weekly-sell-through"/,
+  )
+  assert.doesNotMatch(miWeeklySellThroughHtml, /<aside\b/i)
+  assert.doesNotMatch(miWeeklySellThroughHtml, /PageActions/)
+  assert.doesNotMatch(miWeeklySellThroughHtml, /<script[^>]+\bsrc=/i)
+  assert.doesNotMatch(miWeeklySellThroughHtml, /<link[^>]+rel=["']stylesheet["']/i)
   assert.doesNotMatch(
     miInsightHtml,
     /<link\b(?=[^>]*\brel=["']icon["'])(?=[^>]*\bhref=["'](?!data:))[^>]*>/i,
