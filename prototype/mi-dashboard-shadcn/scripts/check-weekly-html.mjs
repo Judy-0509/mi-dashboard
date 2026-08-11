@@ -58,6 +58,33 @@ try {
     assert.doesNotMatch(targetHtml, /url\(["']?(?!data:)[^)]+\.woff2/i)
   }
 
+  const miInsightTarget = pageExportTargets.find(
+    ({ page }) => page === "mi-insight",
+  )
+  assert.deepEqual(miInsightTarget, {
+    page: "mi-insight",
+    hash: "#mi-insight",
+    outputName: "MI_Insight_Weekly_Report.html",
+  })
+  const miInsightHtml = readFileSync(
+    path.join(siteDir, miInsightTarget.outputName),
+    "utf8",
+  )
+  assert.match(miInsightHtml, /window\.__MI_EXPORT_PAGE__ = "mi-insight"/)
+  assert.match(miInsightHtml, /window\.location\.hash = "#mi-insight"/)
+  assert.doesNotMatch(miInsightHtml, /<aside\b/i)
+  assert.doesNotMatch(miInsightHtml, /PageActions/)
+  assert.doesNotMatch(miInsightHtml, /<script[^>]+\bsrc=/i)
+  assert.doesNotMatch(miInsightHtml, /<link[^>]+rel=["']stylesheet["']/i)
+  assert.doesNotMatch(
+    miInsightHtml,
+    /url\(["']?(?!data:)[^)]+\.(?:woff2?|ttf|otf)/i,
+  )
+  assert.doesNotMatch(
+    miInsightHtml,
+    /<link\b(?=[^>]*\brel=["']icon["'])(?=[^>]*\bhref=["'](?!data:))[^>]*>/i,
+  )
+
   const missingJsDir = path.join(tempDir, "missing-js-site")
   mkdirSync(path.join(missingJsDir, "assets"), { recursive: true })
   writeFileSync(
