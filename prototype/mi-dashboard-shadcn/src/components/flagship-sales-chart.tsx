@@ -4,6 +4,7 @@ import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
 import {
   flagshipSalesVendors,
   getFlagshipSalesChartData,
+  getFlagshipSalesGenerationComparison,
   type FlagshipSalesModel,
   type FlagshipSalesVendorKey,
   type FlagshipSalesView,
@@ -38,6 +39,18 @@ function formatMonth(month: string) {
 
 function formatValue(value: unknown) {
   return value === null || value === undefined ? "" : Number(value).toFixed(0)
+}
+
+function formatSignedValue(value: number, suffix: string) {
+  return `${value > 0 ? "+" : ""}${value.toFixed(1)}${suffix}`
+}
+
+function getComparisonDeltaClassName(value: number) {
+  return value > 0
+    ? "text-primary"
+    : value < 0
+      ? "text-destructive"
+      : "text-muted-foreground"
 }
 
 function getSegmentLabelColor(color: string) {
@@ -151,6 +164,7 @@ export function FlagshipSalesChart() {
     visibleModels.map(({ key }) => key),
   )
   const chartConfig = getChartConfig(visibleModels)
+  const comparison = getFlagshipSalesGenerationComparison(selectedVendor)
   const maxTotal = Math.max(...chartData.map(({ total }) => total), 0)
   const yAxisDomain = [0, Math.max(10, Math.ceil((maxTotal * 1.12) / 10) * 10)] as const
 
@@ -305,75 +319,193 @@ export function FlagshipSalesChart() {
           </div>
         </div>
 
-        <ChartContainer
-          aria-label={`${vendor.label} flagship sales stacked bar chart`}
-          className="h-[360px] w-full min-w-0"
-          config={chartConfig}
-        >
-          <BarChart
-            accessibilityLayer
-            barCategoryGap="12%"
-            data={chartData}
-            margin={{ top: 28, right: 8, left: 4, bottom: 4 }}
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <ChartContainer
+            aria-label={`${vendor.label} flagship sales stacked bar chart`}
+            className="h-[360px] w-full min-w-0"
+            config={chartConfig}
           >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              axisLine={false}
-              dataKey="label"
-              fontSize={9}
-              interval={view === "calendar" ? 1 : 0}
-              tickFormatter={view === "calendar" ? formatMonth : undefined}
-              tickLine={false}
-              tickMargin={7}
-            />
-            <YAxis
-              axisLine={false}
-              domain={yAxisDomain}
-              tickFormatter={(value) => Number(value).toFixed(0)}
-              tickLine={false}
-              tickMargin={7}
-              width={32}
-            />
-            <ChartTooltip
-              content={(props) => (
-                <ChartTooltipContent
-                  {...props}
-                  content={undefined}
-                  payload={props.payload?.filter(
-                    ({ value }) => Number(value) !== 0,
-                  )}
-                />
-              )}
-              cursor={false}
-            />
-            {visibleModels.map((model) => (
-              <Bar
-                dataKey={model.key}
-                fill={model.color}
-                isAnimationActive={false}
-                key={model.key}
-                name={model.label}
-                stackId="flagship-sales"
-              >
-                <LabelList
-                  content={renderFlagshipSegmentLabel}
+            <BarChart
+              accessibilityLayer
+              barCategoryGap="12%"
+              data={chartData}
+              margin={{ top: 28, right: 8, left: 4, bottom: 4 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                axisLine={false}
+                dataKey="label"
+                fontSize={9}
+                interval={view === "calendar" ? 1 : 0}
+                tickFormatter={view === "calendar" ? formatMonth : undefined}
+                tickLine={false}
+                tickMargin={7}
+              />
+              <YAxis
+                axisLine={false}
+                domain={yAxisDomain}
+                tickFormatter={(value) => Number(value).toFixed(0)}
+                tickLine={false}
+                tickMargin={7}
+                width={32}
+              />
+              <ChartTooltip
+                content={(props) => (
+                  <ChartTooltipContent
+                    {...props}
+                    content={undefined}
+                    payload={props.payload?.filter(
+                      ({ value }) => Number(value) !== 0,
+                    )}
+                  />
+                )}
+                cursor={false}
+              />
+              {visibleModels.map((model) => (
+                <Bar
                   dataKey={model.key}
-                  fill={getSegmentLabelColor(model.color)}
-                  position="center"
-                />
-                <LabelList
-                  content={renderFlagshipTotalLabel}
-                  position="top"
-                  valueAccessor={(entry) =>
-                    entry.payload.topModelKey === model.key
-                      ? entry.payload.total
-                      : ""
-                  }
-                />
-              </Bar>
-            ))}
-          </BarChart>
-        </ChartContainer>
+                  fill={model.color}
+                  isAnimationActive={false}
+                  key={model.key}
+                  name={model.label}
+                  stackId="flagship-sales"
+                >
+                  <LabelList
+                    content={renderFlagshipSegmentLabel}
+                    dataKey={model.key}
+                    fill={getSegmentLabelColor(model.color)}
+                    position="center"
+                  />
+                  <LabelList
+                    content={renderFlagshipTotalLabel}
+                    position="top"
+                    valueAccessor={(entry) =>
+                      entry.payload.topModelKey === model.key
+                        ? entry.payload.total
+                        : ""
+                    }
+                  />
+                </Bar>
+              ))}
+            </BarChart>
+          </ChartContainer>
+
+          <aside
+            aria-labelledby="flagship-comparison-title"
+            className="min-w-0 lg:border-s lg:ps-4"
+          >
+            <div className="mb-2">
+              <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
+                Generation comparison
+              </p>
+              <h3
+                className="mt-1 text-base font-semibold"
+                id="flagship-comparison-title"
+              >
+                세대별 판매 비교
+              </h3>
+              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                {comparison.currentGenerationLabel} vs{" "}
+                {comparison.previousGenerationLabel} · 동일 출시 후 기간
+              </p>
+            </div>
+            <div className="overflow-hidden border">
+              <table
+                aria-label={`${vendor.label} generation sales comparison`}
+                className="w-full table-fixed border-collapse text-[10px] leading-4"
+              >
+                <caption className="sr-only">
+                  {vendor.label} generation sales comparison
+                </caption>
+                <colgroup>
+                  <col className="w-[32%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[20%]" />
+                </colgroup>
+                <thead className="bg-muted/40 text-muted-foreground">
+                  <tr>
+                    <th
+                      className="px-1.5 py-1.5 text-left font-medium"
+                      scope="col"
+                    >
+                      모델
+                    </th>
+                    <th
+                      className="px-1 py-1.5 text-right font-medium"
+                      scope="col"
+                    >
+                      기간
+                    </th>
+                    <th
+                      className="px-1 py-1.5 text-right font-medium"
+                      scope="col"
+                    >
+                      현재
+                    </th>
+                    <th
+                      className="px-1 py-1.5 text-right font-medium"
+                      scope="col"
+                    >
+                      이전
+                    </th>
+                    <th
+                      className="px-1.5 py-1.5 text-right font-medium"
+                      scope="col"
+                    >
+                      증감
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {comparison.rows.map((row, index) => {
+                    const deltaClassName = getComparisonDeltaClassName(
+                      row.deltaMu
+                    )
+                    return (
+                      <tr
+                        className={index === 0 ? "bg-muted/30" : undefined}
+                        key={row.rowLabel}
+                      >
+                        <th
+                          className="px-1.5 py-1.5 text-left align-top font-medium"
+                          scope="row"
+                        >
+                          <span className="block truncate">{row.rowLabel}</span>
+                          <span className="block truncate font-normal text-muted-foreground">
+                            {row.currentModelLabel} / {row.previousModelLabel}
+                          </span>
+                        </th>
+                        <td className="px-1 py-1.5 text-right align-top whitespace-nowrap text-muted-foreground tabular-nums">
+                          {row.duration === null
+                            ? "동일"
+                            : `${row.duration}개월`}
+                        </td>
+                        <td className="px-1 py-1.5 text-right align-top whitespace-nowrap tabular-nums">
+                          {row.currentCumulative.toFixed(1)}Mu
+                        </td>
+                        <td className="px-1 py-1.5 text-right align-top whitespace-nowrap tabular-nums">
+                          {row.previousCumulative.toFixed(1)}Mu
+                        </td>
+                        <td
+                          className={`px-1.5 py-1.5 text-right align-top font-medium whitespace-nowrap tabular-nums ${deltaClassName}`}
+                        >
+                          <span className="block">
+                            {formatSignedValue(row.deltaMu, "Mu")}
+                          </span>
+                          <span className="block">
+                            {formatSignedValue(row.deltaPercent, "%")}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </aside>
+        </div>
 
         <ul
           aria-label="Flagship Sales model legend"

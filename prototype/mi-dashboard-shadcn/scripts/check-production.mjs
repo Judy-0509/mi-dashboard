@@ -50,8 +50,10 @@ import { miWeeklySellThroughDetails } from "../src/data/mi-weekly-sell-through.t
 import {
   flagshipSalesMonths,
   flagshipSalesModels,
+  flagshipSalesComparisonConfigs,
   flagshipSalesVendors,
   getFlagshipSalesChartData,
+  getFlagshipSalesGenerationComparison,
   getFlagshipSalesLifecycle,
 } from "../src/data/flagship-sales.ts"
 
@@ -365,6 +367,79 @@ for (const model of flagshipSalesModels) {
     if (point.period < model.releaseMonth) assert.equal(point[model.key], 0)
   }
 }
+
+assert.deepEqual(Object.keys(flagshipSalesComparisonConfigs), [
+  "apple",
+  "samsung",
+  "xiaomi",
+  "oppo",
+  "vivo",
+  "honor",
+  "google",
+])
+assert.deepEqual(flagshipSalesComparisonConfigs.apple.pairs, [
+  {
+    rowLabel: "Basic",
+    currentModelKey: "iphone17",
+    previousModelKey: "iphone16",
+  },
+  {
+    rowLabel: "Plus/Air",
+    currentModelKey: "iphoneAir",
+    previousModelKey: "iphone16Plus",
+  },
+  {
+    rowLabel: "Pro",
+    currentModelKey: "iphone17Pro",
+    previousModelKey: "iphone16Pro",
+  },
+  {
+    rowLabel: "Pro Max",
+    currentModelKey: "iphone17ProMax",
+    previousModelKey: "iphone16ProMax",
+  },
+])
+for (const vendor of flagshipSalesVendors) {
+  assert.ok(flagshipSalesComparisonConfigs[vendor.key].pairs.length >= 1)
+  const comparison = getFlagshipSalesGenerationComparison(vendor.key)
+  assert.equal(comparison.rows[0].rowLabel, "전체 시리즈")
+  const modelRows = comparison.rows.slice(1)
+  assert.ok(
+    modelRows.every(
+      ({ deltaMu, deltaPercent }) =>
+        Number.isFinite(deltaMu) && Number.isFinite(deltaPercent)
+    )
+  )
+  assert.equal(
+    comparison.rows[0].currentCumulative,
+    modelRows.reduce((total, row) => total + row.currentCumulative, 0)
+  )
+  assert.equal(
+    comparison.rows[0].previousCumulative,
+    modelRows.reduce((total, row) => total + row.previousCumulative, 0)
+  )
+}
+const appleComparison = getFlagshipSalesGenerationComparison("apple")
+assert.deepEqual(
+  appleComparison.rows.map(
+    ({ rowLabel, currentModelLabel, previousModelLabel }) => [
+      rowLabel,
+      currentModelLabel,
+      previousModelLabel,
+    ]
+  ),
+  [
+    ["전체 시리즈", "iPhone 17", "iPhone 16"],
+    ["Basic", "iPhone 17", "iPhone 16"],
+    ["Plus/Air", "iPhone Air", "iPhone 16 Plus"],
+    ["Pro", "iPhone 17 Pro", "iPhone 16 Pro"],
+    ["Pro Max", "iPhone 17 Pro Max", "iPhone 16 Pro Max"],
+  ]
+)
+assert.equal(appleComparison.rows[0].duration, 12)
+assert.ok(
+  appleComparison.rows.slice(1).every(({ duration }) => duration === 12)
+)
 
 assert.equal(cumulativeProduction.length, 14)
 assert.equal(productionYAxisDomain[0], 0)
@@ -685,6 +760,10 @@ assert.match(flagshipSalesSource, /Calendar Month/)
 assert.match(flagshipSalesSource, /Since Launch/)
 assert.match(flagshipSalesSource, /ONLY/)
 assert.match(flagshipSalesSource, /getFlagshipSalesChartData/)
+assert.match(flagshipSalesSource, /getFlagshipSalesGenerationComparison/)
+assert.match(flagshipSalesSource, /세대별 판매 비교/)
+assert.match(flagshipSalesSource, /<table/)
+assert.match(flagshipSalesSource, /grid-cols-\[minmax\(0,1fr\)_320px\]/)
 assert.match(flagshipSalesSource, /stackId="flagship-sales"/)
 assert.match(flagshipSalesSource, /LabelList/)
 assert.match(sellThroughSource, /58fr.*42fr/)

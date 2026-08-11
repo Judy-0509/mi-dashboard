@@ -68,6 +68,35 @@ export interface FlagshipSalesChartPoint {
   [modelKey: string]: number | string
 }
 
+export interface FlagshipSalesComparisonPair {
+  rowLabel: string
+  currentModelKey: string
+  previousModelKey: string
+}
+
+export interface FlagshipSalesComparisonConfig {
+  currentGenerationLabel: string
+  previousGenerationLabel: string
+  pairs: readonly FlagshipSalesComparisonPair[]
+}
+
+export interface FlagshipSalesComparisonRow {
+  rowLabel: string
+  currentModelLabel: string
+  previousModelLabel: string
+  duration: number | null
+  currentCumulative: number
+  previousCumulative: number
+  deltaMu: number
+  deltaPercent: number
+}
+
+export interface FlagshipSalesComparison {
+  currentGenerationLabel: string
+  previousGenerationLabel: string
+  rows: readonly FlagshipSalesComparisonRow[]
+}
+
 export const flagshipSalesMonths = [
   "2024-09",
   "2024-10",
@@ -219,6 +248,69 @@ export const flagshipSalesModels = flagshipSalesVendors.flatMap(
   ({ models }) => models,
 )
 
+export const flagshipSalesComparisonConfigs = {
+  apple: {
+    currentGenerationLabel: "iPhone 17",
+    previousGenerationLabel: "iPhone 16",
+    pairs: [
+      { rowLabel: "Basic", currentModelKey: "iphone17", previousModelKey: "iphone16" },
+      { rowLabel: "Plus/Air", currentModelKey: "iphoneAir", previousModelKey: "iphone16Plus" },
+      { rowLabel: "Pro", currentModelKey: "iphone17Pro", previousModelKey: "iphone16Pro" },
+      { rowLabel: "Pro Max", currentModelKey: "iphone17ProMax", previousModelKey: "iphone16ProMax" },
+    ],
+  },
+  samsung: {
+    currentGenerationLabel: "Galaxy S26",
+    previousGenerationLabel: "Galaxy S25",
+    pairs: [
+      { rowLabel: "Basic", currentModelKey: "galaxyS26", previousModelKey: "galaxyS25" },
+      { rowLabel: "Plus", currentModelKey: "galaxyS26Plus", previousModelKey: "galaxyS25Plus" },
+      { rowLabel: "Ultra", currentModelKey: "galaxyS26Ultra", previousModelKey: "galaxyS25Ultra" },
+    ],
+  },
+  xiaomi: {
+    currentGenerationLabel: "Xiaomi 17",
+    previousGenerationLabel: "Xiaomi 15",
+    pairs: [
+      { rowLabel: "Basic", currentModelKey: "xiaomi17", previousModelKey: "xiaomi15" },
+      { rowLabel: "Ultra", currentModelKey: "xiaomi17Ultra", previousModelKey: "xiaomi15Ultra" },
+    ],
+  },
+  oppo: {
+    currentGenerationLabel: "OPPO Find X9",
+    previousGenerationLabel: "OPPO Find X8",
+    pairs: [
+      { rowLabel: "Basic", currentModelKey: "oppoFindX9", previousModelKey: "oppoFindX8" },
+      { rowLabel: "Pro", currentModelKey: "oppoFindX9Pro", previousModelKey: "oppoFindX8Pro" },
+    ],
+  },
+  vivo: {
+    currentGenerationLabel: "vivo X300",
+    previousGenerationLabel: "vivo X200",
+    pairs: [
+      { rowLabel: "Basic", currentModelKey: "vivoX300", previousModelKey: "vivoX200" },
+      { rowLabel: "Pro", currentModelKey: "vivoX300Pro", previousModelKey: "vivoX200Pro" },
+    ],
+  },
+  honor: {
+    currentGenerationLabel: "HONOR Magic8",
+    previousGenerationLabel: "HONOR Magic7",
+    pairs: [
+      { rowLabel: "Pro", currentModelKey: "honorMagic8Pro", previousModelKey: "honorMagic7Pro" },
+    ],
+  },
+  google: {
+    currentGenerationLabel: "Pixel 10",
+    previousGenerationLabel: "Pixel 9",
+    pairs: [
+      { rowLabel: "Basic", currentModelKey: "pixel10", previousModelKey: "pixel9" },
+      { rowLabel: "Pro", currentModelKey: "pixel10Pro", previousModelKey: "pixel9Pro" },
+      { rowLabel: "Pro XL", currentModelKey: "pixel10ProXL", previousModelKey: "pixel9ProXL" },
+      { rowLabel: "Pro Fold", currentModelKey: "pixel10ProFold", previousModelKey: "pixel9ProFold" },
+    ],
+  },
+} as const satisfies Record<FlagshipSalesVendorKey, FlagshipSalesComparisonConfig>
+
 function getVendor(vendorKey: FlagshipSalesVendorKey) {
   return flagshipSalesVendors.find(({ key }) => key === vendorKey) ?? flagshipSalesVendors[0]
 }
@@ -278,4 +370,100 @@ export function getFlagshipSalesVendorTotal(
     (total, point) => total + point.total,
     0,
   )
+}
+
+function getFlagshipSalesModel(modelKey: string) {
+  return flagshipSalesModels.find(({ key }) => key === modelKey)
+}
+
+function getComparisonDuration(model: FlagshipSalesModel) {
+  const finalDashboardMonth = flagshipSalesMonths[flagshipSalesMonths.length - 1] ?? "2026-08"
+  const availableMonths = getMonthAge(model.releaseMonth, finalDashboardMonth) + 1
+  return Math.min(model.salesFromLaunch.length, Math.max(0, availableMonths))
+}
+
+function getCumulativeSales(model: FlagshipSalesModel, duration: number) {
+  return model.salesFromLaunch
+    .slice(0, duration)
+    .reduce((total, value) => total + value, 0)
+}
+
+function makeComparisonRow(
+  rowLabel: string,
+  currentModel: FlagshipSalesModel,
+  previousModel: FlagshipSalesModel,
+  duration: number,
+): FlagshipSalesComparisonRow {
+  const currentCumulative = getCumulativeSales(currentModel, duration)
+  const previousCumulative = getCumulativeSales(previousModel, duration)
+  const deltaMu = currentCumulative - previousCumulative
+
+  return {
+    rowLabel,
+    currentModelLabel: currentModel.label,
+    previousModelLabel: previousModel.label,
+    duration,
+    currentCumulative,
+    previousCumulative,
+    deltaMu,
+    deltaPercent:
+      previousCumulative === 0 ? 0 : (deltaMu / previousCumulative) * 100,
+  }
+}
+
+export function getFlagshipSalesGenerationComparison(
+  vendorKey: FlagshipSalesVendorKey,
+): FlagshipSalesComparison {
+  const config = flagshipSalesComparisonConfigs[vendorKey]
+  const rows = config.pairs.map(
+    ({ rowLabel, currentModelKey, previousModelKey }) => {
+      const currentModel = getFlagshipSalesModel(currentModelKey)
+      const previousModel = getFlagshipSalesModel(previousModelKey)
+      if (!currentModel || !previousModel) {
+        throw new Error(
+          `Missing flagship comparison model for ${vendorKey}: ${rowLabel}`,
+        )
+      }
+
+      return makeComparisonRow(
+        rowLabel,
+        currentModel,
+        previousModel,
+        getComparisonDuration(currentModel),
+      )
+    },
+  )
+  const currentCumulative = rows.reduce(
+    (total, row) => total + row.currentCumulative,
+    0,
+  )
+  const previousCumulative = rows.reduce(
+    (total, row) => total + row.previousCumulative,
+    0,
+  )
+  const deltaMu = currentCumulative - previousCumulative
+  const commonDuration = rows.every(
+    (row) => row.duration === rows[0]?.duration,
+  )
+    ? rows[0]?.duration ?? null
+    : null
+
+  return {
+    currentGenerationLabel: config.currentGenerationLabel,
+    previousGenerationLabel: config.previousGenerationLabel,
+    rows: [
+      {
+        rowLabel: "전체 시리즈",
+        currentModelLabel: config.currentGenerationLabel,
+        previousModelLabel: config.previousGenerationLabel,
+        duration: commonDuration,
+        currentCumulative,
+        previousCumulative,
+        deltaMu,
+        deltaPercent:
+          previousCumulative === 0 ? 0 : (deltaMu / previousCumulative) * 100,
+      },
+      ...rows,
+    ],
+  }
 }
