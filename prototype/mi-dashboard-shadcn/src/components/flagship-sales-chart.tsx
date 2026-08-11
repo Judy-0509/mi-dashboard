@@ -316,7 +316,7 @@ export function FlagshipSalesChart() {
               axisLine={false}
               dataKey="label"
               fontSize={9}
-              interval={0}
+              interval={view === "calendar" ? 1 : 0}
               tickFormatter={view === "calendar" ? formatMonth : undefined}
               tickLine={false}
               tickMargin={7}

@@ -210,7 +210,7 @@ function FlagshipSalesPage() {
             Flagship Sales
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            2025년 9월–2026년 8월 월별 모델 판매량 · 출시월 기준 Lifecycle 비교
+            2024년 9월–2026년 8월 24개월 모델 판매량 · 출시월 기준 Lifecycle 비교
           </p>
         </div>
         <PageActions page="flagship-sales" />

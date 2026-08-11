@@ -117,35 +117,123 @@ assert.equal(inventorySnapshots.length, 7)
 assert.ok(inventorySnapshots.every((row) => row.inventory.length === 3 && row.wos.length === 3))
 
 assert.deepEqual(flagshipSalesMonths, [
-  "2025-09", "2025-10", "2025-11", "2025-12",
-  "2026-01", "2026-02", "2026-03", "2026-04",
-  "2026-05", "2026-06", "2026-07", "2026-08",
+  "2024-09",
+  "2024-10",
+  "2024-11",
+  "2024-12",
+  "2025-01",
+  "2025-02",
+  "2025-03",
+  "2025-04",
+  "2025-05",
+  "2025-06",
+  "2025-07",
+  "2025-08",
+  "2025-09",
+  "2025-10",
+  "2025-11",
+  "2025-12",
+  "2026-01",
+  "2026-02",
+  "2026-03",
+  "2026-04",
+  "2026-05",
+  "2026-06",
+  "2026-07",
+  "2026-08",
 ])
-assert.deepEqual(flagshipSalesVendors.map(({ key }) => key), [
-  "apple", "samsung", "xiaomi", "oppo", "vivo", "honor", "google",
-])
+assert.deepEqual(
+  flagshipSalesVendors.map(({ key }) => key),
+  ["apple", "samsung", "xiaomi", "oppo", "vivo", "honor", "google"]
+)
 assert.equal(flagshipSalesVendors.length, 7)
-assert.deepEqual(flagshipSalesVendors.map(({ label }) => label), [
-  "Apple", "Samsung", "Xiaomi", "OPPO", "vivo", "HONOR", "Google",
-])
+assert.deepEqual(
+  flagshipSalesVendors.map(({ label }) => label),
+  ["Apple", "Samsung", "Xiaomi", "OPPO", "vivo", "HONOR", "Google"]
+)
 const expectedFlagshipModels = {
-  apple: ["iPhone 17", "iPhone Air", "iPhone 17 Pro", "iPhone 17 Pro Max"],
-  samsung: [
-    "Galaxy S25", "Galaxy S25+", "Galaxy S25 Ultra",
-    "Galaxy Z Fold7", "Galaxy Z Flip7",
-    "Galaxy S26", "Galaxy S26+", "Galaxy S26 Ultra",
+  apple: [
+    "iPhone 16",
+    "iPhone 16 Plus",
+    "iPhone 16 Pro",
+    "iPhone 16 Pro Max",
+    "iPhone 17",
+    "iPhone Air",
+    "iPhone 17 Pro",
+    "iPhone 17 Pro Max",
   ],
-  xiaomi: ["Xiaomi 15T Pro", "Xiaomi 17", "Xiaomi 17 Ultra"],
-  oppo: ["OPPO Find X9", "OPPO Find X9 Pro", "OPPO Find N6", "OPPO Find X9 Ultra"],
-  vivo: ["vivo X Fold5", "vivo X300", "vivo X300 Pro", "vivo X300 Ultra"],
-  honor: ["HONOR Magic V5", "HONOR Magic8 Pro", "HONOR Magic V6"],
-  google: ["Pixel 10", "Pixel 10 Pro", "Pixel 10 Pro XL", "Pixel 10 Pro Fold"],
+  samsung: [
+    "Galaxy S24",
+    "Galaxy S24+",
+    "Galaxy S24 Ultra",
+    "Galaxy Z Fold6",
+    "Galaxy Z Flip6",
+    "Galaxy S25",
+    "Galaxy S25+",
+    "Galaxy S25 Ultra",
+    "Galaxy Z Fold7",
+    "Galaxy Z Flip7",
+    "Galaxy S26",
+    "Galaxy S26+",
+    "Galaxy S26 Ultra",
+  ],
+  xiaomi: [
+    "Xiaomi 14T Pro",
+    "Xiaomi 15",
+    "Xiaomi 15 Ultra",
+    "Xiaomi 15T Pro",
+    "Xiaomi 17",
+    "Xiaomi 17 Ultra",
+  ],
+  oppo: [
+    "OPPO Find X8",
+    "OPPO Find X8 Pro",
+    "OPPO Find N5",
+    "OPPO Find X9",
+    "OPPO Find X9 Pro",
+    "OPPO Find N6",
+    "OPPO Find X9 Ultra",
+  ],
+  vivo: [
+    "vivo X200",
+    "vivo X200 Pro",
+    "vivo X Fold5",
+    "vivo X300",
+    "vivo X300 Pro",
+    "vivo X300 Ultra",
+  ],
+  honor: [
+    "HONOR Magic V3",
+    "HONOR Magic7 Pro",
+    "HONOR Magic V5",
+    "HONOR Magic8 Pro",
+    "HONOR Magic V6",
+  ],
+  google: [
+    "Pixel 9",
+    "Pixel 9 Pro",
+    "Pixel 9 Pro XL",
+    "Pixel 9 Pro Fold",
+    "Pixel 10",
+    "Pixel 10 Pro",
+    "Pixel 10 Pro XL",
+    "Pixel 10 Pro Fold",
+  ],
 }
 const expectedFlagshipReleaseMonths = {
+  "iPhone 16": "2024-09",
+  "iPhone 16 Plus": "2024-09",
+  "iPhone 16 Pro": "2024-09",
+  "iPhone 16 Pro Max": "2024-09",
   "iPhone 17": "2025-09",
   "iPhone Air": "2025-09",
   "iPhone 17 Pro": "2025-09",
   "iPhone 17 Pro Max": "2025-09",
+  "Galaxy S24": "2024-01",
+  "Galaxy S24+": "2024-01",
+  "Galaxy S24 Ultra": "2024-01",
+  "Galaxy Z Fold6": "2024-07",
+  "Galaxy Z Flip6": "2024-07",
   "Galaxy S25": "2025-02",
   "Galaxy S25+": "2025-02",
   "Galaxy S25 Ultra": "2025-02",
@@ -154,73 +242,129 @@ const expectedFlagshipReleaseMonths = {
   "Galaxy S26": "2026-03",
   "Galaxy S26+": "2026-03",
   "Galaxy S26 Ultra": "2026-03",
+  "Xiaomi 14T Pro": "2024-09",
+  "Xiaomi 15": "2025-03",
+  "Xiaomi 15 Ultra": "2025-03",
   "Xiaomi 15T Pro": "2025-09",
   "Xiaomi 17": "2026-02",
   "Xiaomi 17 Ultra": "2026-02",
+  "OPPO Find X8": "2024-11",
+  "OPPO Find X8 Pro": "2024-11",
+  "OPPO Find N5": "2025-02",
   "OPPO Find X9": "2025-10",
   "OPPO Find X9 Pro": "2025-10",
   "OPPO Find N6": "2026-03",
   "OPPO Find X9 Ultra": "2026-04",
+  "vivo X200": "2024-11",
+  "vivo X200 Pro": "2024-11",
   "vivo X Fold5": "2025-06",
   "vivo X300": "2025-10",
   "vivo X300 Pro": "2025-10",
   "vivo X300 Ultra": "2026-04",
+  "HONOR Magic V3": "2024-09",
+  "HONOR Magic7 Pro": "2025-01",
   "HONOR Magic V5": "2025-08",
   "HONOR Magic8 Pro": "2026-01",
   "HONOR Magic V6": "2026-06",
+  "Pixel 9": "2024-08",
+  "Pixel 9 Pro": "2024-09",
+  "Pixel 9 Pro XL": "2024-08",
+  "Pixel 9 Pro Fold": "2024-09",
   "Pixel 10": "2025-08",
   "Pixel 10 Pro": "2025-08",
   "Pixel 10 Pro XL": "2025-08",
   "Pixel 10 Pro Fold": "2025-10",
 }
 for (const vendor of flagshipSalesVendors) {
-  assert.deepEqual(vendor.models.map(({ label }) => label), expectedFlagshipModels[vendor.key])
+  assert.deepEqual(
+    vendor.models.map(({ label }) => label),
+    expectedFlagshipModels[vendor.key]
+  )
 }
-assert.equal(flagshipSalesModels.length, 30)
+assert.equal(flagshipSalesModels.length, 53)
 for (const model of flagshipSalesModels) {
   assert.equal(model.releaseMonth, expectedFlagshipReleaseMonths[model.label])
-  assert.equal(model.salesFromLaunch.length, 12)
+  assert.equal(model.salesFromLaunch.length, 24)
   assert.equal(model.source.isEstimated, true)
   assert.ok(model.source.marketScope.trim())
   assert.match(model.source.url, /^https:\/\//)
 }
 assert.equal(
   flagshipSalesModels.find(({ label }) => label === "Xiaomi 17").source.url,
-  "https://www.mi.com/global/product/xiaomi-17/",
+  "https://www.mi.com/global/product/xiaomi-17/"
 )
 assert.equal(
   flagshipSalesModels.find(({ label }) => label === "Galaxy S25").source.url,
-  "https://news.samsung.com/global/samsung-galaxy-s25-series-arrives-worldwide/",
+  "https://news.samsung.com/global/samsung-galaxy-s25-series-arrives-worldwide/"
 )
 for (const vendor of flagshipSalesVendors) {
   assert.ok(vendor.models.length >= 2)
   const selectedKeys = vendor.models.map(({ key }) => key)
-  const calendar = getFlagshipSalesChartData(vendor.key, "calendar", selectedKeys)
-  const lifecycle = getFlagshipSalesChartData(vendor.key, "launch", selectedKeys)
-  assert.equal(calendar.length, 12)
-  assert.equal(lifecycle.length, 12)
-  assert.equal(calendar[0].period, "2025-09")
+  const calendar = getFlagshipSalesChartData(
+    vendor.key,
+    "calendar",
+    selectedKeys
+  )
+  const lifecycle = getFlagshipSalesChartData(
+    vendor.key,
+    "launch",
+    selectedKeys
+  )
+  assert.equal(calendar.length, 24)
+  assert.equal(lifecycle.length, 24)
+  assert.equal(calendar[0].period, "2024-09")
   assert.equal(lifecycle[0].period, "M0")
-  assert.equal(lifecycle.at(-1).period, "M+11")
-  assert.ok(vendor.models.every((model) => getFlagshipSalesLifecycle(model).length === 12))
+  assert.equal(lifecycle.at(-1).period, "M+23")
+  assert.ok(
+    vendor.models.every(
+      (model) => getFlagshipSalesLifecycle(model).length === 24
+    )
+  )
 }
-const xiaomiCalendar = getFlagshipSalesChartData(
-  "xiaomi",
-  "calendar",
-  ["xiaomi15TPro", "xiaomi17", "xiaomi17Ultra"],
+const xiaomiCalendar = getFlagshipSalesChartData("xiaomi", "calendar", [
+  "xiaomi14TPro",
+  "xiaomi15",
+  "xiaomi15Ultra",
+  "xiaomi15TPro",
+  "xiaomi17",
+  "xiaomi17Ultra",
+])
+const xiaomiPreLaunch = xiaomiCalendar.find(
+  (point) => point.period === "2024-09"
 )
-const xiaomiPreLaunch = xiaomiCalendar.find((point) => point.period === "2025-09")
 assert.ok(xiaomiPreLaunch)
+assert.equal(
+  xiaomiPreLaunch.xiaomi14TPro,
+  flagshipSalesModels.find(({ label }) => label === "Xiaomi 14T Pro")
+    .salesFromLaunch[0]
+)
+assert.equal(xiaomiPreLaunch.xiaomi15, 0)
+assert.equal(xiaomiPreLaunch.xiaomi15Ultra, 0)
+assert.equal(xiaomiPreLaunch.xiaomi15TPro, 0)
 assert.equal(xiaomiPreLaunch.xiaomi17, 0)
 assert.equal(xiaomiPreLaunch.xiaomi17Ultra, 0)
+const s24 = flagshipSalesModels.find(({ label }) => label === "Galaxy S24")
+assert.ok(s24)
+const samsungCalendar = getFlagshipSalesChartData("samsung", "calendar", [
+  s24.key,
+])
+assert.equal(samsungCalendar[0].galaxyS24, s24.salesFromLaunch[8])
 const s25 = flagshipSalesModels.find(({ label }) => label === "Galaxy S25")
 assert.ok(s25)
-const samsungCalendar = getFlagshipSalesChartData("samsung", "calendar", [s25.key])
-assert.equal(samsungCalendar[0].galaxyS25, s25.salesFromLaunch[7])
-assert.deepEqual(
-  getFlagshipSalesLifecycle(s25),
-  s25.salesFromLaunch,
-)
+const s25ReleasePoint = getFlagshipSalesChartData("samsung", "calendar", [
+  s25.key,
+]).find((point) => point.period === s25.releaseMonth)
+assert.ok(s25ReleasePoint)
+assert.equal(s25ReleasePoint.galaxyS25, s25.salesFromLaunch[0])
+assert.deepEqual(getFlagshipSalesLifecycle(s25), s25.salesFromLaunch)
+for (const model of flagshipSalesModels) {
+  const calendar = getFlagshipSalesChartData(model.vendor, "calendar", [
+    model.key,
+  ])
+  for (const point of calendar) {
+    if (point.period < model.releaseMonth) assert.equal(point[model.key], 0)
+  }
+}
 
 assert.equal(cumulativeProduction.length, 14)
 assert.equal(productionYAxisDomain[0], 0)
