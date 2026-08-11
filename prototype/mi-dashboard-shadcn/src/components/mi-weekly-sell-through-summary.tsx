@@ -88,7 +88,7 @@ export function MiWeeklySellThroughSummary() {
                     {formatMetric(wow)}
                   </td>
                   <td className="min-w-0 px-3 py-2 align-top text-muted-foreground">
-                    <ul className="grid gap-0.5 list-disc pl-4 leading-4">
+                    <ul className="grid gap-0.5 list-disc pl-4 text-sm leading-5">
                       {details.map((detail) => (
                         <li className="break-words" key={detail}>
                           {detail}
