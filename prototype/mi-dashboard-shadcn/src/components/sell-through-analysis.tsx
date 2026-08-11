@@ -155,7 +155,7 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
         />
         <YAxis
           axisLine={false}
-          domain={[0, 400]}
+          domain={[0, 500]}
           tickFormatter={(value) => Number(value).toFixed(0)}
           tickLine={false}
           tickMargin={7}
@@ -164,7 +164,7 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
         />
         <YAxis
           axisLine={false}
-          domain={[0, 120]}
+          domain={[90, 110]}
           orientation="right"
           tickFormatter={(value) => `${Number(value).toFixed(0)}%`}
           tickLine={false}
@@ -184,6 +184,13 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
                 stackId="sell-in"
                 yAxisId="bars"
               >
+                <LabelList
+                  dataKey={`si_${vendor.key}`}
+                  fill={index < 3 ? "var(--foreground)" : "var(--background)"}
+                  fontSize={8}
+                  formatter={formatBarTotal}
+                  position="center"
+                />
                 {index === sellThroughVendors.length - 1 ? (
                   <LabelList
                     dataKey="sellInTotal"
@@ -203,6 +210,13 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
                 stackId="sell-through"
                 yAxisId="bars"
               >
+                <LabelList
+                  dataKey={`st_${vendor.key}`}
+                  fill={index < 3 ? "var(--foreground)" : "var(--background)"}
+                  fontSize={8}
+                  formatter={formatBarTotal}
+                  position="center"
+                />
                 {index === sellThroughVendors.length - 1 ? (
                   <LabelList
                     dataKey="sellThroughTotal"
