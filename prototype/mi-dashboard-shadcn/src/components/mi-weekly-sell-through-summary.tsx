@@ -70,7 +70,7 @@ export function MiWeeklySellThroughSummary() {
                     {region}
                   </th>
                   <td
-                    className={`px-3 py-2 text-right align-top font-mono tabular-nums whitespace-nowrap ${
+                    className={`px-3 py-2 text-right align-top text-sm leading-4 font-normal tabular-nums whitespace-nowrap ${
                       yoy !== null && yoy < 0
                         ? "text-destructive"
                         : "text-foreground"
@@ -79,7 +79,7 @@ export function MiWeeklySellThroughSummary() {
                     {formatMetric(yoy)}
                   </td>
                   <td
-                    className={`px-3 py-2 text-right align-top font-mono tabular-nums whitespace-nowrap ${
+                    className={`px-3 py-2 text-right align-top text-sm leading-4 font-normal tabular-nums whitespace-nowrap ${
                       wow !== null && wow < 0
                         ? "text-destructive"
                         : "text-foreground"
