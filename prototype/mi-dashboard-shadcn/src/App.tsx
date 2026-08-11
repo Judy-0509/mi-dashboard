@@ -5,6 +5,7 @@ import { AniProductionChart } from "@/components/ani-production-chart"
 import { CumulativeProductionChart } from "@/components/cumulative-production-chart"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { ExecutiveSummary } from "@/components/executive-summary"
+import { MiInsightWeeklyReport } from "@/components/mi-insight-weekly-report"
 import { PortalSidebar, type PortalPage } from "@/components/portal-sidebar"
 import { SellThroughAnalysis } from "@/components/sell-through-analysis"
 import { buttonVariants } from "@/components/ui/button"
@@ -192,6 +193,31 @@ function SellThroughPage() {
   )
 }
 
+function MiInsightPage() {
+  return (
+    <>
+      <header
+        className="flex items-end justify-between border-b pb-4"
+        id="mi-insight"
+      >
+        <div>
+          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+            MI Insight / Weekly Report
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            Weekly Report
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            EDM 업데이트 자료와 공유 내용
+          </p>
+        </div>
+        <PageActions page="mi-insight" />
+      </header>
+      <MiInsightWeeklyReport />
+    </>
+  )
+}
+
 export function App() {
   const [activePage, setActivePage] = useState<PortalPage>(pageFromHash)
 
@@ -228,6 +254,8 @@ export function App() {
         <SellThroughPage />
       ) : activePage === "ani" ? (
         <AniPage />
+      ) : activePage === "mi-insight" ? (
+        <MiInsightPage />
       ) : (
         <SigmaPage />
       )}

@@ -1,6 +1,11 @@
 import { Separator } from "@/components/ui/separator"
 
-export type PortalPage = "sigma" | "weekly" | "ani" | "sell-through"
+export type PortalPage =
+  | "sigma"
+  | "weekly"
+  | "ani"
+  | "sell-through"
+  | "mi-insight"
 
 const providers: Array<{
   label: string
@@ -28,6 +33,16 @@ const providers: Array<{
         child: "Sell-in / Sell-through",
         page: "sell-through",
         href: "#sell-through",
+      },
+    ],
+  },
+  {
+    label: "MI Insight",
+    children: [
+      {
+        child: "Weekly Report",
+        page: "mi-insight",
+        href: "#mi-insight",
       },
     ],
   },

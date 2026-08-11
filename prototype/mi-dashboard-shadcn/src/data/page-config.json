@@ -14,6 +14,11 @@
     "exportFileName": "MI_SellThrough.html",
     "originalExcelUrl": null
   },
+  "mi-insight": {
+    "hash": "#mi-insight",
+    "exportFileName": "MI_Insight_Weekly_Report.html",
+    "originalExcelUrl": null
+  },
   "ani": {
     "hash": "#ani",
     "exportFileName": "MI_ANI.html",
