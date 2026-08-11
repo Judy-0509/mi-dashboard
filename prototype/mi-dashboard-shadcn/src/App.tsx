@@ -6,6 +6,7 @@ import { CumulativeProductionChart } from "@/components/cumulative-production-ch
 import { DashboardShell } from "@/components/dashboard-shell"
 import { ExecutiveSummary } from "@/components/executive-summary"
 import { MiInsightWeeklyReport } from "@/components/mi-insight-weekly-report"
+import { MiWeeklySellThroughSummary } from "@/components/mi-weekly-sell-through-summary"
 import { PortalSidebar, type PortalPage } from "@/components/portal-sidebar"
 import { SellThroughAnalysis } from "@/components/sell-through-analysis"
 import { buttonVariants } from "@/components/ui/button"
@@ -238,7 +239,7 @@ function MiInsightWeeklySellThroughPage() {
         </div>
         <PageActions page="mi-weekly-sell-through" />
       </header>
-      <WeeklyExecutiveSummary />
+      <MiWeeklySellThroughSummary />
       <WeeklyAnalysis />
     </>
   )

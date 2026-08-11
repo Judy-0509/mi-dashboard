@@ -46,6 +46,7 @@ import {
   miInsightInsights,
   miInsightReports,
 } from "../src/data/mi-insight.ts"
+import { miWeeklySellThroughDetails } from "../src/data/mi-weekly-sell-through.ts"
 
 assert.equal(miInsightInsights.length, 3)
 assert.ok(miInsightReports.length >= 1)
@@ -344,6 +345,16 @@ assert.ok(
 assert.equal(getWeeklyMetric(weeklySelectedWeek, "Total", null, "yoy"), 6.8)
 assert.equal(getWeeklyMetric(weeklySelectedWeek, "Total", null, "wow"), -0.2)
 assert.equal(getWeeklyMetric(weeklySelectedWeek, "India", null, "yoy"), 9.3)
+assert.ok(
+  weeklyRegions.every(
+    (region) =>
+      miWeeklySellThroughDetails[region].length >= 2 &&
+      miWeeklySellThroughDetails[region].length <= 4 &&
+      miWeeklySellThroughDetails[region].every(
+        (detail) => typeof detail === "string" && detail.trim(),
+      ),
+  ),
+)
 
 const totalWeeklyTrend = getWeeklyTrend("Total", null, "mu")
 assert.equal(totalWeeklyTrend.length, 52)
@@ -384,6 +395,10 @@ const pageConfigSource = readFileSync(
 )
 const sellThroughSource = readFileSync(
   new URL("../src/components/sell-through-analysis.tsx", import.meta.url),
+  "utf8"
+)
+const miWeeklySummarySource = readFileSync(
+  new URL("../src/components/mi-weekly-sell-through-summary.tsx", import.meta.url),
   "utf8"
 )
 
@@ -462,8 +477,15 @@ assert.match(
 )
 assert.match(
   appSource,
-  /function MiInsightWeeklySellThroughPage\(\)[\s\S]*?<p[^>]*>\s*MI Insight \/ Weekly Sell-through\s*<\/p>[\s\S]*?<h1[^>]*>\s*Weekly Sell-through\s*<\/h1>[\s\S]*?<PageActions page="mi-weekly-sell-through" \/>[\s\S]*?<WeeklyExecutiveSummary \/>[\s\S]*?<WeeklyAnalysis \/>/,
+  /function MiInsightWeeklySellThroughPage\(\)[\s\S]*?<p[^>]*>\s*MI Insight \/ Weekly Sell-through\s*<\/p>[\s\S]*?<h1[^>]*>\s*Weekly Sell-through\s*<\/h1>[\s\S]*?<PageActions page="mi-weekly-sell-through" \/>[\s\S]*?<MiWeeklySellThroughSummary \/>[\s\S]*?<WeeklyAnalysis \/>/,
 )
+assert.match(miWeeklySummarySource, /<table[\s\S]*table-fixed border-collapse text-xs/)
+assert.match(miWeeklySummarySource, /YoY \(%\)/)
+assert.match(miWeeklySummarySource, /WoW \(%\)/)
+assert.match(miWeeklySummarySource, /세부 내용/)
+assert.match(miWeeklySummarySource, /weeklyRegions\.map/)
+assert.match(miWeeklySummarySource, /miWeeklySellThroughDetails\[region\]/)
+assert.match(miWeeklySummarySource, /scope="row"/)
 
 const aniChartSource = readFileSync(
   new URL("../src/components/ani-production-chart.tsx", import.meta.url),
