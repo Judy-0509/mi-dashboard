@@ -56,6 +56,15 @@ import {
   getFlagshipSalesGenerationComparison,
   getFlagshipSalesLifecycle,
 } from "../src/data/flagship-sales.ts"
+import {
+  getPipelineChartData,
+  pipelineData,
+  pipelineExecutiveSummary,
+  pipelineQuarters,
+  pipelineVendors,
+  pipelineYAxisDomain,
+  pipelineYAxisTicks,
+} from "../src/data/pipeline-check.ts"
 
 assert.equal(miInsightInsights.length, 3)
 assert.ok(miInsightReports.length >= 1)
@@ -1057,5 +1066,48 @@ assert.doesNotMatch(weeklyAnalysisSource, /aria-label="Trend vendor selector"/)
 assert.doesNotMatch(weeklyAnalysisSource, /aria-label="Cumulative context selector"/)
 assert.match(weeklyAnalysisSource, /dot=\{\{ r: 2 \}\}/)
 assert.match(weeklyAnalysisSource, /activeDot=\{\{ r: 4 \}\}/)
+
+const expectedPipelineQuarters = [
+  "2025 Q1", "2025 Q2", "2025 Q3", "2025 Q4", "2026 Q1", "2026 Q2",
+]
+const expectedPipelineVendors = ["apple", "samsung", "cnOem"]
+const pipelineFlowMetrics = ["production", "sellIn", "sellOut"]
+const pipelineInventoryMetrics = ["productionInventory", "channelInventory"]
+
+assert.deepEqual([...pipelineQuarters], expectedPipelineQuarters)
+assert.deepEqual(pipelineVendors.map(({ key }) => key), expectedPipelineVendors)
+assert.equal(pipelineData.length, 6)
+for (const [index, row] of pipelineData.entries()) {
+  assert.equal(row.quarter, expectedPipelineQuarters[index])
+  for (const metric of pipelineFlowMetrics) {
+    assert.deepEqual(Object.keys(row[metric]), expectedPipelineVendors)
+    assert.ok(Object.values(row[metric]).every(Number.isFinite))
+  }
+  for (const metric of pipelineInventoryMetrics) {
+    assert.deepEqual(Object.keys(row[metric]), expectedPipelineVendors)
+    assert.ok(
+      Object.values(row[metric]).every(
+        (value) => value === null || Number.isFinite(value),
+      ),
+    )
+  }
+}
+for (const metric of pipelineFlowMetrics) {
+  const chartRows = getPipelineChartData(metric)
+  assert.equal(chartRows.length, 6)
+  for (const row of chartRows) {
+    assert.equal(
+      row.total,
+      Number(expectedPipelineVendors.reduce((sum, key) => sum + row[key], 0).toFixed(1)),
+    )
+    assert.ok(row.total <= pipelineYAxisDomain[1])
+  }
+}
+assert.equal(pipelineYAxisDomain[0], 0)
+assert.deepEqual(pipelineYAxisTicks, [0, 50, 100, 150, 200, 250, 300, 350])
+assert.equal(pipelineExecutiveSummary.length, 3)
+assert.match(pipelineExecutiveSummary[0], /309\.0Mu.*298\.0Mu.*291\.0Mu/)
+assert.match(pipelineExecutiveSummary[1], /80\.0Mu.*90\.0Mu.*\+7\.0Mu/)
+assert.match(pipelineExecutiveSummary[2], /CN OEM.*45\.0Mu.*확인 필요/)
 
 console.log("production and weekly data checks passed")
