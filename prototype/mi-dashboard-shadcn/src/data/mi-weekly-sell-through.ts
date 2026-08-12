@@ -1,4 +1,4 @@
-import type { WeeklyRegion } from "@/data/weekly"
+import type { WeeklyRegion } from "./weekly.ts"
 
 export const miWeeklySellThroughDetails: Record<
   WeeklyRegion,
