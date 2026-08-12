@@ -33,6 +33,12 @@ import {
   weeklyTitle,
   weeklyYears,
 } from "@/data/weekly"
+import {
+  HoverDetailsProvider,
+  isHoverDetailsEnabled,
+  setHoverDetailsEnabled,
+  type HoverDetailsByPage,
+} from "@/lib/hover-details"
 
 function formatMonth(period: string) {
   const [year, month] = period.split("-")
@@ -276,6 +282,9 @@ function PipelineCheckIPhonePage(): React.ReactElement {
 
 export function App() {
   const [activePage, setActivePage] = useState<PortalPage>(pageFromHash)
+  const [hoverDetailsByPage, setHoverDetailsByPage] = useState<
+    HoverDetailsByPage<PortalPage>
+  >({})
 
   useEffect(() => {
     const updatePage = () => setActivePage(pageFromHash())
@@ -292,59 +301,68 @@ export function App() {
   }
 
   return (
-    <DashboardShell
-      scrollable={
-        activePage === "weekly" ||
-        activePage === "ani" ||
-        activePage === "sell-through" ||
-        activePage === "flagship-sales" ||
-        activePage === "latest-results" ||
-        activePage === "latest-results-iphone" ||
-        activePage === "mi-weekly-sell-through"
-      }
-      sidebar={
-        isExport ? null : (
-          <PortalSidebar activePage={activePage} onNavigate={navigate} />
+    <HoverDetailsProvider
+      enabled={isHoverDetailsEnabled(hoverDetailsByPage, activePage)}
+      onEnabledChange={(enabled) =>
+        setHoverDetailsByPage((current) =>
+          setHoverDetailsEnabled(current, activePage, enabled)
         )
       }
     >
-      {activePage === "weekly" ? (
-        <WeeklyPage />
-      ) : activePage === "sell-through" ? (
-        <SellThroughPage />
-      ) : activePage === "flagship-sales" ? (
-        <FlagshipSalesPage />
-      ) : activePage === "ani" ? (
-        <AniPage />
-      ) : activePage === "mi-insight" ? (
-        <MiInsightPage />
-      ) : activePage === "mi-weekly-sell-through" ? (
-        <MiInsightWeeklySellThroughPage />
-      ) : activePage === "pipeline-check" ? (
-        <PipelineCheckPage />
-      ) : activePage === "pipeline-check-iphone" ? (
-        <PipelineCheckIPhonePage />
-      ) : activePage === "latest-results" ? (
-        <LatestResultsPage
-          affiliateDataset={affiliateAnnualResultsDataset}
-          dataset={latestResultsDataset}
-          eyebrow="MI TAM / LATEST RESULTS"
-          page="latest-results"
-          subtitle="2026 Q1–Q4 Actual · Forecast"
-          title="조사기관별 최신 실적"
-        />
-      ) : activePage === "latest-results-iphone" ? (
-        <LatestResultsPage
-          dataset={latestResultsIPhoneDataset}
-          eyebrow="MI TAM / LATEST RESULTS · IPHONE"
-          page="latest-results-iphone"
-          subtitle="2026 Q1–Q4 Actual · Forecast · iPhone models"
-          title="조사기관별 최신 실적 (iPhone)"
-        />
-      ) : (
-        <SigmaPage />
-      )}
-    </DashboardShell>
+      <DashboardShell
+        scrollable={
+          activePage === "weekly" ||
+          activePage === "ani" ||
+          activePage === "sell-through" ||
+          activePage === "flagship-sales" ||
+          activePage === "latest-results" ||
+          activePage === "latest-results-iphone" ||
+          activePage === "mi-weekly-sell-through"
+        }
+        sidebar={
+          isExport ? null : (
+            <PortalSidebar activePage={activePage} onNavigate={navigate} />
+          )
+        }
+      >
+        {activePage === "weekly" ? (
+          <WeeklyPage />
+        ) : activePage === "sell-through" ? (
+          <SellThroughPage />
+        ) : activePage === "flagship-sales" ? (
+          <FlagshipSalesPage />
+        ) : activePage === "ani" ? (
+          <AniPage />
+        ) : activePage === "mi-insight" ? (
+          <MiInsightPage />
+        ) : activePage === "mi-weekly-sell-through" ? (
+          <MiInsightWeeklySellThroughPage />
+        ) : activePage === "pipeline-check" ? (
+          <PipelineCheckPage />
+        ) : activePage === "pipeline-check-iphone" ? (
+          <PipelineCheckIPhonePage />
+        ) : activePage === "latest-results" ? (
+          <LatestResultsPage
+            affiliateDataset={affiliateAnnualResultsDataset}
+            dataset={latestResultsDataset}
+            eyebrow="MI TAM / LATEST RESULTS"
+            page="latest-results"
+            subtitle="2026 Q1–Q4 Actual · Forecast"
+            title="조사기관별 최신 실적"
+          />
+        ) : activePage === "latest-results-iphone" ? (
+          <LatestResultsPage
+            dataset={latestResultsIPhoneDataset}
+            eyebrow="MI TAM / LATEST RESULTS · IPHONE"
+            page="latest-results-iphone"
+            subtitle="2026 Q1–Q4 Actual · Forecast · iPhone models"
+            title="조사기관별 최신 실적 (iPhone)"
+          />
+        ) : (
+          <SigmaPage />
+        )}
+      </DashboardShell>
+    </HoverDetailsProvider>
   )
 }
 

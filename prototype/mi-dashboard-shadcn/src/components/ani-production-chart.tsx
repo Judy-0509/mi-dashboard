@@ -36,6 +36,10 @@ import {
   type AniModelTypeKey,
 } from "@/data/ani"
 import { getTotalLabelOffsets } from "@/lib/chart-labels"
+import {
+  getHoverHighlightOpacity,
+  useHoverDetails,
+} from "@/lib/hover-details"
 
 const generationOptions = [
   { key: "iphone15", label: "iPhone 15" },
@@ -334,6 +338,7 @@ function getLabelColor(modelType: AniModelTypeKey) {
 }
 
 export function AniProductionChart() {
+  const { enabled: hoverDetailsEnabled } = useHoverDetails()
   const [filterMode, setFilterMode] = useState<AniFilterMode>("lineup")
   const [selectedLineupBuckets, setSelectedLineupBuckets] = useState<
     Set<AniLineupBucketKey>
@@ -682,7 +687,9 @@ export function AniProductionChart() {
                 onMouseLeave={() => setHoveredQuarter(null)}
                 onMouseMove={({ activeLabel }) => {
                   setHoveredQuarter(
-                    typeof activeLabel === "string" ? activeLabel : null,
+                    hoverDetailsEnabled && typeof activeLabel === "string"
+                      ? activeLabel
+                      : null,
                   )
                 }}
               >
@@ -742,11 +749,11 @@ export function AniProductionChart() {
                     {productionWithVisibleTotals.map((item) => (
                       <Cell
                         className="cursor-pointer transition-opacity focus:outline-none focus-visible:outline-none"
-                        fillOpacity={
-                          hoveredQuarter && hoveredQuarter !== item.quarter
-                            ? 0.25
-                            : 1
-                        }
+                        fillOpacity={getHoverHighlightOpacity(
+                          hoverDetailsEnabled,
+                          hoveredQuarter,
+                          item.quarter,
+                        )}
                         key={`${model.key}-${item.quarter}`}
                       />
                     ))}

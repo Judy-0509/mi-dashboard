@@ -31,6 +31,10 @@ import {
 } from "@/data/production"
 import { getVendorLabelColor, type VendorValue } from "@/data/vendor-catalog"
 import { getTotalLabelOffsets } from "@/lib/chart-labels"
+import {
+  getHoverHighlightOpacity,
+  useHoverDetails,
+} from "@/lib/hover-details"
 
 const chartConfig = Object.fromEntries(
   vendors.map((vendor) => [
@@ -118,6 +122,7 @@ function TotalLabel(props: ChartLabelProps) {
 }
 
 export function CumulativeProductionChart() {
+  const { enabled: hoverDetailsEnabled } = useHoverDetails()
   const [visibleVendors, setVisibleVendors] = useState<Set<VendorKey>>(
     () => new Set(allVendorKeys)
   )
@@ -300,7 +305,9 @@ export function CumulativeProductionChart() {
                 onMouseLeave={() => setHoveredQuarter(null)}
                 onMouseMove={({ activeLabel }) => {
                   setHoveredQuarter(
-                    typeof activeLabel === "string" ? activeLabel : null
+                    hoverDetailsEnabled && typeof activeLabel === "string"
+                      ? activeLabel
+                      : null
                   )
                 }}
               >
@@ -341,11 +348,11 @@ export function CumulativeProductionChart() {
                     {cumulativeProduction.map((item) => (
                       <Cell
                         className="cursor-pointer transition-opacity"
-                        fillOpacity={
-                          hoveredQuarter && hoveredQuarter !== item.quarter
-                            ? 0.25
-                            : 1
-                        }
+                        fillOpacity={getHoverHighlightOpacity(
+                          hoverDetailsEnabled,
+                          hoveredQuarter,
+                          item.quarter,
+                        )}
                         key={`${vendor.key}-${item.quarter}`}
                       />
                     ))}

@@ -1,8 +1,10 @@
-import { Download, FileSpreadsheet } from "lucide-react"
+import { Download, FileSpreadsheet, MessageSquareText } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button"
+import { Toggle } from "@/components/ui/toggle"
 import pageConfig from "@/data/page-config.json"
 import type { PortalPage } from "@/components/portal-sidebar"
+import { useHoverDetails } from "@/lib/hover-details"
 
 declare global {
   interface Window {
@@ -33,6 +35,8 @@ export function pageFromHash(): PortalPage {
 }
 
 export function PageActions({ page }: { page: PortalPage }) {
+  const { enabled: hoverDetailsEnabled, onEnabledChange } = useHoverDetails()
+
   if (isExport) {
     return null
   }
@@ -42,6 +46,16 @@ export function PageActions({ page }: { page: PortalPage }) {
 
   return (
     <div className="flex items-center gap-2">
+      <Toggle
+        aria-label="hover 상세 설명"
+        isSelected={hoverDetailsEnabled}
+        onChange={onEnabledChange}
+        size="sm"
+        variant="outline"
+      >
+        <MessageSquareText aria-hidden="true" />
+        상세 설명 {hoverDetailsEnabled ? "ON" : "OFF"}
+      </Toggle>
       <a
         aria-disabled={excelDisabled}
         className={buttonVariants({
