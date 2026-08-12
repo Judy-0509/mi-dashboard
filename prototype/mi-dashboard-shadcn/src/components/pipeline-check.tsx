@@ -35,6 +35,7 @@ import {
   type PipelineInventoryMetric,
 } from "@/data/pipeline-check"
 import { getVendorLabelColor } from "@/data/vendor-catalog"
+import { getTotalLabelOffsets } from "@/lib/chart-labels"
 
 const pipelineChartConfig = Object.fromEntries(
   pipelineVendors.map((vendor) => [
@@ -52,17 +53,56 @@ export type PipelineInventoryTableProps = {
   metric: PipelineInventoryMetric
   title: "Production Inventory" | "Channel Inventory"
   selectedQuarters: InventoryQuarterSelection<(typeof pipelineQuarters)[number]>
-  onQuarterChange: (
-    index: number,
-    quarter: (typeof pipelineQuarters)[number],
-  ) => void
+}
+
+type TotalLabelProps = {
+  value?: unknown
+  x?: unknown
+  y?: unknown
+  width?: unknown
+}
+
+function formatQuarterLabel(quarter: string) {
+  return quarter.replace(/^20/, "'")
+}
+
+function TotalLabel(props: TotalLabelProps) {
+  const [value, offset] = String(props.value).split("|").map(Number)
+  const x = Number(props.x)
+  const y = Number(props.y)
+  const width = Number(props.width)
+
+  if (![value, x, y, width].every(Number.isFinite)) return null
+
+  return (
+    <text
+      className="type-chart-total"
+      fill="var(--foreground)"
+      fontSize={11}
+      fontWeight={600}
+      textAnchor="middle"
+      x={x + width / 2}
+      y={y - 6 + offset}
+    >
+      {value.toFixed(1)}Mu
+    </text>
+  )
 }
 
 function PipelineStackedChart({
   metric,
   title,
 }: PipelineStackedChartProps) {
-  const chartData = getPipelineChartData(metric)
+  const chartRows = getPipelineChartData(metric)
+  const totalLabelOffsets = getTotalLabelOffsets(
+    chartRows.map((item) => item.total),
+    300,
+    pipelineYAxisDomain[1],
+  )
+  const chartData = chartRows.map((item, index) => ({
+    ...item,
+    totalLabel: `${item.total}|${totalLabelOffsets[index]}`,
+  }))
   const titleId = `pipeline-${metric}-title`
 
   return (
@@ -87,6 +127,7 @@ function PipelineStackedChart({
             dataKey="quarter"
             fontSize={10}
             interval={0}
+            tickFormatter={formatQuarterLabel}
             tickLine={false}
             tickMargin={4}
           />
@@ -120,13 +161,8 @@ function PipelineStackedChart({
               />
               {vendor.key === "cnOem" ? (
                 <LabelList
-                  className="type-chart-total"
-                  dataKey="total"
-                  fill="var(--foreground)"
-                  fontSize={11}
-                  fontWeight={600}
-                  formatter={(value) => `${Number(value).toFixed(1)}Mu`}
-                  offset={8}
+                  content={<TotalLabel />}
+                  dataKey="totalLabel"
                   position="top"
                 />
               ) : null}
@@ -140,7 +176,6 @@ function PipelineStackedChart({
 
 function PipelineInventoryTable({
   metric,
-  onQuarterChange,
   selectedQuarters,
   title,
 }: PipelineInventoryTableProps) {
@@ -173,12 +208,7 @@ function PipelineInventoryTable({
                 key={`${quarter}-${index}`}
                 scope="col"
               >
-                <InventoryQuarterSelect
-                  availableQuarters={pipelineQuarters}
-                  index={index}
-                  onChange={onQuarterChange}
-                  value={quarter}
-                />
+                {formatQuarterLabel(quarter)}
               </th>
             ))}
           </tr>
@@ -274,18 +304,35 @@ export function PipelineCheck(): React.ReactElement {
           </ul>
         </CardHeader>
         <CardContent className="pt-3">
+          <div
+            aria-label="재고 비교 분기"
+            className="mb-3 flex items-center justify-end gap-2"
+            role="group"
+          >
+            <span className="type-control-label text-muted-foreground">
+              재고 비교 분기
+            </span>
+            {selectedInventoryQuarters.map((quarter, index) => (
+              <div className="w-20" key={`${quarter}-${index}`}>
+                <InventoryQuarterSelect
+                  availableQuarters={pipelineQuarters}
+                  index={index}
+                  onChange={changeInventoryQuarter}
+                  value={quarter}
+                />
+              </div>
+            ))}
+          </div>
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_210px_minmax(0,1fr)_210px_minmax(0,1fr)] items-stretch gap-2">
             <PipelineStackedChart metric="production" title="Production" />
             <PipelineInventoryTable
               metric="productionInventory"
-              onQuarterChange={changeInventoryQuarter}
               selectedQuarters={selectedInventoryQuarters}
               title="Production Inventory"
             />
             <PipelineStackedChart metric="sellIn" title="Sell-in" />
             <PipelineInventoryTable
               metric="channelInventory"
-              onQuarterChange={changeInventoryQuarter}
               selectedQuarters={selectedInventoryQuarters}
               title="Channel Inventory"
             />

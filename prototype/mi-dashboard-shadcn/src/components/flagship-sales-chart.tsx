@@ -229,7 +229,7 @@ export function FlagshipSalesChart() {
               variant="outline"
             >
               {viewOptions.map(({ key, label }) => (
-                <ToggleGroupItem id={key} key={key}>
+                <ToggleGroupItem className="h-8" id={key} key={key}>
                   {label}
                 </ToggleGroupItem>
               ))}
@@ -249,7 +249,7 @@ export function FlagshipSalesChart() {
                 return (
                   <Button
                     aria-pressed={isSelected}
-                    className="type-control h-7 gap-1.5 px-2"
+                    className="type-control h-8 gap-1.5 px-2.5"
                     isDisabled={availability === "unavailable"}
                     key={key}
                     onPress={() => selectVendor(key)}
@@ -288,7 +288,7 @@ export function FlagshipSalesChart() {
                   <div className="inline-flex items-center" key={model.key}>
                     <Button
                       aria-pressed={isSelected}
-                      className="type-control h-7 rounded-e-none border-e-0 px-2"
+                      className="type-control h-8 rounded-e-none border-e-0 px-2.5"
                       onPress={() => toggleModel(model.key)}
                       size="sm"
                       style={isSelected ? { borderColor: model.color } : undefined}
@@ -303,7 +303,7 @@ export function FlagshipSalesChart() {
                     </Button>
                     <Button
                       aria-label={`ONLY ${model.label}`}
-                      className="type-control-label h-7 rounded-s-none px-1.5"
+                      className="type-control-label h-8 rounded-s-none px-2"
                       onPress={() => onlyModel(model.key)}
                       size="sm"
                       variant="outline"

@@ -47,7 +47,11 @@ export function PageActions({ page }: { page: PortalPage }) {
         className={buttonVariants({
           variant: "outline",
           size: "sm",
-          className: "type-control",
+          className: `type-control ${
+            excelDisabled
+              ? "pointer-events-none cursor-not-allowed opacity-45"
+              : ""
+          }`,
         })}
         href={config.originalExcelUrl ?? undefined}
         onClick={excelDisabled ? (event) => event.preventDefault() : undefined}

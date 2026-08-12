@@ -30,6 +30,7 @@ import {
   type VendorKey,
 } from "@/data/production"
 import { getVendorLabelColor, type VendorValue } from "@/data/vendor-catalog"
+import { getTotalLabelOffsets } from "@/lib/chart-labels"
 
 const chartConfig = Object.fromEntries(
   vendors.map((vendor) => [
@@ -46,12 +47,74 @@ function toChartValue(value: VendorValue<number>) {
   return value.status === "available" ? value.value : null
 }
 
-function formatChartValue(value: unknown) {
-  return value === null || value === undefined ? "—" : Number(value).toFixed(1)
-}
-
 function formatSignedMu(value: number) {
   return `${value > 0 ? "+" : ""}${value.toFixed(1)}Mu`
+}
+
+type ChartLabelProps = {
+  value?: unknown
+  x?: unknown
+  y?: unknown
+  width?: unknown
+  height?: unknown
+  fill?: string
+}
+
+function SegmentLabel(props: ChartLabelProps) {
+  const value = Number(props.value)
+  const x = Number(props.x)
+  const y = Number(props.y)
+  const width = Number(props.width)
+  const height = Number(props.height)
+
+  if (!Number.isFinite(value) || !Number.isFinite(height) || height < 12) {
+    return null
+  }
+
+  return (
+    <text
+      className="type-chart-segment-value"
+      dominantBaseline="middle"
+      fill={props.fill}
+      fontSize={10}
+      fontWeight={600}
+      textAnchor="middle"
+      x={x + width / 2}
+      y={y + height / 2}
+    >
+      {value.toFixed(1)}
+    </text>
+  )
+}
+
+function TotalLabel(props: ChartLabelProps) {
+  const [value, offset] = String(props.value).split("|").map(Number)
+  const x = Number(props.x)
+  const y = Number(props.y)
+  const width = Number(props.width)
+
+  if (
+    !Number.isFinite(value) ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    !Number.isFinite(width)
+  ) {
+    return null
+  }
+
+  return (
+    <text
+      className="type-chart-total"
+      fill="var(--foreground)"
+      fontSize={11}
+      fontWeight={600}
+      textAnchor="middle"
+      x={x + width / 2}
+      y={y - 6 + offset}
+    >
+      {value.toFixed(1)}Mu
+    </text>
+  )
 }
 
 export function CumulativeProductionChart() {
@@ -70,14 +133,23 @@ export function CumulativeProductionChart() {
     .filter((vendor) => visibleVendors.has(vendor.key))
     .map((vendor) => vendor.key)
   const topVisibleVendorKey = visibleVendorKeys.at(-1)
-  const productionWithVisibleTotals = cumulativeProduction.map((item) => ({
+  const productionRows = cumulativeProduction.map((item) => ({
     quarter: item.quarter,
     ...Object.fromEntries(
       vendors.map((vendor) => [vendor.key, toChartValue(item[vendor.key])]),
     ),
     visibleTotal: getVisibleVendorTotal(item, visibleVendorKeys),
   }))
-  const historyWithTotals = useMemo(
+  const productionOffsets = getTotalLabelOffsets(
+    productionRows.map((item) => item.visibleTotal ?? 0),
+    330,
+    productionYAxisDomain[1],
+  )
+  const productionWithVisibleTotals = productionRows.map((item, index) => ({
+    ...item,
+    totalLabel: `${item.visibleTotal}|${productionOffsets[index]}`,
+  }))
+  const historyRows = useMemo(
     () =>
       history.map((item) => ({
         period: item.period,
@@ -88,6 +160,15 @@ export function CumulativeProductionChart() {
       })),
     [history]
   )
+  const historyOffsets = getTotalLabelOffsets(
+    historyRows.map((item) => item.total ?? 0),
+    330,
+    productionYAxisDomain[1],
+  )
+  const historyWithTotals = historyRows.map((item, index) => ({
+    ...item,
+    totalLabel: `${item.total}|${historyOffsets[index]}`,
+  }))
   const historyDeltas = useMemo(
     () => getVendorHistoryDeltas(history),
     [history]
@@ -269,27 +350,14 @@ export function CumulativeProductionChart() {
                       />
                     ))}
                     <LabelList
+                      content={<SegmentLabel fill={getVendorLabelColor(vendor.color)} />}
                       dataKey={vendor.key}
-                      formatter={formatChartValue}
-                      fill={getVendorLabelColor(vendor.color)}
-                  className="type-chart-segment-value"
-                  fontSize={10}
-                  fontWeight={600}
                       position="center"
                     />
                     {vendor.key === topVisibleVendorKey ? (
                       <LabelList
-                        dataKey="visibleTotal"
-                        formatter={(value) =>
-                          value === null || value === undefined
-                            ? "—"
-                            : `${Number(value).toFixed(1)}Mu`
-                        }
-                        fill="var(--foreground)"
-                        className="type-chart-total"
-                        fontSize={11}
-                        fontWeight={600}
-                        offset={8}
+                        content={<TotalLabel />}
+                        dataKey="totalLabel"
                         position="top"
                       />
                     ) : null}
@@ -343,27 +411,14 @@ export function CumulativeProductionChart() {
                       stackId="history"
                     >
                       <LabelList
+                        content={<SegmentLabel fill={getVendorLabelColor(vendor.color)} />}
                         dataKey={vendor.key}
-                        formatter={formatChartValue}
-                        fill={getVendorLabelColor(vendor.color)}
-                    className="type-chart-segment-value"
-                    fontSize={10}
-                    fontWeight={600}
                         position="center"
                       />
                       {vendorIndex === vendors.length - 1 ? (
                         <LabelList
-                          dataKey="total"
-                          formatter={(value) =>
-                            value === null || value === undefined
-                              ? "—"
-                              : `${Number(value).toFixed(1)}Mu`
-                          }
-                          fill="var(--foreground)"
-                          className="type-chart-total"
-                          fontSize={11}
-                          fontWeight={600}
-                          offset={8}
+                          content={<TotalLabel />}
+                          dataKey="totalLabel"
                           position="top"
                         />
                       ) : null}

@@ -35,6 +35,7 @@ import {
   type AniModelKey,
   type AniModelTypeKey,
 } from "@/data/ani"
+import { getTotalLabelOffsets } from "@/lib/chart-labels"
 
 const generationOptions = [
   { key: "iphone15", label: "iPhone 15" },
@@ -129,6 +130,7 @@ type AniChartItem = {
   quarter: string
   period?: string
   visibleTotal: number
+  totalLabel?: string
   topVisibleModelKey?: AniModelKey
 } & Record<AniModelKey, number>
 
@@ -254,7 +256,7 @@ function getAniBarFill(
 }
 
 function renderAniTotalLabel(props: AniLabelProps) {
-  const value = Number(props.value)
+  const [value, offset] = String(props.value).split("|").map(Number)
   const x = Number(props.x)
   const y = Number(props.y)
   const width = Number(props.width)
@@ -277,7 +279,7 @@ function renderAniTotalLabel(props: AniLabelProps) {
       fontWeight={600}
       textAnchor="middle"
       x={x + width / 2}
-      y={y - 6}
+      y={y - 6 + offset}
     >
       {formatMu(value)}
     </text>
@@ -365,7 +367,7 @@ export function AniProductionChart() {
   const quarterlyVisibleModelKeys = aniQuarterlyProduction.map((item) =>
     getVisibleModelKeysForQuarter(item.quarter),
   )
-  const productionWithVisibleTotals = aniQuarterlyProduction.map(
+  const productionRows = aniQuarterlyProduction.map(
     (item, index) => maskAniChartItem(item, quarterlyVisibleModelKeys[index]),
   )
   const history = useMemo(
@@ -373,7 +375,7 @@ export function AniProductionChart() {
     [selectedQuarter],
   )
   const historyVisibleModelKeys = getVisibleModelKeysForQuarter(selectedQuarter)
-  const historyWithVisibleTotals = history.map((item) =>
+  const historyRows = history.map((item) =>
     maskAniChartItem(item, historyVisibleModelKeys),
   )
   const chartModelKeys = Array.from(
@@ -387,11 +389,29 @@ export function AniProductionChart() {
   )
   const maxVisibleTotal = Math.max(
     0,
-    ...productionWithVisibleTotals.map((item) => item.visibleTotal),
-    ...historyWithVisibleTotals.map((item) => item.visibleTotal),
+    ...productionRows.map((item) => item.visibleTotal),
+    ...historyRows.map((item) => item.visibleTotal),
   )
   const upperBound = Math.max(10, Math.ceil((maxVisibleTotal * 1.08) / 10) * 10)
   const visibleYAxisDomain = [0, upperBound] as const
+  const productionLabelOffsets = getTotalLabelOffsets(
+    productionRows.map((item) => item.visibleTotal),
+    330,
+    upperBound,
+  )
+  const historyLabelOffsets = getTotalLabelOffsets(
+    historyRows.map((item) => item.visibleTotal),
+    330,
+    upperBound,
+  )
+  const productionWithVisibleTotals = productionRows.map((item, index) => ({
+    ...item,
+    totalLabel: `${item.visibleTotal}|${productionLabelOffsets[index]}`,
+  }))
+  const historyWithVisibleTotals = historyRows.map((item, index) => ({
+    ...item,
+    totalLabel: `${item.visibleTotal}|${historyLabelOffsets[index]}`,
+  }))
   const summary = getAniHistorySummary(history, historyVisibleModelKeys)
 
   const toggleLineupBucket = (bucket: AniLineupBucketKey) => {
@@ -636,6 +656,7 @@ export function AniProductionChart() {
                 </p>
                 <p aria-live="polite" className="type-control mt-1 text-muted-foreground">
                   {selectedQuarter} 선택됨 · {visibleModels.length}개 모델
+                  {" · "}신규: e '25 Q2 / Foldable '27 Q1
                 </p>
               </div>
               <p className="type-control-label flex items-center gap-1.5 text-primary">
@@ -698,12 +719,6 @@ export function AniProductionChart() {
                 />
                 {getVisibleModelKeysForQuarter("2025 Q2").includes("iphone16E") ? (
                   <ReferenceLine
-                    label={{
-                      value: "NEW · e",
-                      fill: "var(--muted-foreground)",
-                      fontSize: 10,
-                      position: "insideTop",
-                    }}
                     stroke="var(--muted-foreground)"
                     strokeDasharray="3 3"
                     x="2025 Q2"
@@ -711,12 +726,6 @@ export function AniProductionChart() {
                 ) : null}
                 {getVisibleModelKeysForQuarter("2027 Q1").includes("iphone18Foldable") ? (
                   <ReferenceLine
-                    label={{
-                      value: "NEW · Foldable",
-                      fill: "var(--muted-foreground)",
-                      fontSize: 10,
-                      position: "insideTop",
-                    }}
                     stroke="var(--muted-foreground)"
                     strokeDasharray="3 3"
                     x="2027 Q1"
@@ -751,7 +760,7 @@ export function AniProductionChart() {
                       content={renderAniTotalLabel}
                       valueAccessor={(entry) =>
                         entry.payload.topVisibleModelKey === model.key
-                          ? entry.payload.visibleTotal
+                          ? entry.payload.totalLabel
                           : ""
                       }
                       position="top"
@@ -824,7 +833,7 @@ export function AniProductionChart() {
                         content={renderAniTotalLabel}
                         valueAccessor={(entry) =>
                           entry.payload.topVisibleModelKey === model.key
-                            ? entry.payload.visibleTotal
+                            ? entry.payload.totalLabel
                             : ""
                         }
                         position="top"

@@ -108,6 +108,9 @@ import {
   iphonePipelineQuarters,
 } from "../src/data/pipeline-check-iphone.ts"
 import { getDefaultInventoryQuarters } from "../src/data/inventory-quarters.ts"
+import { getTotalLabelOffsets } from "../src/lib/chart-labels.ts"
+
+assert.deepEqual(getTotalLabelOffsets([283, 281, 317], 330, 500), [0, -18, -18])
 
 assert.deepEqual(canonicalVendors.map(({ key }) => key), [
   "apple",
@@ -1151,7 +1154,8 @@ assert.match(aniChartSource, /payload/)
 assert.match(aniChartSource, /topVisibleModelKey/)
 assert.match(aniChartSource, /const visibleYAxisDomain/)
 assert.match(aniChartSource, /productionWithVisibleTotals\.map/)
-assert.match(aniChartSource, /historyWithVisibleTotals\.map/)
+assert.match(aniChartSource, /historyRows\.map/)
+assert.match(aniChartSource, /totalLabel:/)
 assert.match(aniChartSource, /Math\.max\(10/)
 assert.equal(
   aniChartSource.match(/domain=\{visibleYAxisDomain\}/g)?.length,
@@ -1221,9 +1225,8 @@ assert.doesNotMatch(
 )
 assert.equal(aniChartSource.match(/<ReferenceLine/g)?.length, 2)
 assert.match(aniChartSource, /x="2025 Q2"/)
-assert.match(aniChartSource, /label=\{\{\s*value: "NEW · e"/)
+assert.match(aniChartSource, /신규: e '25 Q2 \/ Foldable '27 Q1/)
 assert.match(aniChartSource, /x="2027 Q1"/)
-assert.match(aniChartSource, /label=\{\{\s*value: "NEW · Foldable"/)
 assert.match(
   aniChartSource,
   /getVisibleModelKeysForQuarter\("2025 Q2"\)\.includes\("iphone16E"\)/,
@@ -1451,9 +1454,10 @@ for (const metric of pipelineFlowMetrics) {
   assert.equal(rows.length, 6)
   assert.ok(rows.every(({ total }) => total > 0))
 }
+assert.ok(miInsightReports.every((report) => report.edmUrl === null))
 assert.equal(iphonePipelineExecutiveSummary.length, 3)
 assert.match(iphonePipelineSource, /PatternDefs/)
-assert.match(iphonePipelineSource, /NEW · e/)
+assert.match(iphonePipelineSource, /신규: e '25 Q2/)
 assert.match(iphonePipelineSource, /iphonePipelineLineups\.map/)
 assert.match(sidebarSource, /Pipeline Check \(iPhone\)/)
 assert.match(appSource, /<PipelineCheckIPhone \/>/)
@@ -1465,6 +1469,16 @@ assert.deepEqual(getDefaultInventoryQuarters(pipelineQuarters), [
 ])
 assert.equal(pipelineSource.match(/<InventoryQuarterSelect/g)?.length, 1)
 assert.equal(iphonePipelineSource.match(/<InventoryQuarterSelect/g)?.length, 1)
+assert.doesNotMatch(
+  pipelineSource.match(/function PipelineInventoryTable[\s\S]*?export function PipelineCheck/)?.[0] ?? "",
+  /<InventoryQuarterSelect/,
+)
+assert.doesNotMatch(
+  iphonePipelineSource.match(/function IPhoneInventoryTable[\s\S]*?export function PipelineCheckIPhone/)?.[0] ?? "",
+  /<InventoryQuarterSelect/,
+)
+assert.match(pipelineSource, /aria-label="재고 비교 분기"/)
+assert.match(iphonePipelineSource, /aria-label="재고 비교 분기"/)
 assert.match(pipelineSource, /selectedQuarters=\{selectedInventoryQuarters\}/)
 assert.match(iphonePipelineSource, /selectedQuarters=\{selectedInventoryQuarters\}/)
 

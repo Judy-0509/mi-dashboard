@@ -44,7 +44,7 @@ export const miInsightReports: readonly MiInsightReport[] = [
     uploadDate: "2026-08-10",
     sharedContent:
       "북미와 인도 중심의 5G 수요가 전체 출하를 지지했으며, 중국 내수는 전년 대비 회복 흐름을 보였습니다.",
-    edmUrl: "https://example.com/mi-insight/2026w32",
+    edmUrl: null,
   },
   {
     fileName: "Smartphone Component Cost Monitor_2026W31.xlsx",
@@ -64,7 +64,7 @@ export const miInsightReports: readonly MiInsightReport[] = [
     uploadDate: "2026-07-31",
     sharedContent:
       "온라인 채널의 프로모션이 강화되면서 중가형 수요가 늘었고, 현지 브랜드 간 점유율 경쟁은 이어졌습니다.",
-    edmUrl: "https://example.com/mi-insight/2026-07-channel",
+    edmUrl: null,
   },
 ]
 

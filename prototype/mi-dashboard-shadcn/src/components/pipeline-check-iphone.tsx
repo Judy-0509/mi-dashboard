@@ -24,7 +24,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
-import type { AniModelKey, AniModelTypeKey } from "@/data/ani"
+import type { AniModelTypeKey } from "@/data/ani"
 import {
   getIPhonePipelineChartData,
   iphonePipelineData,
@@ -37,6 +37,7 @@ import {
   type IPhonePipelineFlowMetric,
   type IPhonePipelineInventoryMetric,
 } from "@/data/pipeline-check-iphone"
+import { getTotalLabelOffsets } from "@/lib/chart-labels"
 
 const chartConfig = Object.fromEntries(
   iphonePipelineModels.map((model) => [
@@ -52,7 +53,10 @@ type LabelProps = {
   width?: unknown
   height?: unknown
   fill?: string
-  payload?: { topModelKey?: AniModelKey }
+}
+
+function formatQuarterLabel(quarter: string) {
+  return quarter.replace(/^20/, "'")
 }
 
 function getLabelColor(type: AniModelTypeKey) {
@@ -85,12 +89,16 @@ function SegmentLabel(props: LabelProps) {
   )
 }
 
-function TotalLabel({ modelKey, ...props }: LabelProps & { modelKey: AniModelKey }) {
-  const value = Number(props.value)
+function TotalLabel(props: LabelProps) {
+  if (props.value === "" || props.value === null || props.value === undefined) {
+    return null
+  }
+
+  const [value, offset] = String(props.value).split("|").map(Number)
   const x = Number(props.x)
   const y = Number(props.y)
   const width = Number(props.width)
-  if (props.payload?.topModelKey !== modelKey || !Number.isFinite(value)) return null
+  if (!Number.isFinite(value)) return null
 
   return (
     <text
@@ -99,8 +107,8 @@ function TotalLabel({ modelKey, ...props }: LabelProps & { modelKey: AniModelKey
       fontSize={11}
       fontWeight={600}
       textAnchor="middle"
-      x={x + width / 2}
-      y={y - 6}
+      x={x + width / 2 - 3}
+      y={y - 12 + offset}
     >
       {value.toFixed(1)}Mu
     </text>
@@ -149,7 +157,16 @@ function IPhonePipelineChart({
   metric: IPhonePipelineFlowMetric
   title: "Production" | "Sell-in" | "Sell-out"
 }) {
-  const data = getIPhonePipelineChartData(metric)
+  const rows = getIPhonePipelineChartData(metric)
+  const totalLabelOffsets = getTotalLabelOffsets(
+    rows.map((item) => item.total),
+    300,
+    iphonePipelineYAxisDomain[1],
+  )
+  const data = rows.map((item, index) => ({
+    ...item,
+    totalLabel: `${item.total}|${totalLabelOffsets[index]}`,
+  }))
   const titleId = `iphone-pipeline-${metric}-title`
 
   return (
@@ -169,6 +186,7 @@ function IPhonePipelineChart({
             dataKey="quarter"
             fontSize={10}
             interval={0}
+            tickFormatter={formatQuarterLabel}
             tickLine={false}
             tickMargin={4}
           />
@@ -185,7 +203,6 @@ function IPhonePipelineChart({
           <ChartTooltip content={<ChartTooltipContent />} cursor={false} />
           {metric === "production" ? (
             <ReferenceLine
-              label={{ value: "NEW · e", fill: "var(--muted-foreground)", fontSize: 10 }}
               stroke="var(--muted-foreground)"
               strokeDasharray="3 3"
               x="2025 Q2"
@@ -205,9 +222,13 @@ function IPhonePipelineChart({
                 position="center"
               />
               <LabelList
-                content={<TotalLabel modelKey={model.key} />}
-                dataKey="total"
+                content={<TotalLabel />}
                 position="top"
+                valueAccessor={(entry) =>
+                  entry.payload.topModelKey === model.key
+                    ? entry.payload.totalLabel
+                    : ""
+                }
               />
             </Bar>
           ))}
@@ -219,15 +240,10 @@ function IPhonePipelineChart({
 
 function IPhoneInventoryTable({
   metric,
-  onQuarterChange,
   selectedQuarters,
   title,
 }: {
   metric: IPhonePipelineInventoryMetric
-  onQuarterChange: (
-    index: number,
-    quarter: (typeof iphonePipelineQuarters)[number],
-  ) => void
   selectedQuarters: InventoryQuarterSelection<
     (typeof iphonePipelineQuarters)[number]
   >
@@ -249,12 +265,7 @@ function IPhoneInventoryTable({
             <th className="border px-1 py-1 text-left" scope="col">Lineup</th>
             {selectedQuarters.map((quarter, index) => (
               <th className="border px-1 py-1 text-center" key={`${quarter}-${index}`} scope="col">
-                <InventoryQuarterSelect
-                  availableQuarters={iphonePipelineQuarters}
-                  index={index}
-                  onChange={onQuarterChange}
-                  value={quarter}
-                />
+                {formatQuarterLabel(quarter)}
               </th>
             ))}
           </tr>
@@ -316,7 +327,9 @@ export function PipelineCheckIPhone(): React.ReactElement {
       <Card className="min-w-0 border-border shadow-none" size="sm">
         <CardHeader className="flex flex-row items-start justify-between gap-4 border-b pb-3">
           <div>
-            <p className="type-eyebrow text-muted-foreground">Pipeline Check · iPhone</p>
+            <p className="type-eyebrow text-muted-foreground">
+              Pipeline Check · iPhone · 신규: e '25 Q2
+            </p>
             <CardTitle className="type-card-title mt-1 tracking-tight">
               Production · Sell-in · Sell-out
             </CardTitle>
@@ -339,18 +352,35 @@ export function PipelineCheckIPhone(): React.ReactElement {
           </ul>
         </CardHeader>
         <CardContent className="pt-3">
+          <div
+            aria-label="재고 비교 분기"
+            className="mb-3 flex items-center justify-end gap-2"
+            role="group"
+          >
+            <span className="type-control-label text-muted-foreground">
+              재고 비교 분기
+            </span>
+            {selectedInventoryQuarters.map((quarter, index) => (
+              <div className="w-20" key={`${quarter}-${index}`}>
+                <InventoryQuarterSelect
+                  availableQuarters={iphonePipelineQuarters}
+                  index={index}
+                  onChange={changeInventoryQuarter}
+                  value={quarter}
+                />
+              </div>
+            ))}
+          </div>
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_210px_minmax(0,1fr)_210px_minmax(0,1fr)] items-stretch gap-2">
             <IPhonePipelineChart metric="production" title="Production" />
             <IPhoneInventoryTable
               metric="productionInventory"
-              onQuarterChange={changeInventoryQuarter}
               selectedQuarters={selectedInventoryQuarters}
               title="Production Inventory"
             />
             <IPhonePipelineChart metric="sellIn" title="Sell-in" />
             <IPhoneInventoryTable
               metric="channelInventory"
-              onQuarterChange={changeInventoryQuarter}
               selectedQuarters={selectedInventoryQuarters}
               title="Channel Inventory"
             />

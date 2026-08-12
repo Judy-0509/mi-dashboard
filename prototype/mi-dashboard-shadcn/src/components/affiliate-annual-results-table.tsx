@@ -89,7 +89,7 @@ export function AffiliateAnnualResultsTable({
                       ) : (
                         <button
                           aria-label={`${affiliate} ${row.label} ${year} Forecast ${formatValue(cell.forecast)}`}
-                          className="rounded-sm px-1 underline decoration-dotted underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          className="inline-flex min-h-8 w-full items-center justify-end rounded-sm px-2 text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                           onClick={() =>
                             onForecastSelect({
                               affiliate,

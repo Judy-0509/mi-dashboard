@@ -87,7 +87,7 @@ function ResultValue<RowKey extends string>({
   return (
     <button
       aria-label={`${getAgency(dataset, agency).label} ${row.label} ${quarter} Forecast ${formatValue(cell.forecast)}`}
-      className="rounded-sm px-1 tabular-nums underline decoration-dotted underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="inline-flex min-h-8 w-full items-center justify-end rounded-sm px-2 tabular-nums text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       onClick={() =>
         onForecastSelect({ agency, quarter, rowKey })
       }
