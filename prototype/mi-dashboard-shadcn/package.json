@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build && node scripts/build-weekly-html.mjs",
     "data:update": "node --experimental-strip-types scripts/update-dashboard-data.mjs",
     "data:check": "node --experimental-strip-types scripts/update-dashboard-data.mjs prototype/mi-dashboard-shadcn/src/data/dashboard.json --check",
-    "test": "node --experimental-strip-types scripts/check-production.mjs && node --experimental-strip-types scripts/check-hover-details.mjs && node scripts/check-weekly-html.mjs",
+    "test": "node --experimental-strip-types scripts/check-production.mjs && node --experimental-strip-types scripts/check-hover-details.mjs && node --experimental-strip-types scripts/check-chart-selection.mjs && node scripts/check-weekly-html.mjs",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",

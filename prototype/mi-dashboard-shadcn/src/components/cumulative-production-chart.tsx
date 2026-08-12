@@ -14,6 +14,7 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  SelectedStackOutline,
   type ChartConfig,
 } from "@/components/ui/chart"
 import { Button } from "@/components/ui/button"
@@ -362,11 +363,22 @@ export function CumulativeProductionChart() {
                       position="center"
                     />
                     {vendor.key === topVisibleVendorKey ? (
-                      <LabelList
-                        content={<TotalLabel />}
-                        dataKey="totalLabel"
-                        position="top"
-                      />
+                      <>
+                        <LabelList
+                          content={<SelectedStackOutline />}
+                          valueAccessor={(entry) =>
+                            entry.payload.quarter === selectedQuarter
+                              ? "selected"
+                              : ""
+                          }
+                          zIndex={1900}
+                        />
+                        <LabelList
+                          content={<TotalLabel />}
+                          dataKey="totalLabel"
+                          position="top"
+                        />
+                      </>
                     ) : null}
                   </Bar>
                 ))}

@@ -15,6 +15,7 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  SelectedStackOutline,
   type ChartConfig,
 } from "@/components/ui/chart"
 import { Button } from "@/components/ui/button"
@@ -762,6 +763,16 @@ export function AniProductionChart() {
                       dataKey={model.key}
                       fill={getLabelColor(model.type)}
                       position="center"
+                    />
+                    <LabelList
+                      content={<SelectedStackOutline />}
+                      valueAccessor={(entry) =>
+                        entry.payload.topVisibleModelKey === model.key &&
+                        entry.payload.quarter === selectedQuarter
+                          ? "selected"
+                          : ""
+                      }
+                      zIndex={1900}
                     />
                     <LabelList
                       content={renderAniTotalLabel}

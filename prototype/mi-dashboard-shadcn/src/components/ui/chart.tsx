@@ -4,6 +4,7 @@ import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 import type { TooltipValueType } from "recharts"
 
+import { getSelectedStackOutline } from "@/lib/chart-selection"
 import { useHoverDetails } from "@/lib/hover-details"
 import { cn } from "@/lib/utils"
 
@@ -67,7 +68,7 @@ function ChartContainer({
         data-slot="chart"
         data-chart={chartId}
         className={cn(
-          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden",
+          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-none",
           !hoverDetailsEnabled && "[&_.recharts-active-dot]:hidden",
           className
         )}
@@ -113,6 +114,53 @@ ${colorConfig
           )
           .join("\n"),
       }}
+    />
+  )
+}
+
+type SelectedStackOutlineProps = {
+  value?: unknown
+  viewBox?: {
+    x?: number
+    y?: number
+    width?: number
+  }
+  parentViewBox?: {
+    y?: number
+    height?: number
+  }
+}
+
+function SelectedStackOutline({
+  parentViewBox,
+  value,
+  viewBox,
+}: SelectedStackOutlineProps) {
+  const outline = getSelectedStackOutline({
+    selected: value === "selected",
+    x: viewBox?.x ?? Number.NaN,
+    y: viewBox?.y ?? Number.NaN,
+    width: viewBox?.width ?? Number.NaN,
+    parentY: parentViewBox?.y ?? Number.NaN,
+    parentHeight: parentViewBox?.height ?? Number.NaN,
+  })
+
+  if (!outline) {
+    return null
+  }
+
+  return (
+    <rect
+      aria-hidden="true"
+      data-selected-bar-outline=""
+      fill="none"
+      height={outline.height}
+      pointerEvents="none"
+      stroke="var(--primary)"
+      strokeWidth={2}
+      width={outline.width}
+      x={outline.x}
+      y={outline.y}
     />
   )
 }
@@ -387,4 +435,5 @@ export {
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
+  SelectedStackOutline,
 }
