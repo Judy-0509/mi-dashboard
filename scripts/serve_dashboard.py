@@ -1,12 +1,26 @@
 from __future__ import annotations
 
 import argparse
-import os
 import socket
 import threading
 import webbrowser
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.server import ThreadingHTTPServer
 from pathlib import Path
+
+if __package__:
+    from scripts.editorial import (
+        EditorialStore,
+        PasswordAuth,
+        SessionManager,
+        create_editorial_handler,
+    )
+else:
+    from editorial import (
+        EditorialStore,
+        PasswordAuth,
+        SessionManager,
+        create_editorial_handler,
+    )
 
 
 def local_ipv4() -> str | None:
@@ -26,17 +40,32 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
-    args = parse_args()
-    package_root = Path(__file__).resolve().parent.parent
+def create_dashboard_server(
+    package_root: Path, host: str, port: int
+) -> ThreadingHTTPServer:
+    package_root = Path(package_root).resolve()
     site_root = package_root / "site"
     index_file = site_root / "index.html"
+    defaults_path = package_root / "editorial-defaults.json"
+    runtime_dir = package_root / "runtime" / "editorial"
 
     if not index_file.is_file():
         raise SystemExit(f"대시보드 파일을 찾을 수 없습니다: {index_file}")
 
-    os.chdir(site_root)
-    server = ThreadingHTTPServer((args.host, args.port), SimpleHTTPRequestHandler)
+    store = EditorialStore(defaults_path, runtime_dir)
+    handler = create_editorial_handler(
+        site_root,
+        store,
+        PasswordAuth(runtime_dir / "auth.json"),
+        SessionManager(),
+    )
+    return ThreadingHTTPServer((host, port), handler)
+
+
+def main() -> None:
+    args = parse_args()
+    package_root = Path(__file__).resolve().parent.parent
+    server = create_dashboard_server(package_root, args.host, args.port)
     local_url = f"http://localhost:{args.port}"
     lan_ip = local_ipv4()
 

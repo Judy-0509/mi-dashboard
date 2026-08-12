@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import hashlib
+import http.client
 import tempfile
+import threading
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from http.server import ThreadingHTTPServer
 
 from scripts.editorial import (
     ConflictError,
@@ -15,8 +18,11 @@ from scripts.editorial import (
     LoginLimiter,
     PasswordAuth,
     SessionManager,
+    create_editorial_handler,
+    is_loopback_address,
     validate_editor_name,
 )
+from scripts.serve_dashboard import create_dashboard_server
 
 
 PAGE_KINDS = {
@@ -233,6 +239,29 @@ class EditorialStoreTests(unittest.TestCase):
         self.assertEqual(recovered.editor_page("sigma")["draftContent"], ["복구할 문장"])
         self.assertTrue(list(self.runtime.glob("history.jsonl.corrupt-*")))
 
+    def test_structurally_invalid_published_content_recovers_from_history(self) -> None:
+        page = self.store.editor_page("sigma")
+        page = self.store.set_reviewed(
+            "sigma", page["version"], True, self.editor
+        )
+        published = self.store.publish("sigma", page["version"], self.editor)
+        state = json.loads(
+            (self.runtime / "content.json").read_text(encoding="utf-8")
+        )
+        state["pages"]["sigma"]["published"]["content"] = "not-a-list"
+        (self.runtime / "content.json").write_text(
+            json.dumps(state), encoding="utf-8"
+        )
+        if (self.runtime / "content.json.bak").exists():
+            (self.runtime / "content.json.bak").unlink()
+
+        recovered = EditorialStore(self.defaults_path, self.runtime)
+
+        self.assertEqual(
+            recovered.public_page("sigma")["published"]["content"],
+            published["published"]["content"],
+        )
+
 
 class PasswordAndSessionTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -285,6 +314,369 @@ class PasswordAndSessionTests(unittest.TestCase):
         self.assertTrue(limiter.is_blocked(ip))
         self.now_value += timedelta(minutes=10, seconds=1)
         self.assertFalse(limiter.is_blocked(ip))
+
+
+class EditorialHttpTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        self.site = self.root / "site"
+        self.site.mkdir()
+        (self.site / "index.html").write_text(
+            "<!doctype html><title>MI Intelligence Portal</title>",
+            encoding="utf-8",
+        )
+        defaults_path = self.root / "editorial-defaults.json"
+        write_defaults(defaults_path)
+        runtime = self.root / "runtime" / "editorial"
+        self.store = EditorialStore(defaults_path, runtime)
+        self.auth = PasswordAuth(runtime / "auth.json")
+        self.sessions = SessionManager()
+        handler = create_editorial_handler(
+            self.site, self.store, self.auth, self.sessions, LoginLimiter()
+        )
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.host = f"127.0.0.1:{self.server.server_port}"
+        self.cookie: str | None = None
+        self.csrf: str | None = None
+
+    def tearDown(self) -> None:
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=2)
+        self.temp.cleanup()
+
+    def request(
+        self,
+        method: str,
+        path: str,
+        payload: object | None = None,
+        *,
+        authenticated: bool = False,
+        csrf: bool = False,
+        origin: str | None = "same",
+        raw_body: bytes | None = None,
+    ) -> tuple[int, dict[str, str], object]:
+        connection = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=5
+        )
+        headers = {"Host": self.host}
+        if method in {"POST", "PUT", "DELETE"} and origin is not None:
+            headers["Origin"] = (
+                f"http://{self.host}" if origin == "same" else origin
+            )
+        if authenticated and self.cookie:
+            headers["Cookie"] = self.cookie
+        if csrf and self.csrf:
+            headers["X-CSRF-Token"] = self.csrf
+        if raw_body is not None:
+            body = raw_body
+            headers["Content-Type"] = "application/json"
+        elif payload is not None:
+            body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        else:
+            body = None
+        connection.request(method, path, body=body, headers=headers)
+        response = connection.getresponse()
+        response_body = response.read()
+        response_headers = {key.lower(): value for key, value in response.getheaders()}
+        connection.close()
+        if not response_body:
+            parsed = None
+        elif response_headers.get("content-type", "").startswith("application/json"):
+            parsed = json.loads(response_body.decode("utf-8"))
+        else:
+            parsed = response_body.decode("utf-8")
+        return response.status, response_headers, parsed
+
+    def setup_and_login(self) -> None:
+        status, _, _ = self.request(
+            "POST", "/api/editor/setup", {"password": "secure local password"}
+        )
+        self.assertEqual(status, 201)
+        status, headers, body = self.request(
+            "POST",
+            "/api/editor/login",
+            {"name": "김지은", "password": "secure local password"},
+        )
+        self.assertEqual(status, 200)
+        cookie = headers["set-cookie"]
+        self.assertIn("HttpOnly", cookie)
+        self.assertIn("SameSite=Strict", cookie)
+        self.assertNotIn("Secure", cookie)
+        self.cookie = cookie.split(";", 1)[0]
+        self.csrf = body["csrfToken"]
+
+    def test_session_reports_loopback_setup_state(self) -> None:
+        status, _, body = self.request("GET", "/api/editor/session")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(
+            body,
+            {
+                "authenticated": False,
+                "editorName": None,
+                "csrfToken": None,
+                "setupRequired": True,
+                "setupAllowed": True,
+                "canChangePassword": False,
+            },
+        )
+        self.assertTrue(is_loopback_address("::1"))
+        self.assertFalse(is_loopback_address("192.168.0.50"))
+
+    def test_public_api_never_returns_draft_or_history(self) -> None:
+        status, headers, body = self.request(
+            "GET", "/api/editorial/pages/sigma"
+        )
+
+        self.assertEqual(status, 200)
+        self.assertEqual(set(body), {"page", "published"})
+        self.assertIsNone(body["published"])
+        self.assertEqual(headers["cache-control"], "no-store")
+        self.assertNotIn("access-control-allow-origin", headers)
+
+    def test_login_cookie_and_authenticated_page(self) -> None:
+        self.setup_and_login()
+
+        status, _, body = self.request(
+            "GET", "/api/editor/pages/sigma", authenticated=True
+        )
+
+        self.assertEqual(status, 200)
+        self.assertEqual(body["draftContent"], ["sigma default v1"])
+        self.assertNotIn("ip", json.dumps(body))
+
+    def test_state_change_requires_same_origin_and_csrf(self) -> None:
+        self.setup_and_login()
+        page = self.store.editor_page("sigma")
+        payload = {
+            "expectedVersion": page["version"],
+            "mode": "custom",
+            "content": ["새 작업본"],
+        }
+
+        status, _, body = self.request(
+            "PUT", "/api/editor/pages/sigma/draft", payload, authenticated=True
+        )
+        self.assertEqual((status, body["code"]), (403, "csrf_failed"))
+
+        status, _, body = self.request(
+            "PUT",
+            "/api/editor/pages/sigma/draft",
+            payload,
+            authenticated=True,
+            csrf=True,
+            origin="http://evil.example",
+        )
+        self.assertEqual((status, body["code"]), (403, "origin_failed"))
+
+        status, _, body = self.request(
+            "PUT",
+            "/api/editor/pages/sigma/draft",
+            payload,
+            authenticated=True,
+            csrf=True,
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(body["draftContent"], ["새 작업본"])
+
+    def test_version_conflict_returns_latest_without_overwrite(self) -> None:
+        self.setup_and_login()
+        initial = self.store.editor_page("sigma")
+        first_payload = {
+            "expectedVersion": initial["version"],
+            "mode": "custom",
+            "content": ["첫 저장"],
+        }
+        status, _, _ = self.request(
+            "PUT",
+            "/api/editor/pages/sigma/draft",
+            first_payload,
+            authenticated=True,
+            csrf=True,
+        )
+        self.assertEqual(status, 200)
+
+        status, _, body = self.request(
+            "PUT",
+            "/api/editor/pages/sigma/draft",
+            {**first_payload, "content": ["뒤늦은 저장"]},
+            authenticated=True,
+            csrf=True,
+        )
+
+        self.assertEqual(status, 409)
+        self.assertEqual(body["latest"]["draftContent"], ["첫 저장"])
+
+    def test_history_requires_authentication_and_never_returns_ip(self) -> None:
+        self.setup_and_login()
+        status, _, body = self.request(
+            "GET", "/api/editor/pages/sigma/history"
+        )
+        self.assertEqual((status, body["code"]), (401, "authentication_required"))
+
+        status, _, body = self.request(
+            "GET", "/api/editor/pages/sigma/history", authenticated=True
+        )
+        self.assertEqual(status, 200)
+        self.assertNotIn("ip", json.dumps(body))
+
+    def test_review_publish_edit_restore_and_unpublish_routes(self) -> None:
+        self.setup_and_login()
+        initial = self.store.editor_page("sigma")
+        status, _, reviewed = self.request(
+            "POST",
+            "/api/editor/pages/sigma/review",
+            {"expectedVersion": initial["version"], "reviewed": True},
+            authenticated=True,
+            csrf=True,
+        )
+        self.assertEqual(status, 200)
+        status, _, published_page = self.request(
+            "POST",
+            "/api/editor/pages/sigma/publish",
+            {"expectedVersion": reviewed["version"]},
+            authenticated=True,
+            csrf=True,
+        )
+        self.assertEqual(status, 200)
+        status, _, public_before = self.request(
+            "GET", "/api/editorial/pages/sigma"
+        )
+        self.assertEqual(public_before["published"]["content"], ["sigma default v1"])
+
+        status, _, changed = self.request(
+            "PUT",
+            "/api/editor/pages/sigma/draft",
+            {
+                "expectedVersion": published_page["version"],
+                "mode": "custom",
+                "content": ["새 비공개 작업본"],
+            },
+            authenticated=True,
+            csrf=True,
+        )
+        self.assertEqual(status, 200)
+        _, _, public_after = self.request("GET", "/api/editorial/pages/sigma")
+        self.assertEqual(public_after, public_before)
+
+        status, _, history = self.request(
+            "GET", "/api/editor/pages/sigma/history", authenticated=True
+        )
+        self.assertEqual(status, 200)
+        source_version = history["versions"][-1]["version"]
+        status, _, detail = self.request(
+            "GET",
+            f"/api/editor/pages/sigma/history/{source_version}",
+            authenticated=True,
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(detail["after"]["draftContent"], ["sigma default v1"])
+
+        status, _, restored = self.request(
+            "POST",
+            "/api/editor/pages/sigma/restore",
+            {"expectedVersion": changed["version"], "version": source_version},
+            authenticated=True,
+            csrf=True,
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(restored["draft"]["mode"], "custom")
+        status, _, unpublished = self.request(
+            "POST",
+            "/api/editor/pages/sigma/unpublish",
+            {"expectedVersion": restored["version"]},
+            authenticated=True,
+            csrf=True,
+        )
+        self.assertEqual(status, 200)
+        self.assertIsNone(unpublished["published"])
+
+    def test_password_change_is_loopback_only_and_logs_out_all_sessions(self) -> None:
+        self.setup_and_login()
+        status, headers, body = self.request(
+            "PUT",
+            "/api/editor/password",
+            {"password": "new secure local password"},
+            authenticated=True,
+            csrf=True,
+        )
+        self.assertEqual(status, 200)
+        self.assertFalse(body["authenticated"])
+        self.assertIn("Max-Age=0", headers["set-cookie"])
+
+        status, _, body = self.request(
+            "GET", "/api/editor/pages/sigma", authenticated=True
+        )
+        self.assertEqual((status, body["code"]), (401, "authentication_required"))
+        status, _, _ = self.request(
+            "POST",
+            "/api/editor/login",
+            {"name": "김지은", "password": "new secure local password"},
+        )
+        self.assertEqual(status, 200)
+
+    def test_fifth_bad_login_is_rate_limited(self) -> None:
+        self.request(
+            "POST", "/api/editor/setup", {"password": "secure local password"}
+        )
+        statuses = []
+        for _ in range(5):
+            status, _, _ = self.request(
+                "POST",
+                "/api/editor/login",
+                {"name": "김지은", "password": "wrong password"},
+            )
+            statuses.append(status)
+
+        self.assertEqual(statuses, [401, 401, 401, 401, 429])
+
+    def test_body_limit_and_cors_preflight_are_rejected(self) -> None:
+        status, headers, body = self.request(
+            "POST", "/api/editor/login", raw_body=b" " * (64 * 1024 + 1)
+        )
+        self.assertEqual((status, body["code"]), (413, "body_too_large"))
+        self.assertNotIn("access-control-allow-origin", headers)
+
+        status, headers, _ = self.request("OPTIONS", "/api/editor/login")
+        self.assertEqual(status, 405)
+        self.assertNotIn("access-control-allow-origin", headers)
+
+    def test_static_site_is_still_served(self) -> None:
+        status, headers, body = self.request("GET", "/")
+
+        self.assertEqual(status, 200)
+        self.assertIn("text/html", headers["content-type"])
+        self.assertIsInstance(body, str)
+
+    def test_dashboard_server_factory_wires_static_site_and_api(self) -> None:
+        package_root = self.root / "package"
+        site = package_root / "site"
+        site.mkdir(parents=True)
+        (site / "index.html").write_text("<title>Portal</title>", encoding="utf-8")
+        write_defaults(package_root / "editorial-defaults.json")
+        server = create_dashboard_server(package_root, "127.0.0.1", 0)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            connection = http.client.HTTPConnection(
+                "127.0.0.1", server.server_port, timeout=5
+            )
+            connection.request("GET", "/api/editor/session")
+            response = connection.getresponse()
+            body = json.loads(response.read().decode("utf-8"))
+            connection.close()
+            self.assertEqual(response.status, 200)
+            self.assertTrue(body["setupRequired"])
+            self.assertTrue((package_root / "runtime" / "editorial").is_dir())
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
 
 
 if __name__ == "__main__":

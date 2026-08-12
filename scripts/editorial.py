@@ -1,19 +1,26 @@
 from __future__ import annotations
 
 import copy
+import functools
 import hashlib
 import hmac
+import ipaddress
 import json
 import os
 import re
 import secrets
 import shutil
+import socket
 import tempfile
 import threading
+import traceback
+from http.cookies import SimpleCookie
+from http.server import SimpleHTTPRequestHandler
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable
+from urllib.parse import unquote, urlsplit
 
 
 PAGE_KINDS = {
@@ -275,14 +282,45 @@ class EditorialStore:
             state = pages.get(page)
             if not isinstance(state, dict):
                 return False
-            if state.get("kind") != kind or not isinstance(state.get("version"), int):
+            revision = state.get("dataRevision")
+            version = state.get("version")
+            if (
+                state.get("kind") != kind
+                or not isinstance(version, int)
+                or isinstance(version, bool)
+                or version < 1
+                or not isinstance(revision, str)
+                or not REVISION_PATTERN.fullmatch(revision)
+            ):
                 return False
             draft = state.get("draft")
-            if not isinstance(draft, dict) or draft.get("mode") not in {"default", "custom"}:
+            if (
+                not isinstance(draft, dict)
+                or draft.get("mode") not in {"default", "custom"}
+                or not isinstance(draft.get("reviewed"), bool)
+                or not isinstance(draft.get("updatedAt"), str)
+                or not isinstance(draft.get("updatedBy"), str)
+            ):
                 return False
             if draft.get("mode") == "custom":
                 try:
                     validate_content(kind, draft.get("customContent"))
+                except EditorialError:
+                    return False
+            elif draft.get("customContent") is not None:
+                return False
+            published = state.get("published")
+            if published is not None:
+                if (
+                    not isinstance(published, dict)
+                    or not isinstance(published.get("sourceVersion"), int)
+                    or isinstance(published.get("sourceVersion"), bool)
+                    or not isinstance(published.get("publishedAt"), str)
+                    or not isinstance(published.get("publishedBy"), str)
+                ):
+                    return False
+                try:
+                    validate_content(kind, published.get("content"), publishing=True)
                 except EditorialError:
                     return False
         return True
@@ -908,3 +946,453 @@ class LoginLimiter:
     def clear(self, ip: str) -> None:
         with self._lock:
             self._failures.pop(ip, None)
+
+
+SESSION_COOKIE = "mi_editor_session"
+MAX_BODY_SIZE = 64 * 1024
+
+
+def is_loopback_address(value: str) -> bool:
+    try:
+        return ipaddress.ip_address(value).is_loopback
+    except ValueError:
+        return value.casefold() == "localhost"
+
+
+def _allowed_host(value: str | None) -> bool:
+    if not value:
+        return False
+    parsed = urlsplit(f"//{value}")
+    hostname = parsed.hostname
+    if not hostname or parsed.username or parsed.password or parsed.path:
+        return False
+    try:
+        address = ipaddress.ip_address(hostname)
+        return address.is_loopback or address.is_private
+    except ValueError:
+        allowed_names = {
+            "localhost",
+            socket.gethostname().casefold(),
+            socket.getfqdn().casefold(),
+        }
+        return hostname.casefold() in allowed_names
+
+
+@dataclass(frozen=True)
+class _EditorialApi:
+    store: EditorialStore
+    auth: PasswordAuth
+    sessions: SessionManager
+    limiter: LoginLimiter
+
+
+class EditorialRequestHandler(SimpleHTTPRequestHandler):
+    server_version = "MIEditorialHTTP/1.0"
+
+    def __init__(
+        self,
+        *args: object,
+        api: _EditorialApi,
+        directory: str,
+        **kwargs: object,
+    ) -> None:
+        self.api = api
+        super().__init__(*args, directory=directory, **kwargs)
+
+    def _send_json(
+        self,
+        status: int,
+        value: object,
+        *,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        payload = json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode(
+            "utf-8"
+        )
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        for name, content in (headers or {}).items():
+            self.send_header(name, content)
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def _send_error(self, error: EditorialError) -> None:
+        body: dict[str, object] = {"error": str(error), "code": error.code}
+        if isinstance(error, ConflictError):
+            body["latest"] = error.latest
+        self._send_json(error.status, body)
+
+    def _read_json_body(self) -> dict[str, object]:
+        if self.headers.get("Transfer-Encoding"):
+            raise EditorialError(
+                "청크 요청은 지원하지 않습니다.", code="invalid_body", status=400
+            )
+        raw_length = self.headers.get("Content-Length")
+        try:
+            length = int(raw_length or "0")
+        except ValueError as error:
+            raise EditorialError("요청 크기를 확인해 주세요.", code="invalid_body") from error
+        if length > MAX_BODY_SIZE:
+            raise EditorialError(
+                "요청 본문은 64 KiB 이하여야 합니다.",
+                code="body_too_large",
+                status=413,
+            )
+        if length < 0:
+            raise EditorialError("요청 크기를 확인해 주세요.", code="invalid_body")
+        content_type = self.headers.get_content_type()
+        if length and content_type != "application/json":
+            raise EditorialError(
+                "Content-Type은 application/json이어야 합니다.",
+                code="invalid_content_type",
+                status=415,
+            )
+        try:
+            value = json.loads(self.rfile.read(length).decode("utf-8")) if length else {}
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise EditorialError("JSON 본문을 확인해 주세요.", code="invalid_json") from error
+        if not isinstance(value, dict):
+            raise EditorialError("JSON 객체가 필요합니다.", code="invalid_json")
+        return value
+
+    def _origin_allowed(self) -> bool:
+        host = self.headers.get("Host")
+        origin = self.headers.get("Origin")
+        if not _allowed_host(host) or not origin:
+            return False
+        parsed = urlsplit(origin)
+        return (
+            parsed.scheme == "http"
+            and parsed.netloc.casefold() == host.casefold()
+            and parsed.path in {"", "/"}
+            and not parsed.query
+            and not parsed.fragment
+            and parsed.username is None
+            and parsed.password is None
+        )
+
+    def _require_origin(self) -> None:
+        if not self._origin_allowed():
+            raise EditorialError(
+                "동일 출처 요청만 허용합니다.", code="origin_failed", status=403
+            )
+
+    def _session_token(self) -> str | None:
+        cookie = SimpleCookie()
+        try:
+            cookie.load(self.headers.get("Cookie", ""))
+        except Exception:
+            return None
+        morsel = cookie.get(SESSION_COOKIE)
+        return None if morsel is None else morsel.value
+
+    def _require_session(self) -> tuple[str, dict[str, object]]:
+        token = self._session_token()
+        session = self.api.sessions.get(token)
+        if token is None or session is None:
+            raise EditorialError(
+                "편집 모드 로그인이 필요합니다.",
+                code="authentication_required",
+                status=401,
+            )
+        return token, session
+
+    def _require_mutation(self) -> tuple[str, dict[str, object]]:
+        self._require_origin()
+        token, session = self._require_session()
+        supplied = self.headers.get("X-CSRF-Token", "")
+        if not supplied or not hmac.compare_digest(supplied, str(session["csrfToken"])):
+            raise EditorialError(
+                "CSRF 토큰을 확인해 주세요.", code="csrf_failed", status=403
+            )
+        return token, session
+
+    def _editor(self, session: dict[str, object]) -> Editor:
+        return Editor(name=str(session["name"]), ip=str(self.client_address[0]))
+
+    def _session_response(self) -> dict[str, object]:
+        session = self.api.sessions.get(self._session_token())
+        loopback = is_loopback_address(str(self.client_address[0]))
+        return {
+            "authenticated": session is not None,
+            "editorName": None if session is None else session["name"],
+            "csrfToken": None if session is None else session["csrfToken"],
+            "setupRequired": not self.api.auth.configured,
+            "setupAllowed": loopback,
+            "canChangePassword": session is not None and loopback,
+        }
+
+    def _dispatch_get(self, path: str) -> None:
+        if path == "/api/editor/session":
+            self._send_json(200, self._session_response())
+            return
+
+        public_match = re.fullmatch(r"/api/editorial/pages/([^/]+)", path)
+        if public_match:
+            page = unquote(public_match.group(1))
+            self._send_json(200, self.api.store.public_page(page))
+            return
+
+        detail_match = re.fullmatch(
+            r"/api/editor/pages/([^/]+)/history/(\d+)", path
+        )
+        if detail_match:
+            self._require_session()
+            page = unquote(detail_match.group(1))
+            version = int(detail_match.group(2))
+            self._send_json(200, self.api.store.history_version(page, version))
+            return
+
+        history_match = re.fullmatch(r"/api/editor/pages/([^/]+)/history", path)
+        if history_match:
+            self._require_session()
+            page = unquote(history_match.group(1))
+            self._send_json(
+                200, {"page": page, "versions": self.api.store.history(page)}
+            )
+            return
+
+        editor_match = re.fullmatch(r"/api/editor/pages/([^/]+)", path)
+        if editor_match:
+            self._require_session()
+            page = unquote(editor_match.group(1))
+            self._send_json(200, self.api.store.editor_page(page))
+            return
+
+        raise EditorialError("API 경로를 찾을 수 없습니다.", status=404)
+
+    def _setup(self) -> None:
+        self._require_origin()
+        if not is_loopback_address(str(self.client_address[0])):
+            raise EditorialError(
+                "최초 설정은 서버 PC의 localhost에서만 가능합니다.",
+                code="loopback_required",
+                status=403,
+            )
+        body = self._read_json_body()
+        self.api.auth.setup(body.get("password"))
+        self._send_json(201, {"setupRequired": False})
+
+    def _login(self) -> None:
+        self._require_origin()
+        body = self._read_json_body()
+        if not self.api.auth.configured:
+            raise EditorialError(
+                "서버 PC에서 공용 비밀번호를 먼저 설정해 주세요.",
+                code="setup_required",
+                status=409,
+            )
+        ip = str(self.client_address[0])
+        if self.api.limiter.is_blocked(ip):
+            raise EditorialError(
+                "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+                code="login_rate_limited",
+                status=429,
+            )
+        name = validate_editor_name(body.get("name"))
+        if not self.api.auth.verify(body.get("password")):
+            self.api.limiter.record_failure(ip)
+            if self.api.limiter.is_blocked(ip):
+                raise EditorialError(
+                    "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+                    code="login_rate_limited",
+                    status=429,
+                )
+            raise EditorialError(
+                "이름 또는 비밀번호를 확인해 주세요.",
+                code="login_failed",
+                status=401,
+            )
+        self.api.limiter.clear(ip)
+        token, session = self.api.sessions.create(name)
+        self._send_json(
+            200,
+            {
+                "authenticated": True,
+                "editorName": session["name"],
+                "csrfToken": session["csrfToken"],
+                "setupRequired": False,
+                "setupAllowed": is_loopback_address(ip),
+                "canChangePassword": is_loopback_address(ip),
+            },
+            headers={
+                "Set-Cookie": (
+                    f"{SESSION_COOKIE}={token}; HttpOnly; SameSite=Strict; Path=/"
+                )
+            },
+        )
+
+    def _logout(self) -> None:
+        token, _ = self._require_mutation()
+        self.api.sessions.destroy(token)
+        self._send_json(
+            200,
+            {"authenticated": False},
+            headers={
+                "Set-Cookie": (
+                    f"{SESSION_COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0"
+                )
+            },
+        )
+
+    def _change_password(self) -> None:
+        self._require_mutation()
+        if not is_loopback_address(str(self.client_address[0])):
+            raise EditorialError(
+                "비밀번호 변경은 서버 PC의 localhost에서만 가능합니다.",
+                code="loopback_required",
+                status=403,
+            )
+        body = self._read_json_body()
+        self.api.auth.change(body.get("password"))
+        self.api.sessions.clear()
+        self._send_json(
+            200,
+            {"authenticated": False},
+            headers={
+                "Set-Cookie": (
+                    f"{SESSION_COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0"
+                )
+            },
+        )
+
+    def _dispatch_editor_mutation(self, path: str) -> None:
+        _, session = self._require_mutation()
+        editor = self._editor(session)
+        body = self._read_json_body()
+
+        draft_match = re.fullmatch(r"/api/editor/pages/([^/]+)/draft", path)
+        if draft_match and self.command == "PUT":
+            page = unquote(draft_match.group(1))
+            result = self.api.store.save_draft(
+                page,
+                body.get("expectedVersion"),
+                body.get("mode"),
+                body.get("content"),
+                editor,
+            )
+            self._send_json(200, result)
+            return
+
+        review_match = re.fullmatch(r"/api/editor/pages/([^/]+)/review", path)
+        if review_match and self.command == "POST":
+            page = unquote(review_match.group(1))
+            result = self.api.store.set_reviewed(
+                page, body.get("expectedVersion"), body.get("reviewed"), editor
+            )
+            self._send_json(200, result)
+            return
+
+        publish_match = re.fullmatch(r"/api/editor/pages/([^/]+)/publish", path)
+        if publish_match and self.command == "POST":
+            page = unquote(publish_match.group(1))
+            result = self.api.store.publish(page, body.get("expectedVersion"), editor)
+            self._send_json(200, result)
+            return
+
+        unpublish_match = re.fullmatch(
+            r"/api/editor/pages/([^/]+)/unpublish", path
+        )
+        if unpublish_match and self.command == "POST":
+            page = unquote(unpublish_match.group(1))
+            result = self.api.store.unpublish(
+                page, body.get("expectedVersion"), editor
+            )
+            self._send_json(200, result)
+            return
+
+        restore_match = re.fullmatch(r"/api/editor/pages/([^/]+)/restore", path)
+        if restore_match and self.command == "POST":
+            page = unquote(restore_match.group(1))
+            result = self.api.store.restore(
+                page,
+                body.get("expectedVersion"),
+                body.get("version"),
+                editor,
+            )
+            self._send_json(200, result)
+            return
+
+        raise EditorialError("API 경로를 찾을 수 없습니다.", status=404)
+
+    def _dispatch_mutation(self, path: str) -> None:
+        if path == "/api/editor/setup" and self.command == "POST":
+            self._setup()
+            return
+        if path == "/api/editor/login" and self.command == "POST":
+            self._login()
+            return
+        if path == "/api/editor/logout" and self.command == "POST":
+            self._logout()
+            return
+        if path == "/api/editor/password" and self.command == "PUT":
+            self._change_password()
+            return
+        self._dispatch_editor_mutation(path)
+
+    def _handle_api(self, method: str) -> bool:
+        path = urlsplit(self.path).path
+        if not path.startswith("/api/"):
+            return False
+        try:
+            if method == "GET":
+                self._dispatch_get(path)
+            elif method in {"POST", "PUT"}:
+                self._dispatch_mutation(path)
+            else:
+                raise EditorialError(
+                    "허용되지 않은 API 메서드입니다.",
+                    code="method_not_allowed",
+                    status=405,
+                )
+        except EditorialError as error:
+            self._send_error(error)
+        except Exception:
+            self.log_error("Unhandled editorial API error:\n%s", traceback.format_exc())
+            self._send_error(
+                EditorialError(
+                    "편집 API 처리 중 오류가 발생했습니다.",
+                    code="server_error",
+                    status=500,
+                )
+            )
+        return True
+
+    def do_GET(self) -> None:
+        if not self._handle_api("GET"):
+            super().do_GET()
+
+    def do_POST(self) -> None:
+        if not self._handle_api("POST"):
+            self.send_error(405)
+
+    def do_PUT(self) -> None:
+        if not self._handle_api("PUT"):
+            self.send_error(405)
+
+    def do_OPTIONS(self) -> None:
+        if not self._handle_api("OPTIONS"):
+            self.send_error(405)
+
+
+def create_editorial_handler(
+    site_root: Path,
+    store: EditorialStore,
+    auth: PasswordAuth,
+    sessions: SessionManager,
+    limiter: LoginLimiter | None = None,
+) -> type[EditorialRequestHandler]:
+    api = _EditorialApi(
+        store=store,
+        auth=auth,
+        sessions=sessions,
+        limiter=limiter or LoginLimiter(),
+    )
+    return functools.partial(
+        EditorialRequestHandler,
+        api=api,
+        directory=str(Path(site_root).resolve()),
+    )
