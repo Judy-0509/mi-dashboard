@@ -11,6 +11,7 @@ export type PortalPage =
   | "flagship-sales"
   | "pipeline-check"
   | "pipeline-check-iphone"
+  | "latest-results"
   | "mi-insight"
   | "mi-weekly-sell-through"
 
@@ -60,6 +61,11 @@ const providers: Array<{
         child: "Pipeline Check (iPhone)",
         page: "pipeline-check-iphone",
         href: "#pipeline-check-iphone",
+      },
+      {
+        child: "Latest Results",
+        page: "latest-results",
+        href: "#latest-results",
       },
     ],
   },

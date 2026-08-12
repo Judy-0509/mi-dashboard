@@ -29,6 +29,11 @@
     "exportFileName": "MI_TAM_Pipeline_Check_iPhone.html",
     "originalExcelUrl": null
   },
+  "latest-results": {
+    "hash": "#latest-results",
+    "exportFileName": "MI_TAM_Latest_Results.html",
+    "originalExcelUrl": null
+  },
   "mi-insight": {
     "hash": "#mi-insight",
     "exportFileName": "MI_Insight_Weekly_Report.html",

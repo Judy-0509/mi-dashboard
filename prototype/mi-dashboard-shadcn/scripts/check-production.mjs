@@ -8,6 +8,16 @@ import {
   normalizeProviderVendorName,
   withVendorAdditions,
 } from "../src/data/vendor-catalog.ts"
+import {
+  getFirstForecast,
+  getForecastHistory as getLatestResultsForecastHistory,
+  getResultCellState,
+  isValidSourceUrl,
+  latestResultsAgencies,
+  latestResultsQuarters,
+  latestResultsVendors,
+  validateLatestResultsData,
+} from "../src/data/latest-results.ts"
 
 import {
   cumulativeProduction,
@@ -829,6 +839,10 @@ const appSource = readFileSync(
   new URL("../src/App.tsx", import.meta.url),
   "utf8"
 )
+const pageActionsSource = readFileSync(
+  new URL("../src/components/page-actions.tsx", import.meta.url),
+  "utf8"
+)
 const weeklyAnalysisSource = readFileSync(
   new URL("../src/components/weekly-analysis.tsx", import.meta.url),
   "utf8"
@@ -1205,14 +1219,17 @@ assert.doesNotMatch(aniChartSource, /getVendorHistoryDeltas/)
 assert.doesNotMatch(aniChartSource, /업체별 전망 변화/)
 
 assert.doesNotMatch(appSource, /기준: 2026 W32 · 단위: Mu/)
-assert.match(appSource, /__MI_EXPORT_PAGE__\?: PortalPage/)
-assert.match(appSource, /const PAGE_CONFIG = pageConfig as Record<PortalPage, PageConfig>/)
-assert.match(appSource, /function PageActions\(\{ page \}: \{ page: PortalPage \}\)/)
-assert.match(appSource, /download=\{config\.exportFileName\}/)
-assert.match(appSource, /href=\{`\.\/\$\{config\.exportFileName\}`\}/)
-assert.match(appSource, /aria-disabled=\{excelDisabled\}/)
+assert.match(appSource, /from "@\/components\/page-actions"/)
+assert.doesNotMatch(appSource, /__MI_EXPORT_PAGE__\?: PortalPage/)
+assert.doesNotMatch(appSource, /const PAGE_CONFIG = pageConfig as Record<PortalPage, PageConfig>/)
+assert.doesNotMatch(appSource, /function PageActions\(\{ page \}: \{ page: PortalPage \}\)/)
+assert.match(pageActionsSource, /export const PAGE_CONFIG = pageConfig as Record<PortalPage, PageConfig>/)
+assert.match(pageActionsSource, /export function pageFromHash\(\)/)
+assert.match(pageActionsSource, /download=\{config\.exportFileName\}/)
+assert.match(pageActionsSource, /href=\{`\.\/\$\{config\.exportFileName\}`\}/)
+assert.match(pageActionsSource, /aria-disabled=\{excelDisabled\}/)
 assert.match(appSource, /isExport \? null/)
-assert.match(appSource, /원본 엑셀 보기/)
+assert.match(pageActionsSource, /원본 엑셀 보기/)
 assert.match(pageConfigSource, /"MI_Weekly_2026W32\.html"/)
 assert.match(pageConfigSource, /"MI_SigmaIntel\.html"/)
 assert.match(pageConfigSource, /"MI_SellThrough\.html"/)
@@ -1433,5 +1450,130 @@ assert.equal(pipelineSource.match(/<InventoryQuarterSelect/g)?.length, 1)
 assert.equal(iphonePipelineSource.match(/<InventoryQuarterSelect/g)?.length, 1)
 assert.match(pipelineSource, /selectedQuarters=\{selectedInventoryQuarters\}/)
 assert.match(iphonePipelineSource, /selectedQuarters=\{selectedInventoryQuarters\}/)
+
+assert.deepEqual([...latestResultsQuarters], [
+  "2026 Q1",
+  "2026 Q2",
+  "2026 Q3",
+  "2026 Q4",
+])
+assert.deepEqual(
+  latestResultsVendors.map(({ key }) => key),
+  canonicalVendors.map(({ key }) => key),
+)
+assert.deepEqual(latestResultsAgencies.map(({ key }) => key), [
+  "omdia",
+  "counterpoint",
+  "gfk",
+  "techinsights",
+  "tsr",
+  "trendforce",
+])
+assert.equal(latestResultsAgencies.length, 6)
+for (const agency of latestResultsAgencies) {
+  assert.deepEqual(Object.keys(agency.cells), [...latestResultsQuarters])
+  for (const quarter of latestResultsQuarters) {
+    assert.deepEqual(
+      Object.keys(agency.cells[quarter]),
+      canonicalVendors.map(({ key }) => key),
+    )
+  }
+}
+const actualWinsCell = latestResultsAgencies[0].cells["2026 Q1"].apple
+assert.equal(actualWinsCell.actual, 12.4)
+assert.equal(actualWinsCell.forecast, 12.8)
+assert.equal(getResultCellState(actualWinsCell), "actual")
+assert.deepEqual(
+  getLatestResultsForecastHistory({
+    agency: "omdia",
+    quarter: "2026 Q1",
+    vendor: "apple",
+  }),
+  [],
+)
+assert.equal(
+  getResultCellState({ actual: null, forecast: 0, history: [] }),
+  "forecast",
+)
+assert.equal(
+  getResultCellState({ actual: null, forecast: null, history: [] }),
+  "missing",
+)
+assert.ok(
+  latestResultsAgencies.some((agency) =>
+    latestResultsQuarters.some((quarter) =>
+      latestResultsVendors.some(
+        ({ key }) => agency.cells[quarter][key].actual === 0,
+      ),
+    ),
+  ),
+)
+const firstForecast = getFirstForecast("quarter", "2026 Q1", "omdia")
+assert.deepEqual(firstForecast, {
+  agency: "omdia",
+  quarter: "2026 Q1",
+  vendor: "samsung",
+})
+assert.ok(getLatestResultsForecastHistory(firstForecast).length >= 1)
+assert.ok(isValidSourceUrl("https://example.com/source.xlsx"))
+assert.ok(isValidSourceUrl("http://example.com/source.xlsx"))
+assert.equal(isValidSourceUrl("not a url"), false)
+assert.equal(isValidSourceUrl("javascript:alert(1)"), false)
+assert.equal(isValidSourceUrl(null), false)
+assert.doesNotThrow(() => validateLatestResultsData(latestResultsAgencies))
+assert.throws(
+  () => validateLatestResultsData(latestResultsAgencies.slice(0, -1)),
+  /agency|dimension/i,
+)
+const invalidLatestResults = JSON.parse(JSON.stringify(latestResultsAgencies))
+invalidLatestResults[0].cells["2026 Q1"].samsung.history[0].value = Number.NaN
+assert.throws(
+  () => validateLatestResultsData(invalidLatestResults),
+  /finite/i,
+)
+
+const latestResultsPageSource = readFileSync(
+  new URL("../src/components/latest-results-page.tsx", import.meta.url),
+  "utf8",
+)
+const latestResultsTableSource = readFileSync(
+  new URL("../src/components/latest-results-table.tsx", import.meta.url),
+  "utf8",
+)
+const forecastHistoryChartSource = readFileSync(
+  new URL("../src/components/forecast-history-chart.tsx", import.meta.url),
+  "utf8",
+)
+
+assert.match(latestResultsTableSource, /<table\b/)
+assert.match(latestResultsTableSource, /scope="row"/)
+assert.match(latestResultsTableSource, /scope="col"/)
+assert.match(latestResultsPageSource, /aria-pressed/)
+assert.match(latestResultsTableSource, /aria-label=.*Forecast/)
+assert.match(latestResultsTableSource, /target="_blank"/)
+assert.match(latestResultsTableSource, /rel="noopener noreferrer"/)
+assert.match(latestResultsTableSource, /원본 자료 보기/)
+assert.doesNotMatch(latestResultsTableSource, /원본 엑셀 보기/)
+assert.match(forecastHistoryChartSource, /LineChart/)
+assert.match(forecastHistoryChartSource, /<Line[\s\S]*dot/)
+assert.match(forecastHistoryChartSource, /monthLabel/)
+assert.match(forecastHistoryChartSource, /Forecast.*선택|Forecast.*이력|Forecast history/i)
+assert.match(latestResultsPageSource, /LatestResultsTable/)
+assert.match(latestResultsPageSource, /ForecastHistoryChart/)
+assert.match(sidebarSource, /child: "Latest Results"/)
+assert.match(sidebarSource, /page: "latest-results"/)
+assert.match(sidebarSource, /href: "#latest-results"/)
+assert.match(latestResultsPageSource, /MI TAM \/ LATEST RESULTS/)
+assert.match(latestResultsPageSource, /조사기관별 최신 실적/)
+assert.match(appSource, /<LatestResultsPage \/>/)
+assert.match(latestResultsPageSource, /PageActions page="latest-results"/)
+assert.match(pageConfigSource, /"hash": "#latest-results"/)
+assert.match(pageConfigSource, /"exportFileName": "MI_TAM_Latest_Results\.html"/)
+assert.deepEqual(JSON.parse(pageConfigSource)["latest-results"], {
+  hash: "#latest-results",
+  exportFileName: "MI_TAM_Latest_Results.html",
+  originalExcelUrl: null,
+})
+assert.match(pageActionsSource, /\?\? "sigma"/)
 
 console.log("production and weekly data checks passed")

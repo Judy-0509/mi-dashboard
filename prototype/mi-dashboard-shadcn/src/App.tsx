@@ -1,97 +1,28 @@
 import type * as React from "react"
 import { useEffect, useState } from "react"
-import { Download, FileSpreadsheet } from "lucide-react"
 
 import { AniProductionChart } from "@/components/ani-production-chart"
 import { CumulativeProductionChart } from "@/components/cumulative-production-chart"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { ExecutiveSummary } from "@/components/executive-summary"
 import { FlagshipSalesChart } from "@/components/flagship-sales-chart"
+import { LatestResultsPage } from "@/components/latest-results-page"
 import { MiInsightWeeklyReport } from "@/components/mi-insight-weekly-report"
 import { MiWeeklySellThroughSummary } from "@/components/mi-weekly-sell-through-summary"
+import {
+  isExport,
+  PAGE_CONFIG,
+  PageActions,
+  pageFromHash,
+} from "@/components/page-actions"
 import { PipelineCheck } from "@/components/pipeline-check"
 import { PipelineCheckIPhone } from "@/components/pipeline-check-iphone"
 import { PortalSidebar, type PortalPage } from "@/components/portal-sidebar"
 import { SellThroughAnalysis } from "@/components/sell-through-analysis"
-import { buttonVariants } from "@/components/ui/button"
-import pageConfig from "@/data/page-config.json"
 import { WeeklyAnalysis } from "@/components/weekly-analysis"
 import { WeeklyExecutiveSummary } from "@/components/weekly-executive-summary"
 import { dashboardMeta } from "@/data/production"
 import { weeklyDescription, weeklyTitle } from "@/data/weekly"
-
-declare global {
-  interface Window {
-    __MI_EXPORT_PAGE__?: PortalPage
-  }
-}
-
-type PageConfig = {
-  hash: string
-  exportFileName: string
-  originalExcelUrl: string | null
-}
-
-const PAGE_CONFIG = pageConfig as Record<PortalPage, PageConfig>
-const exportPage = window.__MI_EXPORT_PAGE__
-const isExport = exportPage !== undefined
-
-function pageFromHash(): PortalPage {
-  if (exportPage) {
-    return exportPage
-  }
-
-  return (
-    (Object.entries(PAGE_CONFIG).find(([, config]) => config.hash === window.location.hash)?.[0] as
-      | PortalPage
-      | undefined) ?? "sigma"
-  )
-}
-
-function PageActions({ page }: { page: PortalPage }) {
-  if (isExport) {
-    return null
-  }
-
-  const config = PAGE_CONFIG[page]
-  const excelDisabled = config.originalExcelUrl === null
-
-  return (
-    <div className="flex items-center gap-2">
-      <a
-        aria-disabled={excelDisabled}
-        className={buttonVariants({
-          variant: "outline",
-          size: "sm",
-          className: "type-control",
-        })}
-        href={config.originalExcelUrl ?? undefined}
-        onClick={excelDisabled ? (event) => event.preventDefault() : undefined}
-        tabIndex={excelDisabled ? -1 : undefined}
-        title={
-          excelDisabled
-            ? "사내 원본 엑셀 링크가 아직 설정되지 않았습니다."
-            : undefined
-        }
-      >
-        <FileSpreadsheet aria-hidden="true" />
-        원본 엑셀 보기
-      </a>
-      <a
-        className={buttonVariants({
-          variant: "outline",
-          size: "sm",
-          className: "type-control",
-        })}
-        download={config.exportFileName}
-        href={`./${config.exportFileName}`}
-      >
-        <Download aria-hidden="true" />
-        Download as HTML
-      </a>
-    </div>
-  )
-}
 
 function SigmaPage() {
   return (
@@ -348,6 +279,7 @@ export function App() {
         activePage === "ani" ||
         activePage === "sell-through" ||
         activePage === "flagship-sales" ||
+        activePage === "latest-results" ||
         activePage === "mi-weekly-sell-through"
       }
       sidebar={
@@ -372,6 +304,8 @@ export function App() {
         <PipelineCheckPage />
       ) : activePage === "pipeline-check-iphone" ? (
         <PipelineCheckIPhonePage />
+      ) : activePage === "latest-results" ? (
+        <LatestResultsPage />
       ) : (
         <SigmaPage />
       )}

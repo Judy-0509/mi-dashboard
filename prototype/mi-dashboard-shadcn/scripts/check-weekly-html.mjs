@@ -133,6 +133,28 @@ try {
   assert.doesNotMatch(pipelineHtml, /<script[^>]+\bsrc=/i)
   assert.doesNotMatch(pipelineHtml, /<link[^>]+rel=["']stylesheet["']/i)
 
+  const latestResultsTarget = pageExportTargets.find(
+    ({ page }) => page === "latest-results",
+  )
+  assert.deepEqual(latestResultsTarget, {
+    page: "latest-results",
+    hash: "#latest-results",
+    outputName: "MI_TAM_Latest_Results.html",
+  })
+  const latestResultsHtml = readFileSync(
+    path.join(siteDir, latestResultsTarget.outputName),
+    "utf8",
+  )
+  assert.match(
+    latestResultsHtml,
+    /window\.__MI_EXPORT_PAGE__ = "latest-results"/,
+  )
+  assert.match(latestResultsHtml, /window\.location\.hash = "#latest-results"/)
+  assert.doesNotMatch(latestResultsHtml, /<aside\b/i)
+  assert.doesNotMatch(latestResultsHtml, /PageActions/)
+  assert.doesNotMatch(latestResultsHtml, /<script[^>]+\bsrc=/i)
+  assert.doesNotMatch(latestResultsHtml, /<link[^>]+rel=["']stylesheet["']/i)
+
   const missingJsDir = path.join(tempDir, "missing-js-site")
   mkdirSync(path.join(missingJsDir, "assets"), { recursive: true })
   writeFileSync(
