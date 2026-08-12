@@ -1,35 +1,33 @@
 import type * as React from "react"
 
 import {
-  getLatestResultsRowCell,
   getResultCellState,
   isValidSourceUrl,
-  latestResultsAgencies,
-  latestResultsQuarters,
-  latestResultsTableRows,
   type Agency,
   type ForecastSelection,
+  type LatestResultsDataset,
   type LatestResultsTableRow,
   type LatestResultsView,
   type Quarter,
 } from "@/data/latest-results"
 
-export type LatestResultsTableProps = {
+export type LatestResultsTableProps<RowKey extends string> = {
+  dataset: LatestResultsDataset<RowKey>
   view: LatestResultsView
   quarter: Quarter
   agency: Agency
-  onForecastSelect: (selection: ForecastSelection) => void
+  onForecastSelect: (selection: ForecastSelection<RowKey>) => void
 }
 
 function formatValue(value: number | null): string {
   return value === null ? "—" : value.toFixed(1)
 }
 
-function getAgency(key: Agency) {
-  return latestResultsAgencies.find((item) => item.key === key) ?? latestResultsAgencies[0]
+function getAgency<RowKey extends string>(dataset: LatestResultsDataset<RowKey>, key: Agency) {
+  return dataset.agencies.find((item) => item.key === key) ?? dataset.agencies[0]
 }
 
-function SourceLink({ agency }: { agency: (typeof latestResultsAgencies)[number] }) {
+function SourceLink({ agency }: { agency: { label: string; sourceUrl: string | null } }) {
   if (!isValidSourceUrl(agency.sourceUrl)) {
     return (
       <span
@@ -57,20 +55,22 @@ function SourceLink({ agency }: { agency: (typeof latestResultsAgencies)[number]
   )
 }
 
-function ResultValue({
+function ResultValue<RowKey extends string>({
   agency,
+  dataset,
   quarter,
   row,
   onForecastSelect,
 }: {
   agency: Agency
+  dataset: LatestResultsDataset<RowKey>
   quarter: Quarter
-  row: LatestResultsTableRow
-  onForecastSelect: (selection: ForecastSelection) => void
+  row: LatestResultsTableRow<RowKey>
+  onForecastSelect: (selection: ForecastSelection<RowKey>) => void
 }) {
-  const cell = getLatestResultsRowCell(agency, quarter, row)
+  const cell = dataset.getRowCell(agency, quarter, row)
   const state = getResultCellState(cell)
-  const vendor = row.vendor
+  const rowKey = row.rowKey
 
   if (state === "actual") {
     return <span className="tabular-nums">{formatValue(cell.actual)}</span>
@@ -80,16 +80,16 @@ function ResultValue({
     return <span aria-label="Actual 및 Forecast 없음">—</span>
   }
 
-  if (vendor === null) {
+  if (rowKey === null) {
     return <span className="tabular-nums">{formatValue(cell.forecast)} (F)</span>
   }
 
   return (
     <button
-      aria-label={`${getAgency(agency).label} ${row.label} ${quarter} Forecast ${formatValue(cell.forecast)}`}
+      aria-label={`${getAgency(dataset, agency).label} ${row.label} ${quarter} Forecast ${formatValue(cell.forecast)}`}
       className="rounded-sm px-1 tabular-nums underline decoration-dotted underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       onClick={() =>
-        onForecastSelect({ agency, quarter, vendor })
+        onForecastSelect({ agency, quarter, rowKey })
       }
       type="button"
     >
@@ -98,21 +98,22 @@ function ResultValue({
   )
 }
 
-export function LatestResultsTable({
+export function LatestResultsTable<RowKey extends string>({
   agency,
+  dataset,
   onForecastSelect,
   quarter,
   view,
-}: LatestResultsTableProps): React.ReactElement {
-  const selectedAgency = getAgency(agency)
+}: LatestResultsTableProps<RowKey>): React.ReactElement {
+  const selectedAgency = getAgency(dataset, agency)
   const columns =
     view === "quarter"
-      ? latestResultsAgencies.map((item) => ({
+      ? dataset.agencies.map((item) => ({
           key: item.key,
           label: item.label,
           source: item,
         }))
-      : latestResultsQuarters.map((item) => ({
+      : dataset.quarters.map((item) => ({
           key: item,
           label: item,
           source: null,
@@ -141,7 +142,7 @@ export function LatestResultsTable({
               : `${selectedAgency.label} 분기별 최신 실적`}
           </caption>
           <colgroup>
-            <col className="w-[112px]" />
+            <col className={dataset.rowHeaderWidthClass} />
             {columns.map((column) => (
               <col key={column.key} />
             ))}
@@ -149,7 +150,7 @@ export function LatestResultsTable({
           <thead className="type-table-header bg-muted/40 text-muted-foreground">
             <tr>
               <th className="border px-2 py-2 text-left" scope="col">
-                Vendor
+                {dataset.rowHeaderLabel}
               </th>
               {columns.map((column) => (
                 <th className="border px-1 py-2 text-center" key={column.key} scope="col">
@@ -160,10 +161,19 @@ export function LatestResultsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {latestResultsTableRows.map((row) => (
+            {dataset.rows.map((row) => (
               <tr key={row.key}>
                 <th className="border px-2 py-2 text-left" scope="row">
-                  {row.label}
+                  <span className="inline-flex items-center gap-1.5">
+                    {row.color ? (
+                      <span
+                        aria-hidden="true"
+                        className="size-2.5 shrink-0"
+                        style={{ backgroundColor: row.color }}
+                      />
+                    ) : null}
+                    {row.label}
+                  </span>
                 </th>
                 {columns.map((column) => {
                   const cellAgency = view === "quarter" ? column.key as Agency : agency
@@ -172,6 +182,7 @@ export function LatestResultsTable({
                     <td className="border px-1 py-2 text-right" key={column.key}>
                       <ResultValue
                         agency={cellAgency}
+                        dataset={dataset}
                         onForecastSelect={onForecastSelect}
                         quarter={cellQuarter}
                         row={row}

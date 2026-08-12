@@ -5,17 +5,14 @@ import { ForecastHistoryChart } from "@/components/forecast-history-chart"
 import { LatestResultsTable } from "@/components/latest-results-table"
 import { PageActions } from "@/components/page-actions"
 import {
-  getFirstForecast,
-  latestResultsAgencies,
-  latestResultsQuarters,
+  getDatasetFirstForecast,
   type Agency,
   type ForecastSelection,
+  type LatestResultsDataset,
   type LatestResultsView,
   type Quarter,
 } from "@/data/latest-results"
-
-const firstQuarter: Quarter = latestResultsQuarters[0]
-const firstAgency: Agency = latestResultsAgencies[0].key
+import type { PortalPage } from "@/components/portal-sidebar"
 
 function SelectionButton({
   children,
@@ -42,40 +39,56 @@ function SelectionButton({
   )
 }
 
-export function LatestResultsPage(): React.ReactElement {
+export type LatestResultsPageProps<RowKey extends string> = {
+  dataset: LatestResultsDataset<RowKey>
+  page: PortalPage
+  eyebrow: string
+  title: string
+  subtitle: string
+}
+
+export function LatestResultsPage<RowKey extends string>({
+  dataset,
+  eyebrow,
+  page,
+  subtitle,
+  title,
+}: LatestResultsPageProps<RowKey>): React.ReactElement {
+  const firstQuarter: Quarter = dataset.quarters[0]
+  const firstAgency: Agency = dataset.agencies[0].key
   const [view, setView] = useState<LatestResultsView>("quarter")
   const [selectedQuarter, setSelectedQuarter] = useState<Quarter>(firstQuarter)
   const [selectedAgency, setSelectedAgency] = useState<Agency>(firstAgency)
-  const [selection, setSelection] = useState<ForecastSelection | null>(() =>
-    getFirstForecast("quarter", firstQuarter, firstAgency),
+  const [selection, setSelection] = useState<ForecastSelection<RowKey> | null>(() =>
+    getDatasetFirstForecast(dataset, "quarter", firstQuarter, firstAgency),
   )
 
   const changeView = (nextView: LatestResultsView) => {
     setView(nextView)
-    setSelection(getFirstForecast(nextView, selectedQuarter, selectedAgency))
+    setSelection(getDatasetFirstForecast(dataset, nextView, selectedQuarter, selectedAgency))
   }
 
   const changeQuarter = (nextQuarter: Quarter) => {
     setSelectedQuarter(nextQuarter)
-    setSelection(getFirstForecast(view, nextQuarter, selectedAgency))
+    setSelection(getDatasetFirstForecast(dataset, view, nextQuarter, selectedAgency))
   }
 
   const changeAgency = (nextAgency: Agency) => {
     setSelectedAgency(nextAgency)
-    setSelection(getFirstForecast(view, selectedQuarter, nextAgency))
+    setSelection(getDatasetFirstForecast(dataset, view, selectedQuarter, nextAgency))
   }
 
   return (
     <>
       <header className="flex items-end justify-between border-b pb-4">
         <div>
-          <p className="type-eyebrow text-muted-foreground">MI TAM / LATEST RESULTS</p>
-          <h1 className="type-page-title mt-1 tracking-tight">조사기관별 최신 실적</h1>
+          <p className="type-eyebrow text-muted-foreground">{eyebrow}</p>
+          <h1 className="type-page-title mt-1 tracking-tight">{title}</h1>
           <p className="type-page-subtitle mt-1 text-muted-foreground">
-            2026 Q1–Q4 Actual · Forecast
+            {subtitle}
           </p>
         </div>
-        <PageActions page="latest-results" />
+        <PageActions page={page} />
       </header>
 
       <div className="my-4 flex flex-wrap items-center gap-3 border-b pb-3">
@@ -93,7 +106,7 @@ export function LatestResultsPage(): React.ReactElement {
             {view === "quarter" ? "Quarter" : "Agency"}
           </span>
           {view === "quarter"
-            ? latestResultsQuarters.map((quarter) => (
+            ? dataset.quarters.map((quarter) => (
                 <SelectionButton
                   key={quarter}
                   onClick={() => changeQuarter(quarter)}
@@ -102,7 +115,7 @@ export function LatestResultsPage(): React.ReactElement {
                   {quarter}
                 </SelectionButton>
               ))
-            : latestResultsAgencies.map((agency) => (
+            : dataset.agencies.map((agency) => (
                 <SelectionButton
                   key={agency.key}
                   onClick={() => changeAgency(agency.key)}
@@ -118,12 +131,13 @@ export function LatestResultsPage(): React.ReactElement {
         <section className="min-w-0 overflow-hidden rounded-lg border bg-card px-5 py-4">
           <LatestResultsTable
             agency={selectedAgency}
+            dataset={dataset}
             onForecastSelect={setSelection}
             quarter={selectedQuarter}
             view={view}
           />
         </section>
-        <ForecastHistoryChart selection={selection} />
+        <ForecastHistoryChart dataset={dataset} selection={selection} />
       </div>
     </>
   )

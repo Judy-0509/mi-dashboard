@@ -9,10 +9,9 @@ import {
 } from "recharts"
 
 import {
-  getForecastHistory,
-  latestResultsAgencies,
-  latestResultsVendors,
+  getDatasetForecastHistory,
   type ForecastSelection,
+  type LatestResultsDataset,
 } from "@/data/latest-results"
 import {
   ChartContainer,
@@ -21,27 +20,32 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 
-export type ForecastHistoryChartProps = {
-  selection: ForecastSelection | null
+export type ForecastHistoryChartProps<RowKey extends string> = {
+  dataset: LatestResultsDataset<RowKey>
+  selection: ForecastSelection<RowKey> | null
 }
 
 const chartConfig = {
   value: { label: "Forecast", color: "var(--primary)" },
 } satisfies ChartConfig
 
-function getSelectionLabels(selection: ForecastSelection) {
-  const agency = latestResultsAgencies.find((item) => item.key === selection.agency)
-  const vendor = latestResultsVendors.find((item) => item.key === selection.vendor)
+function getSelectionLabels<RowKey extends string>(
+  dataset: LatestResultsDataset<RowKey>,
+  selection: ForecastSelection<RowKey>,
+) {
+  const agency = dataset.agencies.find((item) => item.key === selection.agency)
+  const row = dataset.rows.find((item) => item.rowKey === selection.rowKey)
   return {
     agency: agency?.label ?? selection.agency,
-    vendor: vendor?.label ?? selection.vendor,
+    row: row?.label ?? selection.rowKey,
   }
 }
 
-export function ForecastHistoryChart({
+export function ForecastHistoryChart<RowKey extends string>({
+  dataset,
   selection,
-}: ForecastHistoryChartProps): React.ReactElement {
-  const history = getForecastHistory(selection)
+}: ForecastHistoryChartProps<RowKey>): React.ReactElement {
+  const history = getDatasetForecastHistory(dataset, selection)
 
   if (!selection) {
     return (
@@ -59,8 +63,8 @@ export function ForecastHistoryChart({
     )
   }
 
-  const { agency, vendor } = getSelectionLabels(selection)
-  const title = `Forecast History · ${agency} · ${vendor} · ${selection.quarter}`
+  const { agency, row } = getSelectionLabels(dataset, selection)
+  const title = `Forecast History · ${agency} · ${row} · ${selection.quarter}`
   const chartLabel = `${title}. 월별 Forecast 값: ${history
     .map(({ monthLabel, value }) => `${monthLabel} ${value.toFixed(1)}`)
     .join(", ")}`

@@ -10,16 +10,20 @@ import {
 } from "../src/data/vendor-catalog.ts"
 import {
   getFirstForecast,
+  getDatasetForecastHistory,
   getForecastHistory as getLatestResultsForecastHistory,
   getLatestResultsRowCell,
   getResultCellState,
   isValidSourceUrl,
   latestResultsAgencies,
+  latestResultsDataset,
   latestResultsQuarters,
   latestResultsTableRows,
   latestResultsVendors,
   validateLatestResultsData,
+  validateLatestResultsDataset,
 } from "../src/data/latest-results.ts"
+import { latestResultsIPhoneDataset } from "../src/data/latest-results-iphone.ts"
 
 import {
   cumulativeProduction,
@@ -1511,7 +1515,7 @@ assert.deepEqual(
   getLatestResultsForecastHistory({
     agency: "omdia",
     quarter: "2026 Q1",
-    vendor: "apple",
+    rowKey: "apple",
   }),
   [],
 )
@@ -1536,7 +1540,7 @@ const firstForecast = getFirstForecast("quarter", "2026 Q1", "omdia")
 assert.deepEqual(firstForecast, {
   agency: "omdia",
   quarter: "2026 Q1",
-  vendor: "samsung",
+  rowKey: "samsung",
 })
 assert.ok(getLatestResultsForecastHistory(firstForecast).length >= 1)
 assert.ok(isValidSourceUrl("https://example.com/source.xlsx"))
@@ -1587,10 +1591,10 @@ assert.match(latestResultsPageSource, /ForecastHistoryChart/)
 assert.match(sidebarSource, /child: "Latest Results"/)
 assert.match(sidebarSource, /page: "latest-results"/)
 assert.match(sidebarSource, /href: "#latest-results"/)
-assert.match(latestResultsPageSource, /MI TAM \/ LATEST RESULTS/)
-assert.match(latestResultsPageSource, /조사기관별 최신 실적/)
-assert.match(appSource, /<LatestResultsPage \/>/)
-assert.match(latestResultsPageSource, /PageActions page="latest-results"/)
+assert.match(appSource, /MI TAM \/ LATEST RESULTS/)
+assert.match(appSource, /조사기관별 최신 실적/)
+assert.match(appSource, /<LatestResultsPage/)
+assert.match(appSource, /page="latest-results"/)
 assert.match(pageConfigSource, /"hash": "#latest-results"/)
 assert.match(pageConfigSource, /"exportFileName": "MI_TAM_Latest_Results\.html"/)
 assert.deepEqual(JSON.parse(pageConfigSource)["latest-results"], {
@@ -1599,5 +1603,62 @@ assert.deepEqual(JSON.parse(pageConfigSource)["latest-results"], {
   originalExcelUrl: null,
 })
 assert.match(pageActionsSource, /\?\? "sigma"/)
+
+assert.deepEqual(
+  latestResultsIPhoneDataset.rows.map(({ key }) => key),
+  aniModels.map(({ key }) => key),
+)
+assert.deepEqual(
+  latestResultsIPhoneDataset.rows.map(({ color }) => color),
+  aniModels.map(({ color }) => color),
+)
+assert.equal(latestResultsIPhoneDataset.rows.length, 20)
+assert.equal(latestResultsIPhoneDataset.agencies.length, 6)
+assert.deepEqual(latestResultsIPhoneDataset.quarters, latestResultsQuarters)
+for (const agency of latestResultsIPhoneDataset.agencies) {
+  for (const quarter of latestResultsIPhoneDataset.quarters) {
+    assert.deepEqual(
+      Object.keys(agency.cells[quarter]),
+      aniModels.map(({ key }) => key),
+    )
+  }
+}
+assert.doesNotThrow(() => validateLatestResultsDataset(latestResultsIPhoneDataset))
+const iphoneActualWins = latestResultsIPhoneDataset.agencies[0].cells["2026 Q1"].iphone15Basic
+assert.equal(getResultCellState(iphoneActualWins), "actual")
+assert.equal(
+  latestResultsIPhoneDataset.agencies[0].cells["2026 Q1"].iphone15Pro.actual,
+  0,
+)
+const iphoneForecastSelection = {
+  agency: "omdia",
+  quarter: "2026 Q1",
+  rowKey: "iphone15Plus",
+}
+assert.equal(
+  getResultCellState(latestResultsIPhoneDataset.agencies[0].cells["2026 Q1"].iphone15Plus),
+  "forecast",
+)
+assert.ok(getDatasetForecastHistory(latestResultsIPhoneDataset, iphoneForecastSelection).length > 0)
+assert.equal(
+  getResultCellState(latestResultsIPhoneDataset.agencies[0].cells["2026 Q1"].iphone15ProMax),
+  "missing",
+)
+assert.match(latestResultsTableSource, /row\.color/)
+assert.match(latestResultsTableSource, /backgroundColor: row\.color/)
+assert.equal(latestResultsDataset.rowHeaderWidthClass, "w-[112px]")
+assert.equal(latestResultsIPhoneDataset.rowHeaderWidthClass, "w-[156px]")
+assert.match(latestResultsTableSource, /className=\{dataset\.rowHeaderWidthClass\}/)
+assert.match(sidebarSource, /child: "Latest Results \(iPhone\)"/)
+assert.match(sidebarSource, /page: "latest-results-iphone"/)
+assert.match(sidebarSource, /href: "#latest-results-iphone"/)
+assert.match(appSource, /MI TAM \/ LATEST RESULTS · IPHONE/)
+assert.match(appSource, /조사기관별 최신 실적 \(iPhone\)/)
+assert.match(appSource, /dataset=\{latestResultsIPhoneDataset\}/)
+assert.deepEqual(JSON.parse(pageConfigSource)["latest-results-iphone"], {
+  hash: "#latest-results-iphone",
+  exportFileName: "MI_TAM_Latest_Results_iPhone.html",
+  originalExcelUrl: null,
+})
 
 console.log("production and weekly data checks passed")

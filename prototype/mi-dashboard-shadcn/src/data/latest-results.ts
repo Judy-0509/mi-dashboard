@@ -24,26 +24,40 @@ export type ResultCell = {
   history: ForecastSnapshot[]
 }
 
-export type LatestResultsAgency = {
+export type LatestResultsAgency<RowKey extends string = CanonicalVendorKey> = {
   key: Agency
   label: string
   sourceUrl: string | null
-  cells: Record<Quarter, Record<CanonicalVendorKey, ResultCell>>
+  cells: Record<Quarter, Record<RowKey, ResultCell>>
 }
 
 export type LatestResultsView = "quarter" | "agency"
 
-export type ForecastSelection = {
+export type ForecastSelection<RowKey extends string = CanonicalVendorKey> = {
   agency: Agency
-  vendor: CanonicalVendorKey
+  rowKey: RowKey
   quarter: Quarter
 }
 
-export type LatestResultsTableRow = {
+export type LatestResultsTableRow<RowKey extends string = CanonicalVendorKey> = {
   key: string
   label: string
-  vendor: CanonicalVendorKey | null
-  vendorKeys: readonly CanonicalVendorKey[]
+  rowKey: RowKey | null
+  color?: string
+}
+
+export type LatestResultsDataset<RowKey extends string> = {
+  quarters: readonly Quarter[]
+  agencies: readonly LatestResultsAgency<RowKey>[]
+  rows: readonly LatestResultsTableRow<RowKey>[]
+  rowKeys: readonly RowKey[]
+  rowHeaderLabel: string
+  rowHeaderWidthClass: string
+  getRowCell: (
+    agency: Agency,
+    quarter: Quarter,
+    row: LatestResultsTableRow<RowKey>,
+  ) => ResultCell
 }
 
 export const latestResultsQuarters: readonly Quarter[] = [
@@ -69,28 +83,25 @@ export const latestResultsTableRows: readonly LatestResultsTableRow[] = [
   {
     key: "total",
     label: "Total",
-    vendor: null,
-    vendorKeys: latestResultsVendors.map(({ key }) => key),
+    rowKey: null,
   },
-  { key: "mx", label: "MX", vendor: "samsung", vendorKeys: ["samsung"] },
-  { key: "apple", label: "Apple", vendor: "apple", vendorKeys: ["apple"] },
+  { key: "mx", label: "MX", rowKey: "samsung" },
+  { key: "apple", label: "Apple", rowKey: "apple" },
   {
     key: "cn-total",
     label: "CN Total",
-    vendor: null,
-    vendorKeys: latestResultsCnTotalVendorKeys,
+    rowKey: null,
   },
   ...latestResultsVendors
     .filter(({ key }) => key !== "apple" && key !== "samsung")
     .map(({ key, label }) => ({
       key,
       label,
-      vendor: key,
-      vendorKeys: [key],
+      rowKey: key,
     })),
 ]
 
-const latestResultsAgencyKeys: readonly Agency[] = [
+export const latestResultsAgencyKeys: readonly Agency[] = [
   "omdia",
   "counterpoint",
   "gfk",
@@ -99,7 +110,7 @@ const latestResultsAgencyKeys: readonly Agency[] = [
   "trendforce",
 ]
 
-const latestResultsAgencyMetadata: Readonly<
+export const latestResultsAgencyMetadata: Readonly<
   Record<Agency, { label: string; sourceUrl: string | null }>
 > = {
   omdia: {
@@ -210,12 +221,17 @@ export function getLatestResultsRowCell(
 ): ResultCell {
   const agencyData = getAgency(agency)
   if (!agencyData) return { actual: null, forecast: null, history: [] }
-  if (row.vendor !== null) return agencyData.cells[quarter][row.vendor]
+  if (row.rowKey !== null) return agencyData.cells[quarter][row.rowKey]
+
+  const vendorKeys =
+    row.key === "cn-total"
+      ? latestResultsCnTotalVendorKeys
+      : latestResultsVendors.map(({ key }) => key)
 
   let total = 0
   let hasValue = false
   let hasForecast = false
-  for (const vendor of row.vendorKeys) {
+  for (const vendor of vendorKeys) {
     const cell = agencyData.cells[quarter][vendor]
     const state = getResultCellState(cell)
     if (state === "actual") {
@@ -244,42 +260,58 @@ export function getFirstForecast(
   selectedQuarter: Quarter,
   selectedAgency: Agency,
 ): ForecastSelection | null {
+  return getDatasetFirstForecast(
+    latestResultsDataset,
+    view,
+    selectedQuarter,
+    selectedAgency,
+  )
+}
+
+export function getForecastHistory(
+  selection: ForecastSelection | null,
+): ForecastSnapshot[] {
+  return getDatasetForecastHistory(latestResultsDataset, selection)
+}
+
+export function getDatasetFirstForecast<RowKey extends string>(
+  dataset: LatestResultsDataset<RowKey>,
+  view: LatestResultsView,
+  selectedQuarter: Quarter,
+  selectedAgency: Agency,
+): ForecastSelection<RowKey> | null {
   if (view === "quarter") {
-    for (const vendor of latestResultsVendors) {
-      for (const agency of latestResultsAgencies) {
-        const cell = agency.cells[selectedQuarter][vendor.key]
+    for (const rowKey of dataset.rowKeys) {
+      for (const agency of dataset.agencies) {
+        const cell = agency.cells[selectedQuarter][rowKey]
         if (getResultCellState(cell) === "forecast") {
-          return {
-            agency: agency.key,
-            vendor: vendor.key,
-            quarter: selectedQuarter,
-          }
+          return { agency: agency.key, rowKey, quarter: selectedQuarter }
         }
       }
     }
     return null
   }
 
-  const agency = getAgency(selectedAgency)
+  const agency = dataset.agencies.find((item) => item.key === selectedAgency)
   if (!agency) return null
-
-  for (const vendor of latestResultsVendors) {
-    for (const quarter of latestResultsQuarters) {
-      const cell = agency.cells[quarter][vendor.key]
+  for (const rowKey of dataset.rowKeys) {
+    for (const quarter of dataset.quarters) {
+      const cell = agency.cells[quarter][rowKey]
       if (getResultCellState(cell) === "forecast") {
-        return { agency: agency.key, vendor: vendor.key, quarter }
+        return { agency: agency.key, rowKey, quarter }
       }
     }
   }
   return null
 }
 
-export function getForecastHistory(
-  selection: ForecastSelection | null,
+export function getDatasetForecastHistory<RowKey extends string>(
+  dataset: LatestResultsDataset<RowKey>,
+  selection: ForecastSelection<RowKey> | null,
 ): ForecastSnapshot[] {
   if (!selection) return []
-  const agency = getAgency(selection.agency)
-  const cell = agency?.cells[selection.quarter][selection.vendor]
+  const agency = dataset.agencies.find((item) => item.key === selection.agency)
+  const cell = agency?.cells[selection.quarter][selection.rowKey]
   if (!cell || getResultCellState(cell) !== "forecast") return []
   return cell.history.map((snapshot) => ({ ...snapshot }))
 }
@@ -325,9 +357,10 @@ function assertFiniteOrNull(value: unknown, label: string): void {
   }
 }
 
-export function validateLatestResultsData(
-  agencies: readonly LatestResultsAgency[],
+export function validateLatestResultsDataset<RowKey extends string>(
+  dataset: LatestResultsDataset<RowKey>,
 ): void {
+  const { agencies, quarters, rowKeys } = dataset
   if (agencies.length !== latestResultsAgencyKeys.length) {
     throw new Error("Incomplete agency dimensions")
   }
@@ -340,40 +373,56 @@ export function validateLatestResultsData(
     if (agency.sourceUrl !== null && !isValidSourceUrl(agency.sourceUrl)) {
       throw new Error(`Invalid source URL for ${agency.key}`)
     }
-    assertRecordKeys(agency.cells, latestResultsQuarters, `${agency.key} quarter`)
+    assertRecordKeys(agency.cells, quarters, `${agency.key} quarter`)
 
-    for (const quarter of latestResultsQuarters) {
+    for (const quarter of quarters) {
       const quarterCells = agency.cells[quarter]
       assertRecordKeys(
         quarterCells,
-        latestResultsVendors.map(({ key }) => key),
-        `${agency.key} ${quarter} vendor`,
+        rowKeys,
+        `${agency.key} ${quarter} row`,
       )
 
-      for (const vendor of latestResultsVendors) {
-        const cell = quarterCells[vendor.key]
+      for (const rowKey of rowKeys) {
+        const cell = quarterCells[rowKey]
         if (!isRecord(cell) || !Array.isArray(cell.history)) {
-          throw new Error(`Invalid result cell for ${agency.key} ${quarter} ${vendor.key}`)
+          throw new Error(`Invalid result cell for ${agency.key} ${quarter} ${rowKey}`)
         }
-        assertFiniteOrNull(cell.actual, `${agency.key} ${quarter} ${vendor.key} actual`)
+        assertFiniteOrNull(cell.actual, `${agency.key} ${quarter} ${rowKey} actual`)
         assertFiniteOrNull(
           cell.forecast,
-          `${agency.key} ${quarter} ${vendor.key} forecast`,
+          `${agency.key} ${quarter} ${rowKey} forecast`,
         )
         for (const snapshot of cell.history) {
           if (!isRecord(snapshot) || typeof snapshot.monthLabel !== "string") {
-            throw new Error(`Invalid snapshot label for ${agency.key} ${quarter} ${vendor.key}`)
+            throw new Error(`Invalid snapshot label for ${agency.key} ${quarter} ${rowKey}`)
           }
           if (!snapshot.monthLabel.trim() || !Number.isFinite(snapshot.value)) {
-            throw new Error(`Snapshot values must be finite for ${agency.key} ${quarter} ${vendor.key}`)
+            throw new Error(`Snapshot values must be finite for ${agency.key} ${quarter} ${rowKey}`)
           }
         }
         if (cell.actual === null && cell.forecast === null && cell.history.length > 0) {
-          throw new Error(`History requires a Forecast for ${agency.key} ${quarter} ${vendor.key}`)
+          throw new Error(`History requires a Forecast for ${agency.key} ${quarter} ${rowKey}`)
         }
       }
     }
   })
 }
 
-validateLatestResultsData(latestResultsAgencies)
+export const latestResultsDataset: LatestResultsDataset<CanonicalVendorKey> = {
+  quarters: latestResultsQuarters,
+  agencies: latestResultsAgencies,
+  rows: latestResultsTableRows,
+  rowKeys: latestResultsVendors.map(({ key }) => key),
+  rowHeaderLabel: "Vendor",
+  rowHeaderWidthClass: "w-[112px]",
+  getRowCell: getLatestResultsRowCell,
+}
+
+export function validateLatestResultsData(
+  agencies: readonly LatestResultsAgency[],
+): void {
+  validateLatestResultsDataset({ ...latestResultsDataset, agencies })
+}
+
+validateLatestResultsDataset(latestResultsDataset)

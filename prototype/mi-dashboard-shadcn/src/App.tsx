@@ -22,6 +22,8 @@ import { SellThroughAnalysis } from "@/components/sell-through-analysis"
 import { WeeklyAnalysis } from "@/components/weekly-analysis"
 import { WeeklyExecutiveSummary } from "@/components/weekly-executive-summary"
 import { dashboardMeta } from "@/data/production"
+import { latestResultsDataset } from "@/data/latest-results"
+import { latestResultsIPhoneDataset } from "@/data/latest-results-iphone"
 import { weeklyDescription, weeklyTitle } from "@/data/weekly"
 
 function SigmaPage() {
@@ -280,6 +282,7 @@ export function App() {
         activePage === "sell-through" ||
         activePage === "flagship-sales" ||
         activePage === "latest-results" ||
+        activePage === "latest-results-iphone" ||
         activePage === "mi-weekly-sell-through"
       }
       sidebar={
@@ -305,7 +308,21 @@ export function App() {
       ) : activePage === "pipeline-check-iphone" ? (
         <PipelineCheckIPhonePage />
       ) : activePage === "latest-results" ? (
-        <LatestResultsPage />
+        <LatestResultsPage
+          dataset={latestResultsDataset}
+          eyebrow="MI TAM / LATEST RESULTS"
+          page="latest-results"
+          subtitle="2026 Q1–Q4 Actual · Forecast"
+          title="조사기관별 최신 실적"
+        />
+      ) : activePage === "latest-results-iphone" ? (
+        <LatestResultsPage
+          dataset={latestResultsIPhoneDataset}
+          eyebrow="MI TAM / LATEST RESULTS · IPHONE"
+          page="latest-results-iphone"
+          subtitle="2026 Q1–Q4 Actual · Forecast · iPhone models"
+          title="조사기관별 최신 실적 (iPhone)"
+        />
       ) : (
         <SigmaPage />
       )}

@@ -34,6 +34,11 @@
     "exportFileName": "MI_TAM_Latest_Results.html",
     "originalExcelUrl": null
   },
+  "latest-results-iphone": {
+    "hash": "#latest-results-iphone",
+    "exportFileName": "MI_TAM_Latest_Results_iPhone.html",
+    "originalExcelUrl": null
+  },
   "mi-insight": {
     "hash": "#mi-insight",
     "exportFileName": "MI_Insight_Weekly_Report.html",

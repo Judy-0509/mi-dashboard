@@ -155,6 +155,28 @@ try {
   assert.doesNotMatch(latestResultsHtml, /<script[^>]+\bsrc=/i)
   assert.doesNotMatch(latestResultsHtml, /<link[^>]+rel=["']stylesheet["']/i)
 
+  const latestResultsIPhoneTarget = pageExportTargets.find(
+    ({ page }) => page === "latest-results-iphone",
+  )
+  assert.deepEqual(latestResultsIPhoneTarget, {
+    page: "latest-results-iphone",
+    hash: "#latest-results-iphone",
+    outputName: "MI_TAM_Latest_Results_iPhone.html",
+  })
+  const latestResultsIPhoneHtml = readFileSync(
+    path.join(siteDir, latestResultsIPhoneTarget.outputName),
+    "utf8",
+  )
+  assert.match(
+    latestResultsIPhoneHtml,
+    /window\.__MI_EXPORT_PAGE__ = "latest-results-iphone"/,
+  )
+  assert.match(latestResultsIPhoneHtml, /window\.location\.hash = "#latest-results-iphone"/)
+  assert.doesNotMatch(latestResultsIPhoneHtml, /<aside\b/i)
+  assert.doesNotMatch(latestResultsIPhoneHtml, /PageActions/)
+  assert.doesNotMatch(latestResultsIPhoneHtml, /<script[^>]+\bsrc=/i)
+  assert.doesNotMatch(latestResultsIPhoneHtml, /<link[^>]+rel=["']stylesheet["']/i)
+
   const missingJsDir = path.join(tempDir, "missing-js-site")
   mkdirSync(path.join(missingJsDir, "assets"), { recursive: true })
   writeFileSync(
