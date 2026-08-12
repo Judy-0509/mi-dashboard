@@ -84,9 +84,10 @@ function renderFlagshipSegmentLabel(props: LabelProps) {
 
   return (
     <text
+      className="type-chart-segment-value"
       dominantBaseline="middle"
       fill={props.fill ?? "var(--foreground)"}
-      fontSize={9}
+      fontSize={10}
       fontWeight={600}
       textAnchor="middle"
       x={x + width / 2}
@@ -118,8 +119,9 @@ function renderFlagshipTotalLabel(props: LabelProps) {
 
   return (
     <text
+      className="type-chart-total"
       fill="var(--foreground)"
-      fontSize={9}
+      fontSize={11}
       fontWeight={600}
       textAnchor="middle"
       x={x + width / 2}
@@ -198,13 +200,13 @@ export function FlagshipSalesChart() {
     >
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 border-b pb-3">
         <div>
-          <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             Counterpoint / Flagship Sales
           </p>
-          <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
+          <CardTitle className="type-card-title mt-1 tracking-tight">
             월별 플래그십 모델 판매량
           </CardTitle>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="type-control mt-1 text-muted-foreground">
             모델명·출시월은 제조사 공식 출처, 판매량은 예시 추정치입니다.
           </p>
         </div>
@@ -212,7 +214,7 @@ export function FlagshipSalesChart() {
       <CardContent className="min-w-0 pt-3">
         <div className="mb-3 grid min-w-0 gap-2">
           <div className="flex min-w-0 flex-wrap items-start gap-2" role="group">
-            <span className="w-16 pt-1 text-xs font-medium text-muted-foreground">
+            <span className="type-control-label w-16 pt-1 text-muted-foreground">
               View
             </span>
             <ToggleGroup
@@ -238,7 +240,7 @@ export function FlagshipSalesChart() {
             className="flex min-w-0 flex-wrap items-start gap-2"
             role="group"
           >
-            <span className="w-16 pt-1 text-xs font-medium text-muted-foreground">
+            <span className="type-control-label w-16 pt-1 text-muted-foreground">
               Vendor
             </span>
             <div className="flex flex-wrap gap-2">
@@ -247,7 +249,7 @@ export function FlagshipSalesChart() {
                 return (
                   <Button
                     aria-pressed={isSelected}
-                    className="h-7 gap-1.5 px-2 text-xs"
+                    className="type-control h-7 gap-1.5 px-2"
                     isDisabled={availability === "unavailable"}
                     key={key}
                     onPress={() => selectVendor(key)}
@@ -276,7 +278,7 @@ export function FlagshipSalesChart() {
             className="flex min-w-0 flex-wrap items-start gap-2"
             role="group"
           >
-            <span className="w-16 pt-1 text-xs font-medium text-muted-foreground">
+            <span className="type-control-label w-16 pt-1 text-muted-foreground">
               Model
             </span>
             <div className="flex min-w-0 flex-wrap gap-2">
@@ -286,7 +288,7 @@ export function FlagshipSalesChart() {
                   <div className="inline-flex items-center" key={model.key}>
                     <Button
                       aria-pressed={isSelected}
-                      className="h-7 rounded-e-none border-e-0 px-2 text-xs"
+                      className="type-control h-7 rounded-e-none border-e-0 px-2"
                       onPress={() => toggleModel(model.key)}
                       size="sm"
                       style={isSelected ? { borderColor: model.color } : undefined}
@@ -301,7 +303,7 @@ export function FlagshipSalesChart() {
                     </Button>
                     <Button
                       aria-label={`ONLY ${model.label}`}
-                      className="h-7 rounded-s-none px-1.5 text-[10px]"
+                      className="type-control-label h-7 rounded-s-none px-1.5"
                       onPress={() => onlyModel(model.key)}
                       size="sm"
                       variant="outline"
@@ -313,7 +315,7 @@ export function FlagshipSalesChart() {
               })}
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-xs text-muted-foreground">
+          <div className="type-control flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-muted-foreground">
             <p>
               {view === "calendar"
                 ? "Calendar Month · 출시 전 모델은 0으로 표시"
@@ -341,7 +343,7 @@ export function FlagshipSalesChart() {
               <XAxis
                 axisLine={false}
                 dataKey="label"
-                fontSize={9}
+                fontSize={10}
                 interval={view === "calendar" ? 1 : 0}
                 tickFormatter={view === "calendar" ? formatMonth : undefined}
                 tickLine={false}
@@ -401,16 +403,16 @@ export function FlagshipSalesChart() {
             className="min-w-0 lg:border-s lg:ps-4"
           >
             <div className="mb-2">
-              <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
+              <p className="type-eyebrow text-primary">
                 Generation comparison
               </p>
               <h3
-                className="mt-1 text-base font-semibold"
+                className="type-section-title mt-1"
                 id="flagship-comparison-title"
               >
                 세대별 판매 비교
               </h3>
-              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+              <p className="type-control mt-1 text-muted-foreground">
                 {comparison
                   ? `${comparison.currentGenerationLabel} vs ${comparison.previousGenerationLabel} · 동일 출시 후 기간`
                   : "— 데이터 없음"}
@@ -419,7 +421,7 @@ export function FlagshipSalesChart() {
             <div className="overflow-hidden border">
               <table
                 aria-label={`${vendor.label} generation sales comparison`}
-                className="w-full table-fixed border-collapse text-[10px] leading-4"
+                className="type-table-body w-full table-fixed border-collapse"
               >
                 <caption className="sr-only">
                   {vendor.label} generation sales comparison
@@ -431,34 +433,34 @@ export function FlagshipSalesChart() {
                   <col className="w-[18%]" />
                   <col className="w-[20%]" />
                 </colgroup>
-                <thead className="bg-muted/40 text-muted-foreground">
+                <thead className="type-table-header bg-muted/40 text-muted-foreground">
                   <tr>
                     <th
-                      className="px-1.5 py-1.5 text-left font-medium"
+                      className="px-1.5 py-1.5 text-left"
                       scope="col"
                     >
                       모델
                     </th>
                     <th
-                      className="px-1 py-1.5 text-right font-medium"
+                      className="px-1 py-1.5 text-right"
                       scope="col"
                     >
                       기간
                     </th>
                     <th
-                      className="px-1 py-1.5 text-right font-medium"
+                      className="px-1 py-1.5 text-right"
                       scope="col"
                     >
                       현재
                     </th>
                     <th
-                      className="px-1 py-1.5 text-right font-medium"
+                      className="px-1 py-1.5 text-right"
                       scope="col"
                     >
                       이전
                     </th>
                     <th
-                      className="px-1.5 py-1.5 text-right font-medium"
+                      className="px-1.5 py-1.5 text-right"
                       scope="col"
                     >
                       증감
@@ -476,11 +478,11 @@ export function FlagshipSalesChart() {
                         key={row.rowLabel}
                       >
                         <th
-                          className="px-1.5 py-1.5 text-left align-top font-medium"
+                          className="type-table-header px-1.5 py-1.5 text-left align-top"
                           scope="row"
                         >
                           <span className="block truncate">{row.rowLabel}</span>
-                          <span className="block truncate font-normal text-muted-foreground">
+                          <span className="type-table-body block truncate text-muted-foreground">
                             {row.currentModelLabel} / {row.previousModelLabel}
                           </span>
                         </th>
@@ -496,7 +498,7 @@ export function FlagshipSalesChart() {
                           {row.previousCumulative.toFixed(1)}Mu
                         </td>
                         <td
-                          className={`px-1.5 py-1.5 text-right align-top font-medium whitespace-nowrap tabular-nums ${deltaClassName}`}
+                          className={`type-table-body px-1.5 py-1.5 text-right align-top whitespace-nowrap tabular-nums ${deltaClassName}`}
                         >
                           <span className="block">
                             {formatSignedValue(row.deltaMu, "Mu")}
@@ -509,7 +511,7 @@ export function FlagshipSalesChart() {
                     )
                   }) : (
                     <tr>
-                      <th className="px-1.5 py-1.5 text-left font-medium" scope="row">
+                      <th className="type-table-header px-1.5 py-1.5 text-left" scope="row">
                         —<span className="sr-only">데이터 없음</span>
                       </th>
                       <td className="px-1 py-1.5 text-right" colSpan={4}>
@@ -525,7 +527,7 @@ export function FlagshipSalesChart() {
 
         <ul
           aria-label="Flagship Sales model legend"
-          className="mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground"
+          className="type-control mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-muted-foreground"
         >
           {visibleModels.map((model) => (
             <li className="flex items-center gap-1.5" key={model.key}>

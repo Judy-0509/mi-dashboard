@@ -17,19 +17,45 @@ export type CanonicalVendorKey =
   | "google"
 
 export const canonicalVendors = [
-  { key: "apple", label: "Apple", color: "var(--chart-1)" },
-  { key: "samsung", label: "Samsung", color: "var(--chart-2)" },
-  { key: "xiaomi", label: "Xiaomi", color: "var(--chart-3)" },
-  { key: "huawei", label: "Huawei", color: "var(--chart-7)" },
-  { key: "honor", label: "Honor", color: "#db2777" },
-  { key: "oppo", label: "OPPO", color: "var(--chart-4)" },
-  { key: "vivo", label: "vivo", color: "var(--chart-5)" },
-  { key: "transsion", label: "Transsion", color: "var(--chart-6)" },
-  { key: "lenovo", label: "Lenovo", color: "var(--chart-7)" },
-  { key: "google", label: "Google", color: "#ca8a04" },
+  { key: "apple", label: "Apple", color: "#e76f51" },
+  { key: "samsung", label: "Samsung", color: "#1d4ed8" },
+  { key: "xiaomi", label: "Xiaomi", color: "#bae6fd" },
+  { key: "huawei", label: "Huawei", color: "#7dd3fc" },
+  { key: "honor", label: "Honor", color: "#38bdf8" },
+  { key: "oppo", label: "OPPO", color: "#0ea5e9" },
+  { key: "vivo", label: "vivo", color: "#0284c7" },
+  { key: "transsion", label: "Transsion", color: "#0369a1" },
+  { key: "lenovo", label: "Lenovo", color: "#075985" },
+  { key: "google", label: "Google", color: "#34a853" },
 ] as const satisfies readonly (VendorCatalogEntry & {
   readonly key: CanonicalVendorKey
 })[]
+
+const chartTokenLabelColor: Record<
+  string,
+  "var(--foreground)" | "var(--background)"
+> = {
+  "var(--chart-1)": "var(--foreground)",
+  "var(--chart-2)": "var(--foreground)",
+  "var(--chart-3)": "var(--background)",
+  "var(--chart-4)": "var(--background)",
+  "var(--chart-5)": "var(--background)",
+  "var(--chart-6)": "var(--foreground)",
+  "var(--chart-7)": "var(--background)",
+}
+
+export function getVendorLabelColor(color: string) {
+  if (chartTokenLabelColor[color]) return chartTokenLabelColor[color]
+
+  const channels = color
+    .replace("#", "")
+    .match(/.{2}/g)
+    ?.map((channel) => Number.parseInt(channel, 16))
+  if (!channels || channels.length !== 3) return "var(--foreground)"
+  const luminance =
+    (channels[0] * 299 + channels[1] * 587 + channels[2] * 114) / 1000
+  return luminance > 150 ? "var(--foreground)" : "var(--background)"
+}
 
 export type VendorStatus = "available" | "unavailable"
 

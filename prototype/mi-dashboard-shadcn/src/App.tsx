@@ -10,6 +10,7 @@ import { FlagshipSalesChart } from "@/components/flagship-sales-chart"
 import { MiInsightWeeklyReport } from "@/components/mi-insight-weekly-report"
 import { MiWeeklySellThroughSummary } from "@/components/mi-weekly-sell-through-summary"
 import { PipelineCheck } from "@/components/pipeline-check"
+import { PipelineCheckIPhone } from "@/components/pipeline-check-iphone"
 import { PortalSidebar, type PortalPage } from "@/components/portal-sidebar"
 import { SellThroughAnalysis } from "@/components/sell-through-analysis"
 import { buttonVariants } from "@/components/ui/button"
@@ -62,7 +63,7 @@ function PageActions({ page }: { page: PortalPage }) {
         className={buttonVariants({
           variant: "outline",
           size: "sm",
-          className: "text-sm leading-5 font-normal",
+          className: "type-control",
         })}
         href={config.originalExcelUrl ?? undefined}
         onClick={excelDisabled ? (event) => event.preventDefault() : undefined}
@@ -80,7 +81,7 @@ function PageActions({ page }: { page: PortalPage }) {
         className={buttonVariants({
           variant: "outline",
           size: "sm",
-          className: "text-sm leading-5 font-normal",
+          className: "type-control",
         })}
         download={config.exportFileName}
         href={`./${config.exportFileName}`}
@@ -97,19 +98,19 @@ function SigmaPage() {
     <>
       <header className="flex items-end justify-between border-b pb-4">
         <div>
-          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             SigmaIntel / Production Forecast
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <h1 className="type-page-title mt-1 tracking-tight">
             스마트폰 생산 전망
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="type-page-subtitle mt-1 text-muted-foreground">
             {dashboardMeta.firstQuarter}–{dashboardMeta.lastQuarter} 분기 누적
             Forecast
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <p className="font-mono text-xs text-muted-foreground">
+          <p className="type-control tabular-nums text-muted-foreground">
             기준: {dashboardMeta.asOf.replaceAll("-", ".")}
           </p>
           <PageActions page="sigma" />
@@ -129,13 +130,13 @@ function WeeklyPage() {
         id="weekly"
       >
         <div>
-          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             Counterpoint / Weekly
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <h1 className="type-page-title mt-1 tracking-tight">
             {weeklyTitle}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="type-page-subtitle mt-1 text-muted-foreground">
             {weeklyDescription}
           </p>
         </div>
@@ -155,13 +156,13 @@ function AniPage() {
         id="ani"
       >
         <div>
-          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             ANI / iPhone Model Production
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <h1 className="type-page-title mt-1 tracking-tight">
             iPhone 모델 생산 전망
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="type-page-subtitle mt-1 text-muted-foreground">
             2024 Q1–2027 Q2 분기별 Forecast · 단위: Mu
           </p>
         </div>
@@ -180,13 +181,13 @@ function SellThroughPage() {
         id="sell-through"
       >
         <div>
-          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             Counterpoint / Sell-in · Sell-through
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <h1 className="type-page-title mt-1 tracking-tight">
             스마트폰 Sell-in / Sell-through
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="type-page-subtitle mt-1 text-muted-foreground">
             2025년 9월–2026년 8월 월별 흐름 · Inventory / WoS 비교
           </p>
         </div>
@@ -205,13 +206,13 @@ function FlagshipSalesPage() {
         id="flagship-sales"
       >
         <div>
-          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             Counterpoint / Flagship Sales
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <h1 className="type-page-title mt-1 tracking-tight">
             Flagship Sales
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="type-page-subtitle mt-1 text-muted-foreground">
             2024년 9월–2026년 8월 24개월 모델 판매량 · 출시월 기준 Lifecycle 비교
           </p>
         </div>
@@ -230,13 +231,13 @@ function MiInsightPage() {
         id="mi-insight"
       >
         <div>
-          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             MI Insight / Weekly Report
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <h1 className="type-page-title mt-1 tracking-tight">
             Weekly Report
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="type-page-subtitle mt-1 text-muted-foreground">
             EDM 업데이트 자료와 공유 내용
           </p>
         </div>
@@ -255,13 +256,13 @@ function MiInsightWeeklySellThroughPage() {
         id="mi-weekly-sell-through"
       >
         <div>
-          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             MI Insight / Weekly Sell-through
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <h1 className="type-page-title mt-1 tracking-tight">
             Weekly Sell-through
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="type-page-subtitle mt-1 text-muted-foreground">
             Counterpoint Weekly 데이터 기반 Sell-out 현황과 Trend
           </p>
         </div>
@@ -281,19 +282,44 @@ function PipelineCheckPage(): React.ReactElement {
         id="pipeline-check"
       >
         <div>
-          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             MI TAM / PIPELINE CHECK
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <h1 className="type-page-title mt-1 tracking-tight">
             분기별 Pipeline Check
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="type-page-subtitle mt-1 text-muted-foreground">
             2025 Q1–2026 Q2 Production · Inventory · Sell-in · Sell-out
           </p>
         </div>
         <PageActions page="pipeline-check" />
       </header>
       <PipelineCheck />
+    </>
+  )
+}
+
+function PipelineCheckIPhonePage(): React.ReactElement {
+  return (
+    <>
+      <header
+        className="flex items-end justify-between border-b pb-4"
+        id="pipeline-check-iphone"
+      >
+        <div>
+          <p className="type-eyebrow text-muted-foreground">
+            MI TAM / PIPELINE CHECK · IPHONE
+          </p>
+          <h1 className="type-page-title mt-1 tracking-tight">
+            분기별 Pipeline Check (iPhone)
+          </h1>
+          <p className="type-page-subtitle mt-1 text-muted-foreground">
+            2025 Q1–2026 Q2 iPhone Production · Inventory · Sell-in · Sell-out
+          </p>
+        </div>
+        <PageActions page="pipeline-check-iphone" />
+      </header>
+      <PipelineCheckIPhone />
     </>
   )
 }
@@ -344,6 +370,8 @@ export function App() {
         <MiInsightWeeklySellThroughPage />
       ) : activePage === "pipeline-check" ? (
         <PipelineCheckPage />
+      ) : activePage === "pipeline-check-iphone" ? (
+        <PipelineCheckIPhonePage />
       ) : (
         <SigmaPage />
       )}

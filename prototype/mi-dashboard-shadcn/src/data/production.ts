@@ -13,7 +13,7 @@ import {
 export type VendorKey = CanonicalVendorKey | "others"
 
 const vendorEntries = withVendorAdditions([
-  { key: "others", label: "Others", color: "var(--chart-7)" },
+  { key: "others", label: "Others", color: "#475569" },
 ]) as readonly (VendorCatalogEntry & { readonly key: VendorKey })[]
 
 const providerAliases = Object.fromEntries(

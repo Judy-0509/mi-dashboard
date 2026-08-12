@@ -23,7 +23,7 @@ import {
   sellThroughMonthly,
   sellThroughVendors,
 } from "@/data/sell-through"
-import type { VendorValue } from "@/data/vendor-catalog"
+import { getVendorLabelColor, type VendorValue } from "@/data/vendor-catalog"
 
 type SellThroughView = "vendor" | "total"
 
@@ -159,7 +159,7 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
         <XAxis
           axisLine={false}
           dataKey="label"
-          fontSize={9}
+          fontSize={10}
           interval={0}
           tickLine={false}
           tickMargin={7}
@@ -198,8 +198,10 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
               >
                 <LabelList
                   dataKey={`si_${vendor.key}`}
-                  fill={index < 3 ? "var(--foreground)" : "var(--background)"}
-                  fontSize={8}
+                  fill={getVendorLabelColor(vendor.color)}
+                  className="type-chart-segment-value"
+                  fontSize={10}
+                  fontWeight={600}
                   formatter={formatBarTotal}
                   position="center"
                 />
@@ -207,7 +209,9 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
                   <LabelList
                     dataKey="sellInTotal"
                     fill="var(--foreground)"
-                    fontSize={9}
+                    className="type-chart-total"
+                    fontSize={11}
+                    fontWeight={600}
                     formatter={formatBarTotal}
                     position="top"
                   />
@@ -225,8 +229,10 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
               >
                 <LabelList
                   dataKey={`st_${vendor.key}`}
-                  fill={index < 3 ? "var(--foreground)" : "var(--background)"}
-                  fontSize={8}
+                  fill={getVendorLabelColor(vendor.color)}
+                  className="type-chart-segment-value"
+                  fontSize={10}
+                  fontWeight={600}
                   formatter={formatBarTotal}
                   position="center"
                 />
@@ -234,7 +240,9 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
                   <LabelList
                     dataKey="sellThroughTotal"
                     fill="var(--foreground)"
-                    fontSize={9}
+                    className="type-chart-total"
+                    fontSize={11}
+                    fontWeight={600}
                     formatter={formatBarTotal}
                     position="top"
                   />
@@ -254,7 +262,9 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
               <LabelList
                 dataKey="sellInTotal"
                 fill="var(--foreground)"
-                fontSize={9}
+                className="type-chart-total"
+                fontSize={11}
+                fontWeight={600}
                 formatter={formatBarTotal}
                 position="top"
               />
@@ -269,7 +279,9 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
               <LabelList
                 dataKey="sellThroughTotal"
                 fill="var(--foreground)"
-                fontSize={9}
+                className="type-chart-total"
+                fontSize={11}
+                fontWeight={600}
                 formatter={formatBarTotal}
                 position="top"
               />
@@ -291,7 +303,8 @@ function SellThroughChart({ view }: { view: SellThroughView }) {
           <LabelList
             dataKey="ratio"
             fill={ratioColor}
-            fontSize={9}
+            className="type-chart-segment-value"
+            fontSize={10}
             formatter={formatRatio}
             position="top"
           />
@@ -310,33 +323,33 @@ function InventoryTable() {
     <div className="min-w-0 overflow-hidden border">
       <table
         aria-label="Inventory and WoS vendor snapshots"
-        className="w-full table-fixed border-collapse text-xs"
+        className="type-table-body w-full table-fixed border-collapse"
       >
         <caption className="sr-only">Inventory and WoS vendor snapshots</caption>
         <colgroup>
           <col className="w-[22%]" />
           <col span={6} />
         </colgroup>
-        <thead className="bg-muted/40 text-muted-foreground">
+        <thead className="type-table-header bg-muted/40 text-muted-foreground">
           <tr>
-            <th className="border-b px-3 py-1.5 text-left font-medium" rowSpan={2} scope="col">
+            <th className="border-b px-3 py-1.5 text-left" rowSpan={2} scope="col">
               Vendor
             </th>
-            <th className="border-b px-2 py-1.5 text-center font-medium" colSpan={3} scope="colgroup">
+            <th className="border-b px-2 py-1.5 text-center" colSpan={3} scope="colgroup">
               Inventory
             </th>
-            <th className="border-b px-2 py-1.5 text-center font-medium" colSpan={3} scope="colgroup">
+            <th className="border-b px-2 py-1.5 text-center" colSpan={3} scope="colgroup">
               WoS
             </th>
           </tr>
           <tr>
             {inventoryPeriods.map((period) => (
-              <th className="px-2 py-1.5 text-right font-medium" key={`inventory-${period}`} scope="col">
+              <th className="px-2 py-1.5 text-right" key={`inventory-${period}`} scope="col">
                 {period}
               </th>
             ))}
             {inventoryPeriods.map((period) => (
-              <th className="px-2 py-1.5 text-right font-medium" key={`wos-${period}`} scope="col">
+              <th className="px-2 py-1.5 text-right" key={`wos-${period}`} scope="col">
                 {period}
               </th>
             ))}
@@ -348,7 +361,7 @@ function InventoryTable() {
 
             return (
               <tr className="border-t" key={row.vendor}>
-                <th className="px-3 py-1.5 text-left font-medium" scope="row">
+                <th className="type-table-header px-3 py-1.5 text-left" scope="row">
                   <span className="inline-flex items-center gap-1.5">
                     <i
                       aria-hidden="true"
@@ -359,7 +372,7 @@ function InventoryTable() {
                   </span>
                 </th>
                 {row.inventory.map((value, index) => (
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums" key={`inventory-${index}`}>
+                  <td className="type-table-body px-2 py-1.5 text-right tabular-nums" key={`inventory-${index}`}>
                     <span aria-label={value.status === "available" ? undefined : "데이터 없음"}>
                       {formatVendorValue(value)}
                       {value.status === "unavailable" ? (
@@ -369,7 +382,7 @@ function InventoryTable() {
                   </td>
                 ))}
                 {row.wos.map((value, index) => (
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums" key={`wos-${index}`}>
+                  <td className="type-table-body px-2 py-1.5 text-right tabular-nums" key={`wos-${index}`}>
                     <span aria-label={value.status === "available" ? undefined : "데이터 없음"}>
                       {formatVendorValue(value)}
                       {value.status === "unavailable" ? (
@@ -389,7 +402,7 @@ function InventoryTable() {
 
 function SellThroughLegend({ view }: { view: SellThroughView }) {
   return view === "vendor" ? (
-    <ul aria-label="Vendor legend" className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+    <ul aria-label="Vendor legend" className="type-control mt-2 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
       {sellThroughVendors.map(({ label, color, availability }) => (
         <li className="flex items-center gap-1.5" key={label}>
           <i aria-hidden="true" className="size-1.5 shrink-0" style={{ backgroundColor: color }} />
@@ -403,7 +416,7 @@ function SellThroughLegend({ view }: { view: SellThroughView }) {
       ))}
     </ul>
   ) : (
-    <ul aria-label="Sell-in / Sell-through legend" className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+    <ul aria-label="Sell-in / Sell-through legend" className="type-control mt-2 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
       <li className="flex items-center gap-1.5">
         <i aria-hidden="true" className="size-1.5 shrink-0" style={{ backgroundColor: "var(--chart-1)" }} />
         Sell-in
@@ -427,10 +440,10 @@ export function SellThroughAnalysis(): React.JSX.Element {
       <Card className="h-full min-w-0 border-border shadow-none" size="sm">
         <CardHeader className="flex flex-row items-start justify-between gap-4 border-b pb-3">
           <div>
-            <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <p className="type-eyebrow text-muted-foreground">
               Monthly flow
             </p>
-            <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
+            <CardTitle className="type-card-title mt-1 tracking-tight">
               Sell-in / Sell-through
             </CardTitle>
           </div>
@@ -456,10 +469,10 @@ export function SellThroughAnalysis(): React.JSX.Element {
         </CardHeader>
         <CardContent className="min-w-0 pt-3">
           <div className="mb-2 flex items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">
+            <p className="type-control text-muted-foreground">
               SI / ST monthly comparison · ratio = SI ÷ ST
             </p>
-            <p className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <p className="type-control flex shrink-0 items-center gap-1.5 text-muted-foreground">
               <i aria-hidden="true" className="size-2 rounded-full" style={{ backgroundColor: ratioColor }} />
               SI/ST Ratio(%)
             </p>
@@ -471,10 +484,10 @@ export function SellThroughAnalysis(): React.JSX.Element {
 
       <Card className="h-full min-w-0 border-border shadow-none" size="sm">
         <CardHeader className="border-b pb-3">
-          <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             Vendor snapshots
           </p>
-          <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
+          <CardTitle className="type-card-title mt-1 tracking-tight">
             Inventory
           </CardTitle>
         </CardHeader>

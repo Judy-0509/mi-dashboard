@@ -11,12 +11,12 @@ export function MiInsightWeeklyReport(): JSX.Element {
     <div className="space-y-4">
       <Card className="border-border shadow-none" size="sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold tracking-[0.14em] uppercase">
+          <CardTitle className="type-executive-title">
             Executive Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="grid gap-2 text-sm leading-5 text-muted-foreground">
+          <ul className="type-executive-body grid gap-2 text-muted-foreground">
             {miInsightInsights.map(({ title, details }) => (
               <li className="flex gap-3" key={title}>
                 <span
@@ -24,7 +24,7 @@ export function MiInsightWeeklyReport(): JSX.Element {
                   className="mt-2 size-1.5 shrink-0 bg-primary"
                 />
                 <div className="min-w-0">
-                  <p className="font-medium text-foreground">{title}</p>
+                  <p className="type-table-header text-foreground">{title}</p>
                   <ul className="mt-1 list-disc space-y-0.5 pl-4">
                     {details.map((detail) => (
                       <li key={detail}>{detail}</li>
@@ -39,13 +39,13 @@ export function MiInsightWeeklyReport(): JSX.Element {
 
       <Card className="border-border shadow-none" size="sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold tracking-[0.14em] uppercase">
+          <CardTitle className="type-executive-title">
             Weekly Report Files
           </CardTitle>
         </CardHeader>
         <CardContent className="min-w-0">
           <div className="max-h-[520px] overflow-x-hidden overflow-y-auto">
-            <table className="w-full table-fixed border-collapse text-xs">
+            <table className="type-table-body w-full table-fixed border-collapse">
               <caption className="sr-only">
                 MI Insight Weekly Report files
               </caption>
@@ -58,27 +58,27 @@ export function MiInsightWeeklyReport(): JSX.Element {
                 <col className="w-[27%]" />
                 <col className="w-[12%]" />
               </colgroup>
-              <thead className="border-b border-border text-left text-muted-foreground">
+              <thead className="type-table-header border-b border-border text-left text-muted-foreground">
                 <tr>
-                  <th className="px-2 py-2 font-medium" scope="col">
+                  <th className="px-2 py-2" scope="col">
                     파일명
                   </th>
-                  <th className="px-2 py-2 font-medium" scope="col">
+                  <th className="px-2 py-2" scope="col">
                     조사기관
                   </th>
-                  <th className="px-2 py-2 font-medium" scope="col">
+                  <th className="px-2 py-2" scope="col">
                     응용처
                   </th>
-                  <th className="px-2 py-2 font-medium" scope="col">
+                  <th className="px-2 py-2" scope="col">
                     주기
                   </th>
-                  <th className="px-2 py-2 font-medium" scope="col">
+                  <th className="px-2 py-2" scope="col">
                     업로드일자
                   </th>
-                  <th className="px-2 py-2 font-medium" scope="col">
+                  <th className="px-2 py-2" scope="col">
                     공유내용
                   </th>
-                  <th className="px-2 py-2 font-medium" scope="col">
+                  <th className="px-2 py-2" scope="col">
                     파일 EDM 링크
                   </th>
                 </tr>
@@ -86,7 +86,7 @@ export function MiInsightWeeklyReport(): JSX.Element {
               <tbody className="divide-y divide-border">
                 {reports.map((report) => (
                   <tr key={report.fileName}>
-                    <td className="px-2 py-3 align-top font-medium break-words">
+                    <td className="type-table-header px-2 py-3 align-top break-words">
                       {report.fileName}
                     </td>
                     <td className="px-2 py-3 align-top break-words">
@@ -98,11 +98,11 @@ export function MiInsightWeeklyReport(): JSX.Element {
                     <td className="px-2 py-3 align-top whitespace-nowrap">
                       {report.cadence}
                     </td>
-                    <td className="px-2 py-3 align-top font-mono whitespace-nowrap">
+                    <td className="type-table-body px-2 py-3 align-top tabular-nums whitespace-nowrap">
                       {report.uploadDate}
                     </td>
                     <td className="px-2 py-3 align-top">
-                      <p className="line-clamp-2 leading-5">
+                      <p className="type-table-body line-clamp-2">
                         {report.sharedContent}
                       </p>
                     </td>

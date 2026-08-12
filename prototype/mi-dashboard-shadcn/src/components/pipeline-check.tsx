@@ -1,4 +1,5 @@
 import type * as React from "react"
+import { useState } from "react"
 import {
   Bar,
   BarChart,
@@ -16,6 +17,13 @@ import {
 } from "@/components/ui/chart"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
+  InventoryQuarterSelect,
+} from "@/components/inventory-quarter-select"
+import {
+  getDefaultInventoryQuarters,
+  type InventoryQuarterSelection,
+} from "@/data/inventory-quarters"
+import {
   getPipelineChartData,
   pipelineData,
   pipelineExecutiveSummary,
@@ -26,6 +34,7 @@ import {
   type PipelineFlowMetric,
   type PipelineInventoryMetric,
 } from "@/data/pipeline-check"
+import { getVendorLabelColor } from "@/data/vendor-catalog"
 
 const pipelineChartConfig = Object.fromEntries(
   pipelineVendors.map((vendor) => [
@@ -42,6 +51,11 @@ export type PipelineStackedChartProps = {
 export type PipelineInventoryTableProps = {
   metric: PipelineInventoryMetric
   title: "Production Inventory" | "Channel Inventory"
+  selectedQuarters: InventoryQuarterSelection<(typeof pipelineQuarters)[number]>
+  onQuarterChange: (
+    index: number,
+    quarter: (typeof pipelineQuarters)[number],
+  ) => void
 }
 
 function PipelineStackedChart({
@@ -53,7 +67,7 @@ function PipelineStackedChart({
 
   return (
     <section aria-labelledby={titleId} className="min-w-0">
-      <h3 className="mb-2 text-sm font-medium" id={titleId}>
+      <h3 className="type-section-title mb-2" id={titleId}>
         {title}
       </h3>
       <ChartContainer
@@ -71,14 +85,14 @@ function PipelineStackedChart({
           <XAxis
             axisLine={false}
             dataKey="quarter"
-            fontSize={8}
+            fontSize={10}
             interval={0}
             tickLine={false}
             tickMargin={4}
           />
           <YAxis
             axisLine={false}
-            fontSize={8}
+            fontSize={10}
             domain={pipelineYAxisDomain}
             tickFormatter={(value) => `${value}m`}
             ticks={pipelineYAxisTicks}
@@ -96,17 +110,20 @@ function PipelineStackedChart({
               stackId="pipeline"
             >
               <LabelList
+                className="type-chart-segment-value"
                 dataKey={vendor.key}
-                fill="var(--foreground)"
-                fontSize={8}
+                fill={getVendorLabelColor(vendor.color)}
+                fontSize={10}
+                fontWeight={600}
                 formatter={(value) => Number(value).toFixed(1)}
                 position="center"
               />
               {vendor.key === "cnOem" ? (
                 <LabelList
+                  className="type-chart-total"
                   dataKey="total"
                   fill="var(--foreground)"
-                  fontSize={8}
+                  fontSize={11}
                   fontWeight={600}
                   formatter={(value) => `${Number(value).toFixed(1)}Mu`}
                   offset={8}
@@ -123,38 +140,45 @@ function PipelineStackedChart({
 
 function PipelineInventoryTable({
   metric,
+  onQuarterChange,
+  selectedQuarters,
   title,
 }: PipelineInventoryTableProps) {
   const titleId = `pipeline-${metric}-title`
 
   return (
     <section aria-labelledby={titleId} className="min-w-0">
-      <h3 className="mb-2 text-sm font-medium" id={titleId}>
+      <h3 className="type-section-title mb-2" id={titleId}>
         {title}
       </h3>
       <table
         aria-labelledby={titleId}
-        className="h-[300px] w-full table-fixed border-collapse text-[8px] tabular-nums"
+        className="type-table-body h-[300px] w-full table-fixed border-collapse tabular-nums"
       >
         <caption className="sr-only">{title} · 단위 Mu</caption>
         <colgroup>
           <col className="w-[48px]" />
-          {pipelineQuarters.map((quarter) => (
-            <col key={quarter} />
+          {selectedQuarters.map((quarter, index) => (
+            <col key={`${quarter}-${index}`} />
           ))}
         </colgroup>
-        <thead className="bg-muted/40 text-muted-foreground">
+        <thead className="type-table-header bg-muted/40 text-muted-foreground">
           <tr>
-            <th className="border px-1 py-1 text-left font-medium" scope="col">
+            <th className="border px-1 py-1 text-left" scope="col">
               Vendor
             </th>
-            {pipelineQuarters.map((quarter) => (
+            {selectedQuarters.map((quarter, index) => (
               <th
-                className="border px-1 py-1 text-center font-medium"
-                key={quarter}
+                className="border px-1 py-1 text-center"
+                key={`${quarter}-${index}`}
                 scope="col"
               >
-                {quarter}
+                <InventoryQuarterSelect
+                  availableQuarters={pipelineQuarters}
+                  index={index}
+                  onChange={onQuarterChange}
+                  value={quarter}
+                />
               </th>
             ))}
           </tr>
@@ -163,15 +187,16 @@ function PipelineInventoryTable({
           {pipelineVendors.map((vendor) => (
             <tr key={vendor.key}>
               <th
-                className="border px-1 py-1 text-left font-medium text-foreground"
+                className="type-table-header border px-1 py-1 text-left text-foreground"
                 scope="row"
               >
                 {vendor.label}
               </th>
-              {pipelineData.map((row) => {
+              {selectedQuarters.map((quarter, index) => {
+                const row = pipelineData.find((item) => item.quarter === quarter)!
                 const value = row[metric][vendor.key]
                 return (
-                  <td className="border px-1 py-1 text-right" key={row.quarter}>
+                  <td className="border px-1 py-1 text-right" key={`${quarter}-${index}`}>
                     {value === null ? "N/A" : `${value.toFixed(1)}Mu`}
                   </td>
                 )
@@ -185,16 +210,30 @@ function PipelineInventoryTable({
 }
 
 export function PipelineCheck(): React.ReactElement {
+  const [selectedInventoryQuarters, setSelectedInventoryQuarters] = useState(
+    () => getDefaultInventoryQuarters(pipelineQuarters),
+  )
+  const changeInventoryQuarter = (
+    index: number,
+    quarter: (typeof pipelineQuarters)[number],
+  ) => {
+    setSelectedInventoryQuarters((current) => {
+      const next = [...current] as typeof current
+      next[index] = quarter
+      return next
+    })
+  }
+
   return (
     <>
       <Card className="my-4 border-border shadow-none" size="sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold tracking-[0.14em] uppercase">
+          <CardTitle className="type-executive-title">
             Executive Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="grid gap-2 text-sm leading-5 text-muted-foreground">
+          <ul className="type-executive-body grid gap-2 text-muted-foreground">
             {pipelineExecutiveSummary.map((observation) => (
               <li className="flex gap-3" key={observation}>
                 <span
@@ -211,16 +250,16 @@ export function PipelineCheck(): React.ReactElement {
       <Card className="min-w-0 border-border shadow-none" size="sm">
         <CardHeader className="flex flex-row items-start justify-between gap-4 border-b pb-3">
           <div>
-            <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <p className="type-eyebrow text-muted-foreground">
               Pipeline Check
             </p>
-            <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
+            <CardTitle className="type-card-title mt-1 tracking-tight">
               Production · Sell-in · Sell-out
             </CardTitle>
           </div>
           <ul
             aria-label="Pipeline Vendor legend"
-            className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
+            className="type-control flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground"
           >
             {pipelineVendors.map((vendor) => (
               <li className="flex items-center gap-1.5" key={vendor.key}>
@@ -239,11 +278,15 @@ export function PipelineCheck(): React.ReactElement {
             <PipelineStackedChart metric="production" title="Production" />
             <PipelineInventoryTable
               metric="productionInventory"
+              onQuarterChange={changeInventoryQuarter}
+              selectedQuarters={selectedInventoryQuarters}
               title="Production Inventory"
             />
             <PipelineStackedChart metric="sellIn" title="Sell-in" />
             <PipelineInventoryTable
               metric="channelInventory"
+              onQuarterChange={changeInventoryQuarter}
+              selectedQuarters={selectedInventoryQuarters}
               title="Channel Inventory"
             />
             <PipelineStackedChart metric="sellOut" title="Sell-out" />

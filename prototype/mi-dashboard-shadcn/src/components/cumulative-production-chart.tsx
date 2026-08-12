@@ -29,7 +29,7 @@ import {
   vendors,
   type VendorKey,
 } from "@/data/production"
-import type { VendorValue } from "@/data/vendor-catalog"
+import { getVendorLabelColor, type VendorValue } from "@/data/vendor-catalog"
 
 const chartConfig = Object.fromEntries(
   vendors.map((vendor) => [
@@ -120,19 +120,19 @@ export function CumulativeProductionChart() {
     <Card className="border-border shadow-none" id="overview" size="sm">
       <CardHeader className="flex flex-row items-start justify-between gap-8 border-b pb-3">
         <div>
-          <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             Forecast
           </p>
-          <CardTitle className="mt-1 text-xl font-semibold tracking-tight">
+          <CardTitle className="type-card-title mt-1 tracking-tight">
             {dashboardMeta.firstQuarter}–{dashboardMeta.lastQuarter} 분기 누적
             생산량
           </CardTitle>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="type-page-subtitle mt-1 text-muted-foreground">
             단위: Mu / 분기 누적
           </p>
         </div>
-        <Button
-          className="shrink-0"
+          <Button
+          className="type-control shrink-0"
           onPress={() => setVisibleVendors(new Set(allVendorKeys))}
           size="sm"
           variant="outline"
@@ -153,7 +153,7 @@ export function CumulativeProductionChart() {
               <div className="flex" key={vendor.key}>
                 <Button
                   aria-pressed={visibleVendors.has(vendor.key)}
-                  className="h-7 gap-1.5 px-2 text-xs"
+                  className="type-control h-7 gap-1.5 px-2"
                   isDisabled={unavailable}
                   onPress={() => toggleVendor(vendor.key)}
                   size="sm"
@@ -175,7 +175,7 @@ export function CumulativeProductionChart() {
                 </Button>
                 <Button
                   aria-label={`${vendor.label}만 표시`}
-                  className="h-7 px-2 text-[10px] font-semibold tracking-wide"
+                  className="type-control-label h-7 px-2 tracking-wide"
                   isDisabled={unavailable}
                   onPress={() => setVisibleVendors(new Set([vendor.key]))}
                   size="sm"
@@ -187,7 +187,7 @@ export function CumulativeProductionChart() {
               )
             })}
           </div>
-          <p className="pt-1 text-right text-xs leading-5 text-muted-foreground">
+          <p className="type-control pt-1 text-right text-muted-foreground">
             {vendors.length}개 중 {visibleVendors.size}개 업체 표시
           </p>
         </div>
@@ -197,10 +197,10 @@ export function CumulativeProductionChart() {
             aria-labelledby="production-chart-title"
           >
             <div className="mb-2 flex h-11 items-center justify-between gap-4">
-              <p id="production-chart-title" className="text-sm font-medium">
+                <p id="production-chart-title" className="type-section-title">
                 업체별 누적 생산량
               </p>
-              <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
+              <p className="type-control-label flex items-center gap-1.5 text-primary">
                 <MousePointerClick aria-hidden="true" className="size-3.5" />
                 막대를 클릭해 전망 변화 확인
               </p>
@@ -227,7 +227,7 @@ export function CumulativeProductionChart() {
                 <XAxis
                   axisLine={false}
                   dataKey="quarter"
-                  fontSize={9}
+                  fontSize={10}
                   interval={0}
                   tickLine={false}
                   tickMargin={6}
@@ -244,7 +244,7 @@ export function CumulativeProductionChart() {
                   content={<ChartTooltipContent />}
                   cursor={false}
                 />
-                {vendors.map((vendor, vendorIndex) => (
+                {vendors.map((vendor) => (
                   <Bar
                     className="cursor-pointer"
                     dataKey={vendor.key}
@@ -271,13 +271,10 @@ export function CumulativeProductionChart() {
                     <LabelList
                       dataKey={vendor.key}
                       formatter={formatChartValue}
-                      fill={
-                        vendorIndex === 0 || vendorIndex === 5
-                          ? "var(--foreground)"
-                          : "var(--primary-foreground)"
-                      }
-                      fontSize={9}
-                      fontWeight={600}
+                      fill={getVendorLabelColor(vendor.color)}
+                  className="type-chart-segment-value"
+                  fontSize={10}
+                  fontWeight={600}
                       position="center"
                     />
                     {vendor.key === topVisibleVendorKey ? (
@@ -289,7 +286,8 @@ export function CumulativeProductionChart() {
                             : `${Number(value).toFixed(1)}Mu`
                         }
                         fill="var(--foreground)"
-                        fontSize={9}
+                        className="type-chart-total"
+                        fontSize={11}
                         fontWeight={600}
                         offset={8}
                         position="top"
@@ -303,10 +301,10 @@ export function CumulativeProductionChart() {
 
           <aside className="border-s ps-6" aria-labelledby="history-title">
             <div className="mb-2 h-11">
-              <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
+              <p className="type-eyebrow text-primary">
                 Forecast History
               </p>
-              <h3 id="history-title" className="mt-1 text-base font-semibold">
+              <h3 id="history-title" className="type-section-title mt-1">
                 {selectedQuarter} 전망 변화
               </h3>
             </div>
@@ -325,7 +323,7 @@ export function CumulativeProductionChart() {
                   <XAxis
                     axisLine={false}
                     dataKey="period"
-                    fontSize={9}
+                    fontSize={10}
                     interval={0}
                     tickLine={false}
                     tickMargin={6}
@@ -347,12 +345,10 @@ export function CumulativeProductionChart() {
                       <LabelList
                         dataKey={vendor.key}
                         formatter={formatChartValue}
-                        fill={
-                          vendorIndex === 0 || vendorIndex === 5
-                            ? "var(--foreground)"
-                            : "var(--primary-foreground)"
-                        }
-                        fontSize={8}
+                        fill={getVendorLabelColor(vendor.color)}
+                    className="type-chart-segment-value"
+                    fontSize={10}
+                    fontWeight={600}
                         position="center"
                       />
                       {vendorIndex === vendors.length - 1 ? (
@@ -364,7 +360,8 @@ export function CumulativeProductionChart() {
                               : `${Number(value).toFixed(1)}Mu`
                           }
                           fill="var(--foreground)"
-                          fontSize={8}
+                          className="type-chart-total"
+                          fontSize={11}
                           fontWeight={600}
                           offset={8}
                           position="top"
@@ -376,9 +373,9 @@ export function CumulativeProductionChart() {
               </ChartContainer>
               <div
                 aria-label="업체별 전망 변화"
-                className="pt-5 text-sm leading-5"
+                className="type-table-body pt-5"
               >
-                <p className="mb-2 font-medium text-foreground">
+                <p className="type-table-header mb-2 text-foreground">
                   {history.at(-1)?.period} vs {history.at(-2)?.period} 업체별
                   증감
                 </p>
@@ -405,7 +402,7 @@ export function CumulativeProductionChart() {
                           {vendor.label}
                         </span>
                         <span
-                          className={`shrink-0 font-medium ${deltaClassName}`}
+                          className={`type-table-body shrink-0 ${deltaClassName}`}
                         >
                           {delta === null ? "—" : formatSignedMu(delta)}
                           {delta === null ? (

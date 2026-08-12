@@ -36,7 +36,7 @@ const providerIndexByKey = Object.fromEntries(
 ) as Record<string, number>
 
 const vendorEntries = withVendorAdditions([
-  { key: "others", label: "Others", color: "var(--chart-7)" },
+  { key: "others", label: "Others", color: "#475569" },
 ]) as readonly (VendorCatalogEntry & { readonly key: WeeklyVendorKey })[]
 
 export const weeklyVendors = vendorEntries.map((vendor) => ({

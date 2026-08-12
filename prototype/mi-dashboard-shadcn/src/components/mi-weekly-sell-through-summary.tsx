@@ -25,7 +25,7 @@ export function MiWeeklySellThroughSummary() {
   return (
     <Card className="my-4 min-w-0 border-border shadow-none" size="sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold tracking-[0.14em] uppercase">
+        <CardTitle className="type-executive-title">
           Executive Summary
         </CardTitle>
       </CardHeader>
@@ -33,7 +33,7 @@ export function MiWeeklySellThroughSummary() {
         <div className="w-full overflow-hidden border">
           <table
             aria-label="MI Insight Weekly Sell-through Executive Summary"
-            className="w-full table-fixed border-collapse text-xs"
+            className="type-table-body w-full table-fixed border-collapse"
           >
             <caption className="sr-only">
               MI Insight Weekly Sell-through Executive Summary
@@ -44,18 +44,18 @@ export function MiWeeklySellThroughSummary() {
               <col className="w-[12%]" />
               <col className="w-[61%]" />
             </colgroup>
-            <thead className="bg-muted/40 text-muted-foreground">
+            <thead className="type-table-header bg-muted/40 text-muted-foreground">
               <tr>
-                <th className="px-3 py-2 text-left font-medium" scope="col">
+                <th className="px-3 py-2 text-left" scope="col">
                   지역
                 </th>
-                <th className="px-3 py-2 text-right font-medium" scope="col">
+                <th className="px-3 py-2 text-right" scope="col">
                   YoY (%)
                 </th>
-                <th className="px-3 py-2 text-right font-medium" scope="col">
+                <th className="px-3 py-2 text-right" scope="col">
                   WoW (%)
                 </th>
-                <th className="px-3 py-2 text-left font-medium" scope="col">
+                <th className="px-3 py-2 text-left" scope="col">
                   세부 내용
                 </th>
               </tr>
@@ -64,13 +64,13 @@ export function MiWeeklySellThroughSummary() {
               {rows.map(({ region, yoy, wow, details }) => (
                 <tr key={region}>
                   <th
-                    className="px-3 py-2 text-left align-top font-medium text-foreground"
+                    className="type-table-header px-3 py-2 text-left align-top text-foreground"
                     scope="row"
                   >
                     {region}
                   </th>
                   <td
-                    className={`px-3 py-2 text-right align-top text-sm leading-4 font-normal tabular-nums whitespace-nowrap ${
+                    className={`type-table-body px-3 py-2 text-right align-top tabular-nums whitespace-nowrap ${
                       yoy !== null && yoy < 0
                         ? "text-destructive"
                         : "text-foreground"
@@ -79,7 +79,7 @@ export function MiWeeklySellThroughSummary() {
                     {formatMetric(yoy)}
                   </td>
                   <td
-                    className={`px-3 py-2 text-right align-top text-sm leading-4 font-normal tabular-nums whitespace-nowrap ${
+                    className={`type-table-body px-3 py-2 text-right align-top tabular-nums whitespace-nowrap ${
                       wow !== null && wow < 0
                         ? "text-destructive"
                         : "text-foreground"
@@ -87,8 +87,8 @@ export function MiWeeklySellThroughSummary() {
                   >
                     {formatMetric(wow)}
                   </td>
-                  <td className="min-w-0 px-3 py-2 align-top text-muted-foreground">
-                    <ul className="grid gap-0.5 list-disc pl-4 text-sm leading-5">
+                  <td className="type-table-body min-w-0 px-3 py-2 align-top text-muted-foreground">
+                    <ul className="grid list-disc gap-0.5 pl-4">
                       {details.map((detail) => (
                         <li className="break-words" key={detail}>
                           {detail}

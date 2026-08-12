@@ -10,6 +10,7 @@ export type PortalPage =
   | "sell-through"
   | "flagship-sales"
   | "pipeline-check"
+  | "pipeline-check-iphone"
   | "mi-insight"
   | "mi-weekly-sell-through"
 
@@ -54,6 +55,11 @@ const providers: Array<{
         child: "Pipeline Check",
         page: "pipeline-check",
         href: "#pipeline-check",
+      },
+      {
+        child: "Pipeline Check (iPhone)",
+        page: "pipeline-check-iphone",
+        href: "#pipeline-check-iphone",
       },
     ],
   },
@@ -111,25 +117,25 @@ export function PortalSidebar({
       {!collapsed && (
         <div className="px-5 py-7">
           <div>
-            <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+            <p className="type-eyebrow text-muted-foreground">
               MI Intelligence
             </p>
-            <p className="mt-1.5 text-lg font-semibold tracking-tight">Portal</p>
+            <p className="type-card-title mt-1.5 tracking-tight">Portal</p>
           </div>
           <Separator className="my-7 bg-sidebar-border" />
           <nav aria-label="Research portals" className="space-y-6">
             {providers.map(({ label, children }) => (
               <section key={label}>
-                <h2 className="text-base leading-6 font-bold">{label}</h2>
+                <h2 className="type-section-title">{label}</h2>
                 {children.map(({ child, page, href }) => {
                   const active = activePage === page
 
                   return (
                     <a
                       aria-current={active ? "page" : undefined}
-                      className={`ms-3 mt-1.5 block px-3 py-2 text-sm leading-5 ${
+                      className={`type-control ms-3 mt-1.5 block px-3 py-2 ${
                         active
-                          ? "bg-sidebar-primary font-medium text-sidebar-primary-foreground"
+                          ? "bg-sidebar-primary font-semibold text-sidebar-primary-foreground"
                           : "text-sidebar-foreground hover:bg-sidebar-accent"
                       }`}
                       href={href}

@@ -5,12 +5,12 @@ export function WeeklyExecutiveSummary() {
   return (
     <Card className="my-4 border-border shadow-none" size="sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold tracking-[0.14em] uppercase">
+        <CardTitle className="type-executive-title">
           Executive Summary
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="grid gap-2 text-sm leading-5 text-muted-foreground">
+        <ul className="type-executive-body grid gap-2 text-muted-foreground">
           {weeklyExecutiveSummary.map((summary) => (
             <li className="flex gap-3" key={summary}>
               <span

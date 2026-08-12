@@ -21,9 +21,9 @@ export const pipelineVendors: readonly {
   label: "Apple" | "Samsung" | "CN OEM"
   color: string
 }[] = [
-  { key: "apple", label: "Apple", color: "var(--chart-1)" },
-  { key: "samsung", label: "Samsung", color: "var(--chart-2)" },
-  { key: "cnOem", label: "CN OEM", color: "var(--chart-3)" },
+  { key: "apple", label: "Apple", color: "#e76f51" },
+  { key: "samsung", label: "Samsung", color: "#1d4ed8" },
+  { key: "cnOem", label: "CN OEM", color: "#0ea5e9" },
 ]
 
 export type PipelineFlowMetric = "production" | "sellIn" | "sellOut"

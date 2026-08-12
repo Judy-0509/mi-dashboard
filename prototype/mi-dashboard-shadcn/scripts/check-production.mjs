@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs"
 
 import {
   canonicalVendors,
+  getVendorLabelColor,
   normalizeProviderValue,
   normalizeProviderVendorName,
   withVendorAdditions,
@@ -73,6 +74,15 @@ import {
   pipelineYAxisDomain,
   pipelineYAxisTicks,
 } from "../src/data/pipeline-check.ts"
+import {
+  getIPhonePipelineChartData,
+  iphonePipelineData,
+  iphonePipelineExecutiveSummary,
+  iphonePipelineLineups,
+  iphonePipelineModels,
+  iphonePipelineQuarters,
+} from "../src/data/pipeline-check-iphone.ts"
+import { getDefaultInventoryQuarters } from "../src/data/inventory-quarters.ts"
 
 assert.deepEqual(canonicalVendors.map(({ key }) => key), [
   "apple",
@@ -98,6 +108,27 @@ assert.deepEqual(canonicalVendors.map(({ label }) => label), [
   "Lenovo",
   "Google",
 ])
+assert.deepEqual(canonicalVendors.map(({ color }) => color), [
+  "#e76f51",
+  "#1d4ed8",
+  "#bae6fd",
+  "#7dd3fc",
+  "#38bdf8",
+  "#0ea5e9",
+  "#0284c7",
+  "#0369a1",
+  "#075985",
+  "#34a853",
+])
+assert.equal(getVendorLabelColor("#bae6fd"), "var(--foreground)")
+assert.equal(getVendorLabelColor("#1d4ed8"), "var(--background)")
+assert.equal(getVendorLabelColor("var(--chart-1)"), "var(--foreground)")
+assert.equal(getVendorLabelColor("var(--chart-2)"), "var(--foreground)")
+assert.equal(getVendorLabelColor("var(--chart-3)"), "var(--background)")
+assert.equal(getVendorLabelColor("var(--chart-4)"), "var(--background)")
+assert.equal(getVendorLabelColor("var(--chart-5)"), "var(--background)")
+assert.equal(getVendorLabelColor("var(--chart-6)"), "var(--foreground)")
+assert.equal(getVendorLabelColor("var(--chart-7)"), "var(--background)")
 assert.equal(normalizeProviderVendorName(" HON-OR ", { honor: "honor" }), "honor")
 assert.equal(normalizeProviderVendorName("unknown vendor", { honor: "honor" }), null)
 assert.deepEqual(
@@ -1001,8 +1032,8 @@ assert.match(sellThroughSource, /domain=\{\[0, 500\]\}/)
 assert.match(sellThroughSource, /domain=\{\[90, 110\]\}/)
 assert.match(sellThroughSource, /dataKey=\{`si_\$\{vendor\.key\}`\}[\s\S]*position="center"/)
 assert.match(sellThroughSource, /dataKey=\{`st_\$\{vendor\.key\}`\}[\s\S]*position="center"/)
-assert.match(sellThroughSource, /fill=\{index < 3 \? "var\(--foreground\)" : "var\(--background\)"\}/)
-assert.match(sellThroughSource, /table-fixed border-collapse text-xs/)
+assert.match(sellThroughSource, /fill=\{getVendorLabelColor\(vendor\.color\)\}/)
+assert.match(sellThroughSource, /type-table-body w-full table-fixed border-collapse/)
 assert.match(sellThroughSource, /#d97706/)
 assert.match(
   sellThroughSource,
@@ -1055,7 +1086,7 @@ assert.match(
   appSource,
   /function MiInsightWeeklySellThroughPage\(\)[\s\S]*?<p[^>]*>\s*MI Insight \/ Weekly Sell-through\s*<\/p>[\s\S]*?<h1[^>]*>\s*Weekly Sell-through\s*<\/h1>[\s\S]*?<PageActions page="mi-weekly-sell-through" \/>[\s\S]*?<MiWeeklySellThroughSummary \/>[\s\S]*?<WeeklyAnalysis \/>/,
 )
-assert.match(miWeeklySummarySource, /<table[\s\S]*table-fixed border-collapse text-xs/)
+assert.match(miWeeklySummarySource, /<table[\s\S]*type-table-body w-full table-fixed border-collapse/)
 assert.match(miWeeklySummarySource, /YoY \(%\)/)
 assert.match(miWeeklySummarySource, /WoW \(%\)/)
 assert.match(miWeeklySummarySource, /세부 내용/)
@@ -1131,7 +1162,7 @@ assert.match(aniChartSource, /사선 · e/)
 assert.match(aniChartSource, /점 · Foldable/)
 assert.match(
   aniChartSource,
-  /className="inline-flex h-7 shrink-0 items-center gap-1\.5 rounded-md border border-border bg-secondary px-2 text-xs text-secondary-foreground"/,
+  /className="type-control inline-flex h-7 shrink-0 items-center gap-1\.5 rounded-md border border-border bg-secondary px-2 text-secondary-foreground"/,
 )
 assert.match(aniChartSource, /className="size-2\.5"/)
 assert.doesNotMatch(aniChartSource, /text-\[10px\]/)
@@ -1201,7 +1232,7 @@ assert.equal(
 )
 assert.equal(
   weeklyAnalysisSource.match(
-    /<CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-\[size=sm\]\/card:text-xl">/g
+    /<CardTitle className="type-card-title mt-1 tracking-tight">/g
   )?.length,
   2
 )
@@ -1233,7 +1264,7 @@ assert.equal(
 )
 assert.match(
   weeklyAnalysisSource,
-  /<table\b(?=[^>]*className="h-full w-full border-collapse text-xs")[^>]*>/
+  /<table\b(?=[^>]*className="type-table-body h-full w-full border-collapse")[^>]*>/
 )
 assert.match(
   weeklyAnalysisSource,
@@ -1241,7 +1272,7 @@ assert.match(
 )
 assert.match(
   weeklyAnalysisSource,
-  /<ul\b(?=[^>]*aria-label="Cumulative composition legend")(?=[^>]*className="flex min-w-0 flex-col gap-1\.5 pt-1 text-xs leading-4 whitespace-nowrap text-muted-foreground")[^>]*>/
+  /<ul\b(?=[^>]*aria-label="Cumulative composition legend")(?=[^>]*className="type-control flex min-w-0 flex-col gap-1\.5 pt-1 whitespace-nowrap text-muted-foreground")[^>]*>/
 )
 assert.match(
   weeklyAnalysisSource,
@@ -1323,6 +1354,10 @@ const pipelineSource = readFileSync(
   new URL("../src/components/pipeline-check.tsx", import.meta.url),
   "utf8",
 )
+const iphonePipelineSource = readFileSync(
+  new URL("../src/components/pipeline-check-iphone.tsx", import.meta.url),
+  "utf8",
+)
 assert.match(pipelineSource, /pipelineExecutiveSummary\.map/)
 assert.match(
   pipelineSource,
@@ -1332,11 +1367,11 @@ assert.equal(pipelineSource.match(/domain=\{pipelineYAxisDomain\}/g)?.length, 1)
 assert.equal(pipelineSource.match(/ticks=\{pipelineYAxisTicks\}/g)?.length, 1)
 assert.match(
   pipelineSource,
-  /<YAxis[\s\S]*?fontSize=\{8\}[\s\S]*?domain=\{pipelineYAxisDomain\}/,
+  /<YAxis[\s\S]*?fontSize=\{10\}[\s\S]*?domain=\{pipelineYAxisDomain\}/,
 )
 assert.match(
   pipelineSource,
-  /<colgroup>[\s\S]*<col className="w-\[48px\]" \/>[\s\S]*pipelineQuarters\.map/,
+  /<colgroup>[\s\S]*<col className="w-\[48px\]" \/>[\s\S]*selectedQuarters\.map/,
 )
 assert.match(pipelineSource, /pipelineVendors\.map/)
 assert.match(pipelineSource, /accessibilityLayer/)
@@ -1364,5 +1399,39 @@ assert.ok(pipelineOrder.every((marker) => pipelineSource.indexOf(marker) >= 0))
 assert.doesNotMatch(aniChartSource, /vendor-catalog|canonicalVendors/)
 assert.doesNotMatch(pipelineSource, /canonicalVendors/)
 assert.doesNotMatch(miWeeklySummarySource, /vendor-catalog|canonicalVendors/)
+
+assert.deepEqual([...iphonePipelineQuarters], expectedPipelineQuarters)
+assert.equal(iphonePipelineData.length, 6)
+assert.deepEqual(
+  iphonePipelineLineups.map(({ key }) => key),
+  ["n", "nPlus1", "nPlus2", "legacy"],
+)
+assert.ok(iphonePipelineModels.some(({ type }) => type === "e"))
+assert.ok(
+  iphonePipelineModels.every((model) =>
+    iphonePipelineData.some((row) => row.production[model.key] > 0),
+  ),
+)
+for (const metric of pipelineFlowMetrics) {
+  const rows = getIPhonePipelineChartData(metric)
+  assert.equal(rows.length, 6)
+  assert.ok(rows.every(({ total }) => total > 0))
+}
+assert.equal(iphonePipelineExecutiveSummary.length, 3)
+assert.match(iphonePipelineSource, /PatternDefs/)
+assert.match(iphonePipelineSource, /NEW · e/)
+assert.match(iphonePipelineSource, /iphonePipelineLineups\.map/)
+assert.match(sidebarSource, /Pipeline Check \(iPhone\)/)
+assert.match(appSource, /<PipelineCheckIPhone \/>/)
+assert.match(pageConfigSource, /"MI_TAM_Pipeline_Check_iPhone\.html"/)
+assert.deepEqual(getDefaultInventoryQuarters(pipelineQuarters), [
+  "2025 Q2",
+  "2026 Q1",
+  "2026 Q2",
+])
+assert.equal(pipelineSource.match(/<InventoryQuarterSelect/g)?.length, 1)
+assert.equal(iphonePipelineSource.match(/<InventoryQuarterSelect/g)?.length, 1)
+assert.match(pipelineSource, /selectedQuarters=\{selectedInventoryQuarters\}/)
+assert.match(iphonePipelineSource, /selectedQuarters=\{selectedInventoryQuarters\}/)
 
 console.log("production and weekly data checks passed")

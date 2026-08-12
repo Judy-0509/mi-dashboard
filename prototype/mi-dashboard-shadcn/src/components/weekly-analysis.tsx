@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/chart"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { getVendorLabelColor } from "@/data/vendor-catalog"
 import {
   getWeeklyHeatmap,
   getWeeklyRegionalCumulative,
@@ -190,12 +191,10 @@ function WeeklyCumulativeChart({
             >
               <LabelList
                 dataKey={segmentName}
-                fill={
-                  index === 0 || index === 5
-                    ? "var(--foreground)"
-                    : "var(--primary-foreground)"
-                }
-                fontSize={9}
+                fill={getVendorLabelColor(data.years[0].segments[index].color)}
+                className="type-chart-segment-value"
+                fontSize={10}
+                fontWeight={600}
                 formatter={(value) =>
                   value === null
                     ? "—"
@@ -207,7 +206,9 @@ function WeeklyCumulativeChart({
                 <LabelList
                   dataKey="total"
                   fill="var(--foreground)"
-                  fontSize={10}
+                  className="type-chart-total"
+                  fontSize={11}
+                  fontWeight={600}
                   formatter={(value) =>
                     value === null
                       ? "—"
@@ -222,7 +223,7 @@ function WeeklyCumulativeChart({
       </ChartContainer>
       <ul
         aria-label="Cumulative composition legend"
-        className="flex min-w-0 flex-col gap-1.5 pt-1 text-xs leading-4 whitespace-nowrap text-muted-foreground"
+        className="type-control flex min-w-0 flex-col gap-1.5 pt-1 whitespace-nowrap text-muted-foreground"
       >
         {data.years[0].segments.map((segment) => (
           <li className="flex items-center gap-1.5" key={segment.name}>
@@ -284,10 +285,10 @@ export function WeeklyAnalysis() {
       <Card className="min-w-0 border-border shadow-none" size="sm">
         <CardHeader className="flex flex-row items-start justify-between gap-4 border-b pb-3">
           <div>
-            <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <p className="type-eyebrow text-muted-foreground">
               Weekly market mix
             </p>
-            <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
+            <CardTitle className="type-card-title mt-1 tracking-tight">
               Vendor × Region
             </CardTitle>
           </div>
@@ -311,15 +312,15 @@ export function WeeklyAnalysis() {
         <CardContent className="pt-3">
           <div className="flex h-[300px] overflow-hidden border">
             <table
-              className="h-full w-full border-collapse text-xs"
+              className="type-table-body h-full w-full border-collapse"
               aria-label="Vendor by region weekly heatmap"
             >
-              <thead className="bg-muted/40 text-muted-foreground">
+              <thead className="type-table-header bg-muted/40 text-muted-foreground">
                 <tr>
-                  <th className="px-3 py-1.5 text-left font-medium">Vendor</th>
+                  <th className="px-3 py-1.5 text-left">Vendor</th>
                   {weeklyRegions.map((regionName) => (
                     <th
-                      className="px-2 py-1.5 text-right font-medium"
+                      className="px-2 py-1.5 text-right"
                       key={regionName}
                     >
                       {regionName}
@@ -330,7 +331,7 @@ export function WeeklyAnalysis() {
               <tbody>
                 {heatmap.map((row) => (
                   <tr className="border-t" key={row.label}>
-                    <th className="px-3 py-1.5 text-left font-medium" scope="row">
+                    <th className="type-table-header px-3 py-1.5 text-left" scope="row">
                       {row.label}
                     </th>
                     {row.values.map((value, index) => {
@@ -353,7 +354,7 @@ export function WeeklyAnalysis() {
                           <button
                             aria-label={`${row.label} × ${regionName}: ${value === null ? "데이터 없음" : formatMetric(value)}`}
                             aria-pressed={isSelected}
-                            className={`block w-full rounded-sm border border-transparent px-2 py-1.5 text-right tabular-nums transition-colors hover:bg-muted/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold ${
+                            className={`type-table-body block w-full rounded-sm border border-transparent px-2 py-1.5 text-right tabular-nums transition-colors hover:bg-muted/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold ${
                               value !== null && value < 0
                                 ? "text-destructive"
                                 : "text-foreground"
@@ -378,18 +379,18 @@ export function WeeklyAnalysis() {
           <div className="mt-4 shrink-0 border-t pt-3">
             <div className="mb-2 flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                <p className="type-eyebrow text-muted-foreground">
                   Weekly trend
                 </p>
-                <h3 className="mt-1 text-sm font-semibold tracking-tight">
+                <h3 className="type-section-title mt-1 tracking-tight">
                   {selectedVendorLabel} × {selectedRegionLabel} weekly sell-out
                 </h3>
               </div>
-              <p className="pt-1 text-xs text-muted-foreground">
+              <p className="type-control pt-1 text-muted-foreground">
                 2023–2025 W1–W52 · 2026 W1–W32
               </p>
             </div>
-            <div className="mb-2 flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="type-control mb-2 flex items-center gap-3 text-muted-foreground">
               {weeklyTrendLines.map((line) => (
                 <span className="flex items-center gap-1.5" key={line.dataKey}>
                   <i
@@ -416,10 +417,10 @@ export function WeeklyAnalysis() {
       <Card className="min-w-0 border-border shadow-none" size="sm">
         <CardHeader className="flex flex-row items-start justify-between gap-4 border-b pb-3">
           <div>
-            <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <p className="type-eyebrow text-muted-foreground">
               Cumulative sell-out
             </p>
-            <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
+            <CardTitle className="type-card-title mt-1 tracking-tight">
               4-year cumulative composition
             </CardTitle>
           </div>
@@ -444,10 +445,10 @@ export function WeeklyAnalysis() {
           <div className="grid min-w-0 gap-4">
             <div className="border-b pb-3">
               <div className="mb-2">
-                <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                <p className="type-eyebrow text-muted-foreground">
                   Regional composition
                 </p>
-                <h3 className="mt-1 text-sm font-semibold tracking-tight">
+                <h3 className="type-section-title mt-1 tracking-tight">
                   <span className="text-primary">{selectedVendorLabel}</span> · cumulative sell-out by region
                 </h3>
               </div>
@@ -459,10 +460,10 @@ export function WeeklyAnalysis() {
             </div>
             <div>
               <div className="mb-2">
-                <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                <p className="type-eyebrow text-muted-foreground">
                   Vendor composition
                 </p>
-                <h3 className="mt-1 text-sm font-semibold tracking-tight">
+                <h3 className="type-section-title mt-1 tracking-tight">
                   <span className="text-primary">{selectedRegionLabel}</span> · cumulative sell-out by vendor
                 </h3>
               </div>

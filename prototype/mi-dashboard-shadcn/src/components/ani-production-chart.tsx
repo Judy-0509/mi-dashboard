@@ -150,9 +150,10 @@ function renderAniSegmentLabel(props: AniLabelProps) {
 
   return (
     <text
+      className="type-chart-segment-value"
       dominantBaseline="middle"
       fill={props.fill ?? "var(--foreground)"}
-      fontSize={9}
+      fontSize={10}
       fontWeight={600}
       textAnchor="middle"
       x={x + width / 2}
@@ -186,10 +187,11 @@ function AniQuarterTick({
       transform={`translate(${x ?? 0},${y ?? 0})`}
     >
       <text
+        className="type-chart-axis"
         dy={9}
         fill={isSelected ? "var(--primary)" : "var(--muted-foreground)"}
-        fontSize={9}
-        fontWeight={isSelected ? 600 : 400}
+        fontSize={10}
+        fontWeight={400}
         textAnchor="middle"
       >
         {quarter}
@@ -269,8 +271,9 @@ function renderAniTotalLabel(props: AniLabelProps) {
 
   return (
     <text
+      className="type-chart-total"
       fill="var(--foreground)"
-      fontSize={9}
+      fontSize={11}
       fontWeight={600}
       textAnchor="middle"
       x={x + width / 2}
@@ -437,15 +440,15 @@ export function AniProductionChart() {
     <Card className="min-w-0 border-border shadow-none" size="sm">
       <CardHeader className="flex flex-row items-start justify-between gap-4 border-b pb-3">
         <div>
-          <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+          <p className="type-eyebrow text-muted-foreground">
             ANI Production
           </p>
-          <CardTitle className="mt-1 text-xl font-semibold tracking-tight group-data-[size=sm]/card:text-xl">
+          <CardTitle className="type-card-title mt-1 tracking-tight">
             분기별 모델 생산량
           </CardTitle>
         </div>
         <Button
-          className="shrink-0"
+          className="type-control shrink-0"
           onPress={() => {
             setFilterMode("lineup")
             setSelectedLineupBuckets(new Set(lineupOptions.map(({ key }) => key)))
@@ -477,7 +480,7 @@ export function AniProductionChart() {
               <ToggleGroupItem id="lineup">라인업 기준</ToggleGroupItem>
               <ToggleGroupItem id="series">시리즈 기준</ToggleGroupItem>
             </ToggleGroup>
-            <p className="pt-1 text-right text-xs leading-5 text-muted-foreground">
+            <p className="type-control pt-1 text-right text-muted-foreground">
               {aniModels.length}개 중 {visibleModels.length}개 모델 표시
             </p>
           </div>
@@ -487,7 +490,7 @@ export function AniProductionChart() {
               className="flex flex-wrap gap-2"
               role="group"
             >
-              <span className="w-16 pt-1 text-xs font-medium text-muted-foreground">
+              <span className="type-control-label w-16 pt-1 text-muted-foreground">
                 라인업
               </span>
               <div className="flex flex-wrap gap-2">
@@ -497,7 +500,7 @@ export function AniProductionChart() {
                   return (
                     <Button
                       aria-pressed={isSelected}
-                      className="h-7 px-2 text-xs"
+                      className="type-control h-7 px-2"
                       key={key}
                       onPress={() => toggleLineupBucket(key)}
                       size="sm"
@@ -515,7 +518,7 @@ export function AniProductionChart() {
               className="flex flex-wrap gap-2"
               role="group"
             >
-              <span className="w-16 pt-1 text-xs font-medium text-muted-foreground">
+              <span className="type-control-label w-16 pt-1 text-muted-foreground">
                 시리즈
               </span>
               <div className="flex flex-wrap gap-2">
@@ -525,7 +528,7 @@ export function AniProductionChart() {
                   return (
                     <Button
                       aria-pressed={isSelected}
-                      className="h-7 px-2 text-xs"
+                      className="type-control h-7 px-2"
                       key={key}
                       onPress={() => toggleGeneration(key)}
                       size="sm"
@@ -543,7 +546,7 @@ export function AniProductionChart() {
             className="flex flex-wrap gap-2"
             role="group"
           >
-            <span className="w-16 pt-1 text-xs font-medium text-muted-foreground">
+            <span className="type-control-label w-16 pt-1 text-muted-foreground">
               모델 유형
             </span>
             <div className="flex flex-wrap gap-2">
@@ -553,7 +556,7 @@ export function AniProductionChart() {
                 return (
                   <Button
                     aria-pressed={isSelected}
-                    className="h-7 gap-1.5 px-2 text-xs"
+                    className="type-control h-7 gap-1.5 px-2"
                     key={key}
                     onPress={() => toggleType(key)}
                     size="sm"
@@ -580,11 +583,11 @@ export function AniProductionChart() {
           </div>
           <div
             aria-label="시리즈 색상 범례"
-            className="flex min-w-0 flex-wrap items-center gap-2 border-t pt-2 text-xs leading-4 text-muted-foreground"
+            className="type-control flex min-w-0 flex-wrap items-center gap-2 border-t pt-2 text-muted-foreground"
           >
             {generationOptions.map(({ key, label }) => (
               <span
-                className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-secondary px-2 text-xs text-secondary-foreground"
+                className="type-control inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-secondary px-2 text-secondary-foreground"
                 key={key}
               >
                 <span>{label}</span>
@@ -607,7 +610,7 @@ export function AniProductionChart() {
             ))}
             {specialLegendTypes.map((type) => (
               <span
-                className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-secondary px-2 text-xs text-secondary-foreground"
+                className="type-control inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-secondary px-2 text-secondary-foreground"
                 key={`pattern-key-${type}`}
               >
                 <i
@@ -628,14 +631,14 @@ export function AniProductionChart() {
           >
             <div className="mb-2 flex h-11 items-center justify-between gap-4">
               <div>
-                <p id="ani-quarterly-chart-title" className="text-sm font-medium">
+                <p id="ani-quarterly-chart-title" className="type-section-title">
                   모델별 분기 생산량
                 </p>
-                <p aria-live="polite" className="mt-1 text-xs text-muted-foreground">
+                <p aria-live="polite" className="type-control mt-1 text-muted-foreground">
                   {selectedQuarter} 선택됨 · {visibleModels.length}개 모델
                 </p>
               </div>
-              <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
+              <p className="type-control-label flex items-center gap-1.5 text-primary">
                 <MousePointerClick aria-hidden="true" className="size-3.5" />
                 막대를 클릭해 전망 변화 확인
               </p>
@@ -667,7 +670,7 @@ export function AniProductionChart() {
                 <XAxis
                   axisLine={false}
                   dataKey="quarter"
-                  fontSize={9}
+                  fontSize={10}
                   interval={0}
                   tickLine={false}
                   tickMargin={6}
@@ -698,7 +701,7 @@ export function AniProductionChart() {
                     label={{
                       value: "NEW · e",
                       fill: "var(--muted-foreground)",
-                      fontSize: 8,
+                      fontSize: 10,
                       position: "insideTop",
                     }}
                     stroke="var(--muted-foreground)"
@@ -711,7 +714,7 @@ export function AniProductionChart() {
                     label={{
                       value: "NEW · Foldable",
                       fill: "var(--muted-foreground)",
-                      fontSize: 8,
+                      fontSize: 10,
                       position: "insideTop",
                     }}
                     stroke="var(--muted-foreground)"
@@ -761,10 +764,10 @@ export function AniProductionChart() {
 
           <aside className="min-w-0 border-s ps-6" aria-labelledby="ani-history-title">
             <div className="mb-2 h-11">
-              <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
+              <p className="type-eyebrow text-primary">
                 Forecast History
               </p>
-              <h3 id="ani-history-title" className="mt-1 text-base font-semibold">
+              <h3 id="ani-history-title" className="type-section-title mt-1">
                 {selectedQuarter} 전망 변화
               </h3>
             </div>
@@ -785,7 +788,7 @@ export function AniProductionChart() {
                   <XAxis
                     axisLine={false}
                     dataKey="period"
-                    fontSize={9}
+                    fontSize={10}
                     interval={0}
                     tickLine={false}
                     tickMargin={6}
@@ -830,25 +833,25 @@ export function AniProductionChart() {
                   ))}
                 </BarChart>
               </ChartContainer>
-              <dl className="pt-5 text-sm leading-5">
+              <dl className="type-table-body pt-5">
                 <div className="mb-3 border-b pb-2">
-                  <dt className="text-xs text-muted-foreground">현재 Forecast</dt>
-                  <dd className="mt-1 font-mono font-medium tabular-nums">
+                  <dt className="type-control text-muted-foreground">현재 Forecast</dt>
+                  <dd className="type-control-label mt-1 tabular-nums">
                     {formatMu(summary.currentTotal)}
                   </dd>
                 </div>
                 <div className="mb-3 border-b pb-2">
-                  <dt className="text-xs text-muted-foreground">전월 대비</dt>
+                  <dt className="type-control text-muted-foreground">전월 대비</dt>
                   <dd
-                    className={`mt-1 font-mono font-medium tabular-nums ${getDeltaClassName(summary.monthOverMonth)}`}
+                    className={`type-control-label mt-1 tabular-nums ${getDeltaClassName(summary.monthOverMonth)}`}
                   >
                     {formatSignedMu(summary.monthOverMonth)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground">6개월 대비</dt>
+                  <dt className="type-control text-muted-foreground">6개월 대비</dt>
                   <dd
-                    className={`mt-1 font-mono font-medium tabular-nums ${getDeltaClassName(summary.sixMonth)}`}
+                    className={`type-control-label mt-1 tabular-nums ${getDeltaClassName(summary.sixMonth)}`}
                   >
                     {formatSignedMu(summary.sixMonth)}
                   </dd>
