@@ -11,10 +11,12 @@ import {
 import {
   getFirstForecast,
   getForecastHistory as getLatestResultsForecastHistory,
+  getLatestResultsRowCell,
   getResultCellState,
   isValidSourceUrl,
   latestResultsAgencies,
   latestResultsQuarters,
+  latestResultsTableRows,
   latestResultsVendors,
   validateLatestResultsData,
 } from "../src/data/latest-results.ts"
@@ -1460,6 +1462,28 @@ assert.deepEqual([...latestResultsQuarters], [
 assert.deepEqual(
   latestResultsVendors.map(({ key }) => key),
   canonicalVendors.map(({ key }) => key),
+)
+assert.deepEqual(latestResultsTableRows.map(({ label }) => label), [
+  "Total",
+  "MX",
+  "Apple",
+  "CN Total",
+  "Xiaomi",
+  "Huawei",
+  "Honor",
+  "OPPO",
+  "vivo",
+  "Transsion",
+  "Lenovo",
+  "Google",
+])
+assert.equal(
+  getLatestResultsRowCell("omdia", "2026 Q1", latestResultsTableRows[0]).forecast,
+  58.3,
+)
+assert.equal(
+  getLatestResultsRowCell("omdia", "2026 Q1", latestResultsTableRows[2]).actual,
+  12.4,
 )
 assert.deepEqual(latestResultsAgencies.map(({ key }) => key), [
   "omdia",

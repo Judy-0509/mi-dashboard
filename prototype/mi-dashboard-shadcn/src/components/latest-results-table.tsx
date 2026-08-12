@@ -1,17 +1,18 @@
 import type * as React from "react"
 
 import {
+  getLatestResultsRowCell,
   getResultCellState,
   isValidSourceUrl,
   latestResultsAgencies,
   latestResultsQuarters,
-  latestResultsVendors,
+  latestResultsTableRows,
   type Agency,
   type ForecastSelection,
+  type LatestResultsTableRow,
   type LatestResultsView,
   type Quarter,
 } from "@/data/latest-results"
-import type { CanonicalVendorKey } from "@/data/vendor-catalog"
 
 export type LatestResultsTableProps = {
   view: LatestResultsView
@@ -26,14 +27,6 @@ function formatValue(value: number | null): string {
 
 function getAgency(key: Agency) {
   return latestResultsAgencies.find((item) => item.key === key) ?? latestResultsAgencies[0]
-}
-
-function getResultCell(
-  agency: Agency,
-  quarter: Quarter,
-  vendor: CanonicalVendorKey,
-) {
-  return getAgency(agency).cells[quarter][vendor]
 }
 
 function SourceLink({ agency }: { agency: (typeof latestResultsAgencies)[number] }) {
@@ -67,16 +60,17 @@ function SourceLink({ agency }: { agency: (typeof latestResultsAgencies)[number]
 function ResultValue({
   agency,
   quarter,
-  vendor,
+  row,
   onForecastSelect,
 }: {
   agency: Agency
   quarter: Quarter
-  vendor: (typeof latestResultsVendors)[number]
+  row: LatestResultsTableRow
   onForecastSelect: (selection: ForecastSelection) => void
 }) {
-  const cell = getResultCell(agency, quarter, vendor.key)
+  const cell = getLatestResultsRowCell(agency, quarter, row)
   const state = getResultCellState(cell)
+  const vendor = row.vendor
 
   if (state === "actual") {
     return <span className="tabular-nums">{formatValue(cell.actual)}</span>
@@ -86,12 +80,16 @@ function ResultValue({
     return <span aria-label="Actual 및 Forecast 없음">—</span>
   }
 
+  if (vendor === null) {
+    return <span className="tabular-nums">{formatValue(cell.forecast)} (F)</span>
+  }
+
   return (
     <button
-      aria-label={`${getAgency(agency).label} ${vendor.label} ${quarter} Forecast ${formatValue(cell.forecast)}`}
+      aria-label={`${getAgency(agency).label} ${row.label} ${quarter} Forecast ${formatValue(cell.forecast)}`}
       className="rounded-sm px-1 tabular-nums underline decoration-dotted underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       onClick={() =>
-        onForecastSelect({ agency, quarter, vendor: vendor.key })
+        onForecastSelect({ agency, quarter, vendor })
       }
       type="button"
     >
@@ -162,10 +160,10 @@ export function LatestResultsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {latestResultsVendors.map((vendor) => (
-              <tr key={vendor.key}>
+            {latestResultsTableRows.map((row) => (
+              <tr key={row.key}>
                 <th className="border px-2 py-2 text-left" scope="row">
-                  {vendor.label}
+                  {row.label}
                 </th>
                 {columns.map((column) => {
                   const cellAgency = view === "quarter" ? column.key as Agency : agency
@@ -176,7 +174,7 @@ export function LatestResultsTable({
                         agency={cellAgency}
                         onForecastSelect={onForecastSelect}
                         quarter={cellQuarter}
-                        vendor={vendor}
+                        row={row}
                       />
                     </td>
                   )

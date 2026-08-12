@@ -39,6 +39,13 @@ export type ForecastSelection = {
   quarter: Quarter
 }
 
+export type LatestResultsTableRow = {
+  key: string
+  label: string
+  vendor: CanonicalVendorKey | null
+  vendorKeys: readonly CanonicalVendorKey[]
+}
+
 export const latestResultsQuarters: readonly Quarter[] = [
   "2026 Q1",
   "2026 Q2",
@@ -47,6 +54,41 @@ export const latestResultsQuarters: readonly Quarter[] = [
 ]
 
 export const latestResultsVendors = canonicalVendors
+
+const latestResultsCnTotalVendorKeys: readonly CanonicalVendorKey[] = [
+  "xiaomi",
+  "huawei",
+  "honor",
+  "oppo",
+  "vivo",
+  "transsion",
+  "lenovo",
+]
+
+export const latestResultsTableRows: readonly LatestResultsTableRow[] = [
+  {
+    key: "total",
+    label: "Total",
+    vendor: null,
+    vendorKeys: latestResultsVendors.map(({ key }) => key),
+  },
+  { key: "mx", label: "MX", vendor: "samsung", vendorKeys: ["samsung"] },
+  { key: "apple", label: "Apple", vendor: "apple", vendorKeys: ["apple"] },
+  {
+    key: "cn-total",
+    label: "CN Total",
+    vendor: null,
+    vendorKeys: latestResultsCnTotalVendorKeys,
+  },
+  ...latestResultsVendors
+    .filter(({ key }) => key !== "apple" && key !== "samsung")
+    .map(({ key, label }) => ({
+      key,
+      label,
+      vendor: key,
+      vendorKeys: [key],
+    })),
+]
 
 const latestResultsAgencyKeys: readonly Agency[] = [
   "omdia",
@@ -159,6 +201,38 @@ export function getResultCellState(
   if (cell.actual !== null) return "actual"
   if (cell.forecast !== null) return "forecast"
   return "missing"
+}
+
+export function getLatestResultsRowCell(
+  agency: Agency,
+  quarter: Quarter,
+  row: LatestResultsTableRow,
+): ResultCell {
+  const agencyData = getAgency(agency)
+  if (!agencyData) return { actual: null, forecast: null, history: [] }
+  if (row.vendor !== null) return agencyData.cells[quarter][row.vendor]
+
+  let total = 0
+  let hasValue = false
+  let hasForecast = false
+  for (const vendor of row.vendorKeys) {
+    const cell = agencyData.cells[quarter][vendor]
+    const state = getResultCellState(cell)
+    if (state === "actual") {
+      total += cell.actual ?? 0
+      hasValue = true
+    } else if (state === "forecast") {
+      total += cell.forecast ?? 0
+      hasValue = true
+      hasForecast = true
+    }
+  }
+
+  if (!hasValue) return { actual: null, forecast: null, history: [] }
+  const value = Number(total.toFixed(1))
+  return hasForecast
+    ? { actual: null, forecast: value, history: [] }
+    : { actual: value, forecast: null, history: [] }
 }
 
 function getAgency(key: Agency) {
