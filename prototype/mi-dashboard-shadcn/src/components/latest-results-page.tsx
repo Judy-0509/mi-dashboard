@@ -1,11 +1,24 @@
 import type * as React from "react"
 import { useState } from "react"
 
-import { ForecastHistoryChart } from "@/components/forecast-history-chart"
+import { AffiliateAnnualResultsTable } from "@/components/affiliate-annual-results-table"
+import {
+  ForecastHistoryChart,
+  type ForecastHistoryDisplay,
+} from "@/components/forecast-history-chart"
+import { LatestResultsSelectionButton } from "@/components/latest-results-selection-button"
 import { LatestResultsTable } from "@/components/latest-results-table"
 import { PageActions } from "@/components/page-actions"
 import {
+  defaultAffiliate,
+  getAffiliateForecastHistory,
+  type AffiliateAnnualDataset,
+  type AffiliateForecastSelection,
+  type AffiliateKey,
+} from "@/data/affiliate-annual-results"
+import {
   getDatasetFirstForecast,
+  getDatasetForecastHistory,
   type Agency,
   type ForecastSelection,
   type LatestResultsDataset,
@@ -14,40 +27,30 @@ import {
 } from "@/data/latest-results"
 import type { PortalPage } from "@/components/portal-sidebar"
 
-function SelectionButton({
-  children,
-  onClick,
-  pressed,
-}: {
-  children: React.ReactNode
-  onClick: () => void
-  pressed: boolean
-}) {
-  return (
-    <button
-      aria-pressed={pressed}
-      className={`type-control rounded-md border px-2.5 py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-        pressed
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-background hover:bg-muted"
-      }`}
-      onClick={onClick}
-      type="button"
-    >
-      {children}
-    </button>
-  )
-}
-
 export type LatestResultsPageProps<RowKey extends string> = {
   dataset: LatestResultsDataset<RowKey>
   page: PortalPage
   eyebrow: string
   title: string
   subtitle: string
+  affiliateDataset?: AffiliateAnnualDataset
+}
+
+function getDatasetHistoryDisplay<RowKey extends string>(
+  dataset: LatestResultsDataset<RowKey>,
+  selection: ForecastSelection<RowKey> | null,
+): ForecastHistoryDisplay | null {
+  if (!selection) return null
+  const agency = dataset.agencies.find((item) => item.key === selection.agency)
+  const row = dataset.rows.find((item) => item.rowKey === selection.rowKey)
+  return {
+    history: getDatasetForecastHistory(dataset, selection),
+    title: `Forecast History · ${agency?.label ?? selection.agency} · ${row?.label ?? selection.rowKey} · ${selection.quarter}`,
+  }
 }
 
 export function LatestResultsPage<RowKey extends string>({
+  affiliateDataset,
   dataset,
   eyebrow,
   page,
@@ -59,23 +62,59 @@ export function LatestResultsPage<RowKey extends string>({
   const [view, setView] = useState<LatestResultsView>("quarter")
   const [selectedQuarter, setSelectedQuarter] = useState<Quarter>(firstQuarter)
   const [selectedAgency, setSelectedAgency] = useState<Agency>(firstAgency)
-  const [selection, setSelection] = useState<ForecastSelection<RowKey> | null>(() =>
-    getDatasetFirstForecast(dataset, "quarter", firstQuarter, firstAgency),
+  const [selectedAffiliate, setSelectedAffiliate] =
+    useState<AffiliateKey>(defaultAffiliate)
+  const [historyDisplay, setHistoryDisplay] = useState<ForecastHistoryDisplay | null>(() =>
+    affiliateDataset
+      ? null
+      : getDatasetHistoryDisplay(
+          dataset,
+          getDatasetFirstForecast(dataset, "quarter", firstQuarter, firstAgency),
+        ),
   )
+
+  const resetDatasetHistory = (
+    nextView: LatestResultsView,
+    nextQuarter: Quarter,
+    nextAgency: Agency,
+  ) => {
+    setHistoryDisplay(
+      affiliateDataset
+        ? null
+        : getDatasetHistoryDisplay(
+            dataset,
+            getDatasetFirstForecast(dataset, nextView, nextQuarter, nextAgency),
+          ),
+    )
+  }
 
   const changeView = (nextView: LatestResultsView) => {
     setView(nextView)
-    setSelection(getDatasetFirstForecast(dataset, nextView, selectedQuarter, selectedAgency))
+    resetDatasetHistory(nextView, selectedQuarter, selectedAgency)
   }
 
   const changeQuarter = (nextQuarter: Quarter) => {
     setSelectedQuarter(nextQuarter)
-    setSelection(getDatasetFirstForecast(dataset, view, nextQuarter, selectedAgency))
+    resetDatasetHistory(view, nextQuarter, selectedAgency)
   }
 
   const changeAgency = (nextAgency: Agency) => {
     setSelectedAgency(nextAgency)
-    setSelection(getDatasetFirstForecast(dataset, view, selectedQuarter, nextAgency))
+    resetDatasetHistory(view, selectedQuarter, nextAgency)
+  }
+
+  const selectDatasetForecast = (selection: ForecastSelection<RowKey>) => {
+    setHistoryDisplay(getDatasetHistoryDisplay(dataset, selection))
+  }
+
+  const selectAffiliateForecast = (selection: AffiliateForecastSelection) => {
+    const row = affiliateDataset?.rows.find(
+      (item) => item.rowKey === selection.rowKey,
+    )
+    setHistoryDisplay({
+      history: getAffiliateForecastHistory(selection),
+      title: `Forecast History · ${selection.affiliate} · ${row?.label ?? selection.rowKey} · '${selection.year.slice(2)}`,
+    })
   }
 
   return (
@@ -94,12 +133,12 @@ export function LatestResultsPage<RowKey extends string>({
       <div className="my-4 flex flex-wrap items-center gap-3 border-b pb-3">
         <div aria-label="Latest Results view" className="flex items-center gap-1.5" role="group">
           <span className="type-control-label me-1 text-muted-foreground">View</span>
-          <SelectionButton onClick={() => changeView("quarter")} pressed={view === "quarter"}>
+          <LatestResultsSelectionButton onClick={() => changeView("quarter")} pressed={view === "quarter"}>
             Quarter
-          </SelectionButton>
-          <SelectionButton onClick={() => changeView("agency")} pressed={view === "agency"}>
+          </LatestResultsSelectionButton>
+          <LatestResultsSelectionButton onClick={() => changeView("agency")} pressed={view === "agency"}>
             Agency
-          </SelectionButton>
+          </LatestResultsSelectionButton>
         </div>
         <div aria-label="Latest Results selection" className="flex flex-wrap items-center gap-1.5" role="group">
           <span className="type-control-label me-1 text-muted-foreground">
@@ -107,22 +146,22 @@ export function LatestResultsPage<RowKey extends string>({
           </span>
           {view === "quarter"
             ? dataset.quarters.map((quarter) => (
-                <SelectionButton
+                <LatestResultsSelectionButton
                   key={quarter}
                   onClick={() => changeQuarter(quarter)}
                   pressed={selectedQuarter === quarter}
                 >
                   {quarter}
-                </SelectionButton>
+                </LatestResultsSelectionButton>
               ))
             : dataset.agencies.map((agency) => (
-                <SelectionButton
+                <LatestResultsSelectionButton
                   key={agency.key}
                   onClick={() => changeAgency(agency.key)}
                   pressed={selectedAgency === agency.key}
                 >
                   {agency.label}
-                </SelectionButton>
+                </LatestResultsSelectionButton>
               ))}
         </div>
       </div>
@@ -132,13 +171,32 @@ export function LatestResultsPage<RowKey extends string>({
           <LatestResultsTable
             agency={selectedAgency}
             dataset={dataset}
-            onForecastSelect={setSelection}
+            onForecastSelect={selectDatasetForecast}
             quarter={selectedQuarter}
             view={view}
           />
         </section>
-        <ForecastHistoryChart dataset={dataset} selection={selection} />
+        {affiliateDataset ? (
+          <section className="min-w-0 overflow-hidden rounded-lg border bg-card px-5 py-4">
+            <AffiliateAnnualResultsTable
+              affiliate={selectedAffiliate}
+              dataset={affiliateDataset}
+              onAffiliateChange={(nextAffiliate) => {
+                setSelectedAffiliate(nextAffiliate)
+                setHistoryDisplay(null)
+              }}
+              onForecastSelect={selectAffiliateForecast}
+            />
+          </section>
+        ) : (
+          <ForecastHistoryChart display={historyDisplay} />
+        )}
       </div>
+      {affiliateDataset ? (
+        <div className="mt-4">
+          <ForecastHistoryChart display={historyDisplay} />
+        </div>
+      ) : null}
     </>
   )
 }

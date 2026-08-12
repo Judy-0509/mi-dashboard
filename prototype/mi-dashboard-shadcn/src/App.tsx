@@ -22,9 +22,26 @@ import { SellThroughAnalysis } from "@/components/sell-through-analysis"
 import { WeeklyAnalysis } from "@/components/weekly-analysis"
 import { WeeklyExecutiveSummary } from "@/components/weekly-executive-summary"
 import { dashboardMeta } from "@/data/production"
+import { affiliateAnnualResultsDataset } from "@/data/affiliate-annual-results"
 import { latestResultsDataset } from "@/data/latest-results"
 import { latestResultsIPhoneDataset } from "@/data/latest-results-iphone"
-import { weeklyDescription, weeklyTitle } from "@/data/weekly"
+import { flagshipSalesMonths } from "@/data/flagship-sales"
+import { sellThroughMonths } from "@/data/sell-through"
+import {
+  weeklyDescription,
+  weeklySelectedWeek,
+  weeklyTitle,
+  weeklyYears,
+} from "@/data/weekly"
+
+function formatMonth(period: string) {
+  const [year, month] = period.split("-")
+  return `${year}년 ${Number(month)}월`
+}
+
+const weeklyPeriod = `${weeklyYears[weeklyYears.length - 1]} W${String(weeklySelectedWeek).padStart(2, "0")}`
+const sellThroughPeriod = formatMonth(sellThroughMonths[sellThroughMonths.length - 1])
+const flagshipSalesPeriod = formatMonth(flagshipSalesMonths[flagshipSalesMonths.length - 1])
 
 function SigmaPage() {
   return (
@@ -67,7 +84,7 @@ function WeeklyPage() {
             Counterpoint / Weekly
           </p>
           <h1 className="type-page-title mt-1 tracking-tight">
-            {weeklyTitle}
+            {weeklyTitle} · {weeklyPeriod}
           </h1>
           <p className="type-page-subtitle mt-1 text-muted-foreground">
             {weeklyDescription}
@@ -118,7 +135,7 @@ function SellThroughPage() {
             Counterpoint / Sell-in · Sell-through
           </p>
           <h1 className="type-page-title mt-1 tracking-tight">
-            스마트폰 Sell-in / Sell-through
+            스마트폰 Sell-in / Sell-through · {sellThroughPeriod}
           </h1>
           <p className="type-page-subtitle mt-1 text-muted-foreground">
             2025년 9월–2026년 8월 월별 흐름 · Inventory / WoS 비교
@@ -143,7 +160,7 @@ function FlagshipSalesPage() {
             Counterpoint / Flagship Sales
           </p>
           <h1 className="type-page-title mt-1 tracking-tight">
-            Flagship Sales
+            Flagship Sales · {flagshipSalesPeriod}
           </h1>
           <p className="type-page-subtitle mt-1 text-muted-foreground">
             2024년 9월–2026년 8월 24개월 모델 판매량 · 출시월 기준 Lifecycle 비교
@@ -168,7 +185,7 @@ function MiInsightPage() {
             MI Insight / Weekly Report
           </p>
           <h1 className="type-page-title mt-1 tracking-tight">
-            Weekly Report
+            Weekly Report · {weeklyPeriod}
           </h1>
           <p className="type-page-subtitle mt-1 text-muted-foreground">
             EDM 업데이트 자료와 공유 내용
@@ -193,7 +210,7 @@ function MiInsightWeeklySellThroughPage() {
             MI Insight / Weekly Sell-through
           </p>
           <h1 className="type-page-title mt-1 tracking-tight">
-            Weekly Sell-through
+            Weekly Sell-through · {weeklyPeriod}
           </h1>
           <p className="type-page-subtitle mt-1 text-muted-foreground">
             Counterpoint Weekly 데이터 기반 Sell-out 현황과 Trend
@@ -309,6 +326,7 @@ export function App() {
         <PipelineCheckIPhonePage />
       ) : activePage === "latest-results" ? (
         <LatestResultsPage
+          affiliateDataset={affiliateAnnualResultsDataset}
           dataset={latestResultsDataset}
           eyebrow="MI TAM / LATEST RESULTS"
           page="latest-results"

@@ -221,7 +221,14 @@ export function getLatestResultsRowCell(
 ): ResultCell {
   const agencyData = getAgency(agency)
   if (!agencyData) return { actual: null, forecast: null, history: [] }
-  if (row.rowKey !== null) return agencyData.cells[quarter][row.rowKey]
+  return getVendorResultsRowCell(agencyData.cells[quarter], row)
+}
+
+export function getVendorResultsRowCell(
+  cells: Record<CanonicalVendorKey, ResultCell>,
+  row: LatestResultsTableRow,
+): ResultCell {
+  if (row.rowKey !== null) return cells[row.rowKey]
 
   const vendorKeys =
     row.key === "cn-total"
@@ -232,7 +239,7 @@ export function getLatestResultsRowCell(
   let hasValue = false
   let hasForecast = false
   for (const vendor of vendorKeys) {
-    const cell = agencyData.cells[quarter][vendor]
+    const cell = cells[vendor]
     const state = getResultCellState(cell)
     if (state === "actual") {
       total += cell.actual ?? 0

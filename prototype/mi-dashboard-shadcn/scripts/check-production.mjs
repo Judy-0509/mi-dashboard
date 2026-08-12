@@ -24,6 +24,15 @@ import {
   validateLatestResultsDataset,
 } from "../src/data/latest-results.ts"
 import { latestResultsIPhoneDataset } from "../src/data/latest-results-iphone.ts"
+import {
+  affiliateAnnualResultsDataset,
+  affiliateKeys,
+  affiliateYears,
+  defaultAffiliate,
+  getAffiliateAnnualRowCell,
+  getAffiliateForecastHistory,
+  validateAffiliateAnnualDataset,
+} from "../src/data/affiliate-annual-results.ts"
 
 import {
   cumulativeProduction,
@@ -1009,10 +1018,11 @@ assert.deepEqual(JSON.parse(pageConfigSource)["pipeline-check"], {
 })
 assert.match(appSource, /SellThroughAnalysis/)
 assert.match(appSource, /Counterpoint \/ Sell-in · Sell-through/)
-assert.match(appSource, /스마트폰 Sell-in \/ Sell-through/)
+assert.match(appSource, /스마트폰 Sell-in \/ Sell-through · \{sellThroughPeriod\}/)
 assert.match(appSource, /function FlagshipSalesPage()/)
 assert.match(appSource, /<FlagshipSalesChart \/>/)
 assert.match(appSource, /Counterpoint \/ Flagship Sales/)
+assert.match(appSource, /Flagship Sales · \{flagshipSalesPeriod\}/)
 assert.match(appSource, /PageActions page="flagship-sales" \/>/)
 assert.match(appSource, /MI TAM \/ PIPELINE CHECK/)
 assert.match(appSource, /분기별 Pipeline Check/)
@@ -1100,12 +1110,13 @@ assert.match(appSource, /2024 Q1–2027 Q2 분기별 Forecast · 단위: Mu/)
 assert.match(appSource, /activePage === "ani"/)
 assert.match(
   appSource,
-  /function MiInsightPage\(\)[\s\S]*?<p[^>]*>\s*MI Insight \/ Weekly Report\s*<\/p>[\s\S]*?<h1[^>]*>\s*Weekly Report\s*<\/h1>[\s\S]*?<p[^>]*>\s*EDM 업데이트 자료와 공유 내용\s*<\/p>[\s\S]*?<PageActions page="mi-insight" \/>/,
+  /function MiInsightPage\(\)[\s\S]*?<p[^>]*>\s*MI Insight \/ Weekly Report\s*<\/p>[\s\S]*?<h1[^>]*>\s*Weekly Report · \{weeklyPeriod\}\s*<\/h1>[\s\S]*?<p[^>]*>\s*EDM 업데이트 자료와 공유 내용\s*<\/p>[\s\S]*?<PageActions page="mi-insight" \/>/,
 )
 assert.match(
   appSource,
-  /function MiInsightWeeklySellThroughPage\(\)[\s\S]*?<p[^>]*>\s*MI Insight \/ Weekly Sell-through\s*<\/p>[\s\S]*?<h1[^>]*>\s*Weekly Sell-through\s*<\/h1>[\s\S]*?<PageActions page="mi-weekly-sell-through" \/>[\s\S]*?<MiWeeklySellThroughSummary \/>[\s\S]*?<WeeklyAnalysis \/>/,
+  /function MiInsightWeeklySellThroughPage\(\)[\s\S]*?<p[^>]*>\s*MI Insight \/ Weekly Sell-through\s*<\/p>[\s\S]*?<h1[^>]*>\s*Weekly Sell-through · \{weeklyPeriod\}\s*<\/h1>[\s\S]*?<PageActions page="mi-weekly-sell-through" \/>[\s\S]*?<MiWeeklySellThroughSummary \/>[\s\S]*?<WeeklyAnalysis \/>/,
 )
+assert.match(appSource, /\{weeklyTitle\} · \{weeklyPeriod\}/)
 assert.match(miWeeklySummarySource, /<table[\s\S]*type-table-body w-full table-fixed border-collapse/)
 assert.match(miWeeklySummarySource, /YoY \(%\)/)
 assert.match(miWeeklySummarySource, /WoW \(%\)/)
@@ -1572,11 +1583,19 @@ const forecastHistoryChartSource = readFileSync(
   new URL("../src/components/forecast-history-chart.tsx", import.meta.url),
   "utf8",
 )
+const affiliateAnnualTableSource = readFileSync(
+  new URL("../src/components/affiliate-annual-results-table.tsx", import.meta.url),
+  "utf8",
+)
+const latestResultsSelectionButtonSource = readFileSync(
+  new URL("../src/components/latest-results-selection-button.tsx", import.meta.url),
+  "utf8",
+)
 
 assert.match(latestResultsTableSource, /<table\b/)
 assert.match(latestResultsTableSource, /scope="row"/)
 assert.match(latestResultsTableSource, /scope="col"/)
-assert.match(latestResultsPageSource, /aria-pressed/)
+assert.match(latestResultsSelectionButtonSource, /aria-pressed/)
 assert.match(latestResultsTableSource, /aria-label=.*Forecast/)
 assert.match(latestResultsTableSource, /target="_blank"/)
 assert.match(latestResultsTableSource, /rel="noopener noreferrer"/)
@@ -1660,5 +1679,61 @@ assert.deepEqual(JSON.parse(pageConfigSource)["latest-results-iphone"], {
   exportFileName: "MI_TAM_Latest_Results_iPhone.html",
   originalExcelUrl: null,
 })
+
+assert.deepEqual([...affiliateKeys], ["LSI", "A", "B", "D", "E", "F", "M"])
+assert.deepEqual([...affiliateYears], ["2024", "2025", "2026", "2027"])
+assert.equal(defaultAffiliate, "LSI")
+assert.deepEqual(
+  affiliateAnnualResultsDataset.rows.map(({ label }) => label),
+  latestResultsTableRows.map(({ label }) => label),
+)
+assert.doesNotThrow(() =>
+  validateAffiliateAnnualDataset(affiliateAnnualResultsDataset),
+)
+for (const affiliate of affiliateKeys) {
+  assert.deepEqual(Object.keys(affiliateAnnualResultsDataset.cells[affiliate]), [
+    ...affiliateYears,
+  ])
+  for (const year of affiliateYears) {
+    assert.deepEqual(
+      Object.keys(affiliateAnnualResultsDataset.cells[affiliate][year]),
+      canonicalVendors.map(({ key }) => key),
+    )
+  }
+}
+const affiliateActualWins =
+  affiliateAnnualResultsDataset.cells.LSI["2026"].apple
+assert.equal(affiliateActualWins.actual, 72.4)
+assert.equal(affiliateActualWins.forecast, 73.1)
+assert.equal(getResultCellState(affiliateActualWins), "actual")
+assert.equal(
+  affiliateAnnualResultsDataset.cells.LSI["2024"].xiaomi.actual,
+  0,
+)
+const affiliateForecastSelection = {
+  affiliate: "LSI",
+  rowKey: "samsung",
+  year: "2026",
+}
+assert.equal(
+  getResultCellState(affiliateAnnualResultsDataset.cells.LSI["2026"].samsung),
+  "forecast",
+)
+assert.ok(getAffiliateForecastHistory(affiliateForecastSelection).length > 0)
+assert.equal(
+  getAffiliateAnnualRowCell("LSI", "2026", latestResultsTableRows[1]).forecast,
+  68.6,
+)
+assert.match(affiliateAnnualTableSource, /dataset\.years\.map/)
+assert.match(affiliateAnnualTableSource, /'\{year\.slice\(2\)\}/)
+assert.doesNotMatch(affiliateAnnualTableSource, /onYearChange/)
+assert.match(affiliateAnnualTableSource, /LSI|dataset\.affiliates/)
+assert.match(affiliateAnnualTableSource, /<table\b/)
+assert.match(affiliateAnnualTableSource, /scope="row"/)
+assert.match(affiliateAnnualTableSource, /aria-label=.*Forecast/)
+assert.match(latestResultsPageSource, /grid-cols-\[minmax\(0,58fr\)_minmax\(0,42fr\)\]/)
+assert.match(latestResultsPageSource, /affiliateDataset/)
+assert.match(latestResultsPageSource, /mt-4/)
+assert.match(appSource, /affiliateDataset=\{affiliateAnnualResultsDataset\}/)
 
 console.log("production and weekly data checks passed")

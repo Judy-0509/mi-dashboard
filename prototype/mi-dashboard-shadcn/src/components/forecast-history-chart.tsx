@@ -8,11 +8,7 @@ import {
   YAxis,
 } from "recharts"
 
-import {
-  getDatasetForecastHistory,
-  type ForecastSelection,
-  type LatestResultsDataset,
-} from "@/data/latest-results"
+import type { ForecastSnapshot } from "@/data/latest-results"
 import {
   ChartContainer,
   ChartTooltip,
@@ -20,34 +16,23 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 
-export type ForecastHistoryChartProps<RowKey extends string> = {
-  dataset: LatestResultsDataset<RowKey>
-  selection: ForecastSelection<RowKey> | null
+export type ForecastHistoryDisplay = {
+  history: readonly ForecastSnapshot[]
+  title: string
+}
+
+export type ForecastHistoryChartProps = {
+  display: ForecastHistoryDisplay | null
 }
 
 const chartConfig = {
   value: { label: "Forecast", color: "var(--primary)" },
 } satisfies ChartConfig
 
-function getSelectionLabels<RowKey extends string>(
-  dataset: LatestResultsDataset<RowKey>,
-  selection: ForecastSelection<RowKey>,
-) {
-  const agency = dataset.agencies.find((item) => item.key === selection.agency)
-  const row = dataset.rows.find((item) => item.rowKey === selection.rowKey)
-  return {
-    agency: agency?.label ?? selection.agency,
-    row: row?.label ?? selection.rowKey,
-  }
-}
-
-export function ForecastHistoryChart<RowKey extends string>({
-  dataset,
-  selection,
-}: ForecastHistoryChartProps<RowKey>): React.ReactElement {
-  const history = getDatasetForecastHistory(dataset, selection)
-
-  if (!selection) {
+export function ForecastHistoryChart({
+  display,
+}: ForecastHistoryChartProps): React.ReactElement {
+  if (!display) {
     return (
       <section
         aria-labelledby="forecast-history-title"
@@ -63,8 +48,7 @@ export function ForecastHistoryChart<RowKey extends string>({
     )
   }
 
-  const { agency, row } = getSelectionLabels(dataset, selection)
-  const title = `Forecast History · ${agency} · ${row} · ${selection.quarter}`
+  const { history, title } = display
   const chartLabel = `${title}. 월별 Forecast 값: ${history
     .map(({ monthLabel, value }) => `${monthLabel} ${value.toFixed(1)}`)
     .join(", ")}`
