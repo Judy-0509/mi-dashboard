@@ -885,6 +885,10 @@ const miWeeklySummarySource = readFileSync(
   new URL("../src/components/mi-weekly-sell-through-summary.tsx", import.meta.url),
   "utf8"
 )
+const editorialSummarySource = readFileSync(
+  new URL("../src/components/editorial-summary.tsx", import.meta.url),
+  "utf8"
+)
 const productionSource = readFileSync(
   new URL("../src/components/cumulative-production-chart.tsx", import.meta.url),
   "utf8",
@@ -1120,13 +1124,15 @@ assert.match(
   /function MiInsightWeeklySellThroughPage\(\)[\s\S]*?<p[^>]*>\s*MI Insight \/ Weekly Sell-through\s*<\/p>[\s\S]*?<h1[^>]*>\s*Weekly Sell-through · \{weeklyPeriod\}\s*<\/h1>[\s\S]*?<PageActions page="mi-weekly-sell-through" \/>[\s\S]*?<MiWeeklySellThroughSummary \/>[\s\S]*?<WeeklyAnalysis \/>/,
 )
 assert.match(appSource, /\{weeklyTitle\} · \{weeklyPeriod\}/)
-assert.match(miWeeklySummarySource, /<table[\s\S]*type-table-body w-full table-fixed border-collapse/)
-assert.match(miWeeklySummarySource, /YoY \(%\)/)
-assert.match(miWeeklySummarySource, /WoW \(%\)/)
-assert.match(miWeeklySummarySource, /세부 내용/)
+assert.match(editorialSummarySource, /<table[\s\S]*type-table-body w-full table-fixed border-collapse/)
+assert.match(editorialSummarySource, /YoY \(%\)/)
+assert.match(editorialSummarySource, /WoW \(%\)/)
+assert.match(editorialSummarySource, /세부 내용/)
 assert.match(miWeeklySummarySource, /weeklyRegions\.map/)
-assert.match(miWeeklySummarySource, /miWeeklySellThroughDetails\[region\]/)
-assert.match(miWeeklySummarySource, /scope="row"/)
+assert.match(miWeeklySummarySource, /kind="regional"/)
+assert.match(miWeeklySummarySource, /regionalRows=\{regionalRows\}/)
+assert.match(editorialSummarySource, /showDetails = editing \|\| content !== null/)
+assert.match(editorialSummarySource, /scope="row"/)
 
 const aniChartSource = readFileSync(
   new URL("../src/components/ani-production-chart.tsx", import.meta.url),
@@ -1395,7 +1401,8 @@ const iphonePipelineSource = readFileSync(
   new URL("../src/components/pipeline-check-iphone.tsx", import.meta.url),
   "utf8",
 )
-assert.match(pipelineSource, /pipelineExecutiveSummary\.map/)
+assert.match(appSource, /<EditorialSummary page="pipeline-check" \/>/)
+assert.match(appSource, /<EditorialSummary page="pipeline-check-iphone" \/>/)
 assert.match(
   pipelineSource,
   /grid-cols-\[minmax\(0,1fr\)_210px_minmax\(0,1fr\)_210px_minmax\(0,1fr\)\]/,

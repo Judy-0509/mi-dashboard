@@ -3,10 +3,10 @@
   "pages": {
     "sigma": {
       "kind": "bullets",
-      "dataRevision": "sha256:67544da3e8338a4303323be7d640f053d4db91b55a4469aec6c868c73614e15e",
+      "dataRevision": "sha256:4a20051b20ea365f52ab9aaeeffa33ff3958286b8bd8e5670fa577dac10dbe38",
       "content": [
-        "2026 Q3 현재 누적 Forecast는 484.0Mu로, 6개월 전 대비 +22.7Mu (+4.9%) 조정됨",
-        "업체별로는 Transsion +9.8Mu가 가장 큰 상향, OPPO -3.8Mu가 가장 큰 하향임"
+        "2026 Q3 현재 누적 Forecast는 366.0Mu로, 6개월 전 대비 +32.9Mu (+9.9%) 조정됨",
+        "업체별로는 Apple +8.6Mu가 가장 큰 상향, 하향 조정 업체는 없음"
       ]
     },
     "weekly": {

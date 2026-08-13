@@ -12,21 +12,24 @@ const tempRoot = path.join(appRoot, ".tmp")
 await mkdir(tempRoot, { recursive: true })
 const temp = await mkdtemp(path.join(tempRoot, "editorial-ui-"))
 try {
-  const source = await readFile(
-    path.join(appRoot, "src", "components", "editor-access-panel.tsx"),
-    "utf8",
-  )
-  const compiled = ts.transpileModule(source, {
-    compilerOptions: {
-      jsx: ts.JsxEmit.ReactJSX,
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2023,
-    },
-  }).outputText
-  const modulePath = path.join(temp, "editor-access-panel.mjs")
-  await writeFile(modulePath, compiled, "utf8")
-  const { EditorAccessPanel, EditorSessionControls } = await import(
-    pathToFileURL(modulePath)
+  const loadComponent = async (name) => {
+    const source = await readFile(
+      path.join(appRoot, "src", "components", `${name}.tsx`),
+      "utf8",
+    )
+    const compiled = ts.transpileModule(source, {
+      compilerOptions: {
+        jsx: ts.JsxEmit.ReactJSX,
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ES2023,
+      },
+    }).outputText
+    const modulePath = path.join(temp, `${name}.mjs`)
+    await writeFile(modulePath, compiled, "utf8")
+    return import(pathToFileURL(modulePath))
+  }
+  const { EditorAccessPanel, EditorSessionControls } = await loadComponent(
+    "editor-access-panel",
   )
   const baseProps = {
     busy: false,
@@ -86,6 +89,37 @@ try {
   assert.match(editorControls, /편집 중: 김지은/)
   assert.match(editorControls, /비밀번호 변경/)
   assert.match(editorControls, /로그아웃/)
+
+  const { EditorialBadges, EditorialContentView, EditorialLineDiff } =
+    await loadComponent("editorial-content-view")
+  const content = renderToStaticMarkup(
+    React.createElement(EditorialContentView, {
+      kind: "titled",
+      content: [{ title: "시장 회복", details: ["세부 문장"] }],
+    }),
+  )
+  assert.match(content, /시장 회복/)
+  assert.match(content, /세부 문장/)
+
+  const badges = renderToStaticMarkup(
+    React.createElement(EditorialBadges, {
+      mode: "default",
+      published: false,
+      reviewed: false,
+    }),
+  )
+  assert.match(badges, /자동 생성/)
+  assert.match(badges, /미검토/)
+  assert.match(badges, /비공개/)
+
+  const diff = renderToStaticMarkup(
+    React.createElement(EditorialLineDiff, {
+      after: ["유지", "추가"],
+      before: ["유지", "삭제"],
+    }),
+  )
+  assert.match(diff, /삭제/)
+  assert.match(diff, /추가/)
 } finally {
   await rm(temp, { recursive: true, force: true })
 }

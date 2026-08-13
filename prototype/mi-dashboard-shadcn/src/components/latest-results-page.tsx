@@ -2,6 +2,7 @@ import type * as React from "react"
 import { useState } from "react"
 
 import { AffiliateAnnualResultsTable } from "@/components/affiliate-annual-results-table"
+import { EditorialSummary } from "@/components/editorial-summary"
 import {
   ForecastHistoryChart,
   type ForecastHistoryDisplay,
@@ -129,6 +130,8 @@ export function LatestResultsPage<RowKey extends string>({
         </div>
         <PageActions page={page} />
       </header>
+
+      <EditorialSummary page={page} />
 
       <div className="my-4 flex flex-wrap items-center gap-3 border-b pb-3">
         <div aria-label="Latest Results view" className="flex items-center gap-1.5" role="group">

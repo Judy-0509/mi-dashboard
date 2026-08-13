@@ -9,10 +9,6 @@ import {
 } from "../src/data/vendor-catalog.ts"
 
 const vendorKeys = [...canonicalVendors.map(({ key }) => key), "others"]
-const vendorLabels = Object.fromEntries([
-  ...canonicalVendors.map(({ key, label }) => [key, label]),
-  ["others", "Others"],
-])
 const providerAliases = Object.fromEntries(
   canonicalVendors.map(({ key }) => [key, key]),
 )
@@ -190,41 +186,6 @@ function quarterIndex(quarter) {
   return Number(year) * 4 + Number(label.slice(1))
 }
 
-function total(row) {
-  const values = vendorKeys
-    .map((key) => row[key])
-    .filter((value) => typeof value === "number" && Number.isFinite(value))
-  return values.length ? values.reduce((sum, value) => sum + value, 0) : null
-}
-
-function createSummary(rows, focusQuarter) {
-  const index = rows.findIndex((row) => row.quarter === focusQuarter)
-  const focus = rows[index]
-  const previous = rows[index - 1]
-  const focusTotal = total(focus)
-  const largestKey = vendorKeys
-    .filter((key) => typeof focus[key] === "number")
-    .reduce((largest, key) =>
-      focus[key] > focus[largest] ? key : largest
-    , vendorKeys[0])
-  const change =
-    previous && focusTotal !== null && total(previous) !== null
-      ? focusTotal - total(previous)
-      : null
-  const changeText = previous
-    ? change === null
-      ? "직전 분기와 비교 가능한 데이터가 없음"
-      : `직전 분기 대비 ${change >= 0 ? "+" : ""}${change.toFixed(1)}Mu 조정됨`
-    : "비교 가능한 직전 분기 데이터가 없음"
-
-  return [
-    `${focusQuarter} 현재 누적 Forecast는 ${focusTotal === null ? "데이터 없음" : `${focusTotal.toFixed(1)}Mu`}, ${changeText}`,
-    largestKey && typeof focus[largestKey] === "number"
-      ? `${vendorLabels[largestKey]} ${focus[largestKey].toFixed(1)}Mu로 업체 중 가장 큰 비중임`
-      : "업체별 데이터 없음",
-  ]
-}
-
 async function main() {
   const sourceArgument = process.argv[2] ?? process.env.DASHBOARD_DATA_SOURCE
   const checkOnly = process.argv.includes("--check")
@@ -270,20 +231,9 @@ async function main() {
     )
   }
 
-  const suppliedSummary = Array.isArray(parsed)
-    ? undefined
-    : parsed.executiveSummary
-  const executiveSummary =
-    Array.isArray(suppliedSummary) &&
-    suppliedSummary.length >= 1 &&
-    suppliedSummary.length <= 3
-      ? suppliedSummary.map(String)
-      : createSummary(quarterlyProduction, focusQuarter)
-
   const normalized = {
     asOf,
     focusQuarter,
-    executiveSummary,
     quarterlyProduction,
     ...(dataErrors.length ? { dataErrors } : {}),
   }

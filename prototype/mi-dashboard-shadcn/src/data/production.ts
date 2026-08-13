@@ -82,8 +82,6 @@ export const dashboardMeta = {
   lastQuarter: cumulativeProduction.at(-1)!.quarter,
 }
 
-export const executiveSummary = dashboardData.executiveSummary
-
 function availableValues(
   item: QuarterlyProduction | ForecastHistoryPoint,
   keys: readonly VendorKey[] = vendors.map(({ key }) => key),

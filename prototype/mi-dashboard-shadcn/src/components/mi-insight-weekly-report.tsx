@@ -2,41 +2,13 @@ import type { JSX } from "react"
 import { ExternalLink } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { getMiInsightReports, miInsightInsights } from "@/data/mi-insight"
+import { getMiInsightReports } from "@/data/mi-insight"
 
 export function MiInsightWeeklyReport(): JSX.Element {
   const reports = getMiInsightReports()
 
   return (
     <div className="space-y-4">
-      <Card className="border-border shadow-none" size="sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="type-executive-title">
-            Executive Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="type-executive-body grid gap-2 text-muted-foreground">
-            {miInsightInsights.map(({ title, details }) => (
-              <li className="flex gap-3" key={title}>
-                <span
-                  aria-hidden="true"
-                  className="mt-2 size-1.5 shrink-0 bg-primary"
-                />
-                <div className="min-w-0">
-                  <p className="type-table-header text-foreground">{title}</p>
-                  <ul className="mt-1 list-disc space-y-0.5 pl-4">
-                    {details.map((detail) => (
-                      <li key={detail}>{detail}</li>
-                    ))}
-                  </ul>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-
       <Card className="border-border shadow-none" size="sm">
         <CardHeader className="pb-2">
           <CardTitle className="type-executive-title">

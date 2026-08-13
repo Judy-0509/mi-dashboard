@@ -5,7 +5,7 @@ import { AniProductionChart } from "@/components/ani-production-chart"
 import { CumulativeProductionChart } from "@/components/cumulative-production-chart"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { EditorAccess } from "@/components/editor-access"
-import { ExecutiveSummary } from "@/components/executive-summary"
+import { EditorialSummary } from "@/components/editorial-summary"
 import { FlagshipSalesChart } from "@/components/flagship-sales-chart"
 import { LatestResultsPage } from "@/components/latest-results-page"
 import { MiInsightWeeklyReport } from "@/components/mi-insight-weekly-report"
@@ -21,7 +21,6 @@ import { PipelineCheckIPhone } from "@/components/pipeline-check-iphone"
 import { PortalSidebar, type PortalPage } from "@/components/portal-sidebar"
 import { SellThroughAnalysis } from "@/components/sell-through-analysis"
 import { WeeklyAnalysis } from "@/components/weekly-analysis"
-import { WeeklyExecutiveSummary } from "@/components/weekly-executive-summary"
 import { dashboardMeta } from "@/data/production"
 import { affiliateAnnualResultsDataset } from "@/data/affiliate-annual-results"
 import { latestResultsDataset } from "@/data/latest-results"
@@ -74,7 +73,7 @@ function SigmaPage() {
           <PageActions page="sigma" />
         </div>
       </header>
-      <ExecutiveSummary />
+      <EditorialSummary page="sigma" />
       <CumulativeProductionChart />
     </>
   )
@@ -100,7 +99,7 @@ function WeeklyPage() {
         </div>
         <PageActions page="weekly" />
       </header>
-      <WeeklyExecutiveSummary />
+      <EditorialSummary page="weekly" />
       <WeeklyAnalysis />
     </>
   )
@@ -126,6 +125,7 @@ function AniPage() {
         </div>
         <PageActions page="ani" />
       </header>
+      <EditorialSummary page="ani" />
       <AniProductionChart />
     </>
   )
@@ -151,6 +151,7 @@ function SellThroughPage() {
         </div>
         <PageActions page="sell-through" />
       </header>
+      <EditorialSummary page="sell-through" />
       <SellThroughAnalysis />
     </>
   )
@@ -176,6 +177,7 @@ function FlagshipSalesPage() {
         </div>
         <PageActions page="flagship-sales" />
       </header>
+      <EditorialSummary page="flagship-sales" />
       <FlagshipSalesChart />
     </>
   )
@@ -201,6 +203,7 @@ function MiInsightPage() {
         </div>
         <PageActions page="mi-insight" />
       </header>
+      <EditorialSummary kind="titled" page="mi-insight" />
       <MiInsightWeeklyReport />
     </>
   )
@@ -252,6 +255,7 @@ function PipelineCheckPage(): React.ReactElement {
         </div>
         <PageActions page="pipeline-check" />
       </header>
+      <EditorialSummary page="pipeline-check" />
       <PipelineCheck />
     </>
   )
@@ -277,6 +281,7 @@ function PipelineCheckIPhonePage(): React.ReactElement {
         </div>
         <PageActions page="pipeline-check-iphone" />
       </header>
+      <EditorialSummary page="pipeline-check-iphone" />
       <PipelineCheckIPhone />
     </>
   )

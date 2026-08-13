@@ -24,6 +24,12 @@ import { latestResultsIPhoneDataset } from "../src/data/latest-results-iphone.ts
 import { miInsightInsights } from "../src/data/mi-insight.ts"
 import { miWeeklySellThroughDetails } from "../src/data/mi-weekly-sell-through.ts"
 import {
+  dashboardMeta,
+  getForecastHistory,
+  getProductionTotal,
+  vendors,
+} from "../src/data/production.ts"
+import {
   pipelineData,
   pipelineExecutiveSummary,
   pipelineVendors,
@@ -78,6 +84,43 @@ function canonicalize(value) {
     return value
   }
   throw new Error(`Unsupported revision value: ${typeof value}`)
+}
+
+function sigmaSource() {
+  const history = getForecastHistory(dashboardMeta.focusQuarter)
+  const previous = history[0]
+  const current = history.at(-1)
+  const previousTotal = previous ? getProductionTotal(previous) : null
+  const currentTotal = current ? getProductionTotal(current) : null
+  const totalDelta =
+    previousTotal === null || currentTotal === null
+      ? null
+      : currentTotal - previousTotal
+  const changes = vendors.flatMap((vendor) => {
+    const before = previous?.[vendor.key]
+    const after = current?.[vendor.key]
+    return before?.status === "available" && after?.status === "available"
+      ? [{ label: vendor.label, value: after.value - before.value }]
+      : []
+  })
+  const upward = changes.filter(({ value }) => value > 0).sort((a, b) => b.value - a.value)[0]
+  const downward = changes.filter(({ value }) => value < 0).sort((a, b) => a.value - b.value)[0]
+  const deltaText = totalDelta === null
+    ? "비교 가능한 6개월 전 데이터가 없음"
+    : `6개월 전 대비 ${totalDelta >= 0 ? "+" : ""}${totalDelta.toFixed(1)}Mu (${totalDelta >= 0 ? "+" : ""}${((totalDelta / previousTotal) * 100).toFixed(1)}%) 조정됨`
+
+  return {
+    kind: "bullets",
+    revisionData: {
+      asOf: dashboardData.asOf,
+      focusQuarter: dashboardData.focusQuarter,
+      quarterlyProduction: dashboardData.quarterlyProduction,
+    },
+    content: [
+      `${dashboardMeta.focusQuarter} 현재 누적 Forecast는 ${currentTotal === null ? "데이터 없음" : `${currentTotal.toFixed(1)}Mu`}로, ${deltaText}`,
+      `업체별로는 ${upward ? `${upward.label} +${upward.value.toFixed(1)}Mu가 가장 큰 상향` : "상향 조정 업체는 없음"}, ${downward ? `${downward.label} ${downward.value.toFixed(1)}Mu가 가장 큰 하향임` : "하향 조정 업체는 없음"}`,
+    ],
+  }
 }
 
 export function stableStringify(value) {
@@ -248,16 +291,7 @@ export function getEditorialDefaultSources() {
     })),
   }
   return {
-    sigma: {
-      kind: "bullets",
-      revisionData: {
-        asOf: dashboardData.asOf,
-        focusQuarter: dashboardData.focusQuarter,
-        executiveSummary: dashboardData.executiveSummary,
-        quarterlyProduction: dashboardData.quarterlyProduction,
-      },
-      content: dashboardData.executiveSummary,
-    },
+    sigma: sigmaSource(),
     weekly: {
       kind: "bullets",
       revisionData: weeklyMetrics,

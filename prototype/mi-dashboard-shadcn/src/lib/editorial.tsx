@@ -335,10 +335,13 @@ export function useEditorialPage(page: PortalPage): EditorialPageController {
         ) {
           setConflict(caught.latest as EditorPage)
         }
+        if (caught instanceof EditorialApiError && caught.status === 401) {
+          await refreshSession()
+        }
         throw caught
       }
     },
-    [session.csrfToken],
+    [refreshSession, session.csrfToken],
   )
 
   return {
