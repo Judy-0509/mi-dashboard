@@ -2,6 +2,7 @@ _ceo/
 __pycache__/
 *.pyc
 .gstack/
+.omc/
 .superpowers/
 .worktrees/
 runtime/
