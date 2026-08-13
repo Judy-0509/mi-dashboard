@@ -12,23 +12,29 @@ MI Dashboard는 SigmaIntel, Counterpoint, MI TAM, MI Insight, ANI의 스마트�
 
 실행 창에는 같은 LAN에서 사용할 주소도 함께 표시됩니다. Windows 방화벽이 묻는 경우 사설 네트워크 접근을 허용하세요. 실행 창을 닫거나 `Ctrl+C`를 누르면 서버가 종료됩니다. 이미 빌드된 `site/`를 여는 데는 Node.js나 인터넷 연결이 필요하지 않습니다.
 
+## 화면 사용
+
+- 페이지 상단의 `상세 설명`은 기본 `OFF`입니다. 켠 페이지에서만 그래프 hover 설명과 강조가 동작하며 페이지별 설정은 서로 독립적입니다.
+- 누적 막대그래프는 클릭한 막대에만 파란 윤곽을 표시합니다.
+- `Download as HTML`은 현재 화면의 독립 HTML 파일을 내려받습니다.
+
 ## 편집 기능 최초 설정
 
 1. 서버 PC에서 `http://localhost:8000`을 엽니다.
 2. 상단 `편집 설정`을 눌러 10자 이상의 공용 비밀번호를 한 번 설정합니다.
 3. 이후 편집자는 `편집 모드`에서 자기 이름과 공용 비밀번호를 입력합니다.
 
-최초 설정과 비밀번호 변경은 서버 PC에서만 가능합니다. 편집자는 Executive Summary 작업본을 저장하고 검토 완료 후 공개할 수 있습니다. MI Insight Weekly Sell-through에서는 YoY·WoW가 아니라 지역별 `세부 내용`만 편집합니다. 변경 이력에는 입력한 이름, 시각, 변경 전후 내용이 남습니다.
+최초 설정과 비밀번호 변경은 서버 PC에서만 가능합니다. 편집자는 Executive Summary 작업본을 저장하고 검토 완료 후 공개할 수 있습니다. MI Insight Weekly Sell-through에서는 YoY·WoW가 아니라 지역별 `세부 내용`만 편집합니다. `변경 이력`에서는 입력한 이름, 시각, 변경 전후 내용을 비교하고 선택한 버전을 새 작업본으로 복원할 수 있습니다.
 
 편집 상태와 이력은 `runtime/editorial/`에 저장되고 Git에서는 제외됩니다. `content.json.bak`과 `history.jsonl`이 자동 복구 자료이므로 서버 백업 시 이 폴더 전체를 보관하세요. HTTP를 유지하므로 신뢰할 수 있는 사설 LAN에서만 실행해야 합니다.
 
-## 포털 구성
+## 대시보드 구성
 
 | 영역 | 화면 |
 | --- | --- |
 | SigmaIntel | Production Forecast |
 | Counterpoint | Weekly · Sell-in / Sell-through · Flagship Sales |
-| MI TAM | Pipeline Check · Pipeline Check (iPhone) · Latest Results |
+| MI TAM | Pipeline Check · Pipeline Check (iPhone) · Latest Results · Latest Results (iPhone) |
 | MI Insight | Weekly Report · Weekly Sell-through |
 | ANI | iPhone Model Production |
 
@@ -74,3 +80,4 @@ npm run build
 
 - [프로토타입 개발 안내](prototype/mi-dashboard-shadcn/README.md)
 - [차트 및 화면 디자인 규칙](DESIGN.md)
+- [SigmaIntel 데이터 컬럼 매핑](sigmaintel.md)

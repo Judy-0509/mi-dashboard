@@ -1,3 +1,7 @@
+# SigmaIntel 데이터 컬럼 매핑
+
+SigmaIntel 원본 Excel 컬럼과 대시보드 내부 필드의 대응 관계를 정리한 참고표입니다.
+
 ## 컬럼 목록
 
 | # | Excel 컬럼명 | db.PLC 매핑 | 예시 데이터 |

@@ -1,15 +1,22 @@
-# MI Intelligence Portal
+# MI Dashboard
 
 localhost와 같은 LAN에서 사용하는 Vite + React + shadcn/ui 소스입니다. `npm run build` 결과는 저장소 루트의 `site/`에 생성됩니다.
 
-## Run
+## 개발
 
 ```powershell
-npm install
+npm ci
 npm run dev
+```
+
+검증과 로컬 배포용 빌드는 다음 순서로 실행합니다.
+
+```powershell
 npm run data:check
-npm run build
+npm test
+npm run typecheck
 npm run lint
+npm run build
 ```
 
 루트에서 `대시보드 실행.bat`를 실행하면 정적 사이트와 편집 API가 함께 시작됩니다. 편집 런타임 파일은 루트 `runtime/editorial/`에 저장됩니다.
