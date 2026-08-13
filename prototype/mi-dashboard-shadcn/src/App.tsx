@@ -1,9 +1,10 @@
 import type * as React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { AniProductionChart } from "@/components/ani-production-chart"
 import { CumulativeProductionChart } from "@/components/cumulative-production-chart"
 import { DashboardShell } from "@/components/dashboard-shell"
+import { EditorAccess } from "@/components/editor-access"
 import { ExecutiveSummary } from "@/components/executive-summary"
 import { FlagshipSalesChart } from "@/components/flagship-sales-chart"
 import { LatestResultsPage } from "@/components/latest-results-page"
@@ -33,6 +34,7 @@ import {
   weeklyTitle,
   weeklyYears,
 } from "@/data/weekly"
+import { EditorialProvider, useEditorialSession } from "@/lib/editorial"
 import {
   HoverDetailsProvider,
   isHoverDetailsEnabled,
@@ -280,24 +282,44 @@ function PipelineCheckIPhonePage(): React.ReactElement {
   )
 }
 
-export function App() {
+function PortalApp() {
   const [activePage, setActivePage] = useState<PortalPage>(pageFromHash)
+  const activePageRef = useRef(activePage)
   const [hoverDetailsByPage, setHoverDetailsByPage] = useState<
     HoverDetailsByPage<PortalPage>
   >({})
+  const { confirmDiscard } = useEditorialSession()
 
   useEffect(() => {
-    const updatePage = () => setActivePage(pageFromHash())
+    activePageRef.current = activePage
+  }, [activePage])
+
+  useEffect(() => {
+    const updatePage = () => {
+      const nextPage = pageFromHash()
+      if (nextPage === activePageRef.current) return
+      if (!confirmDiscard()) {
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}${PAGE_CONFIG[activePageRef.current].hash}`,
+        )
+        return
+      }
+      setActivePage(nextPage)
+    }
     window.addEventListener("hashchange", updatePage)
     return () => window.removeEventListener("hashchange", updatePage)
-  }, [])
+  }, [confirmDiscard])
 
   const navigate = (page: PortalPage) => {
+    if (page === activePage || !confirmDiscard()) return false
     const hash = PAGE_CONFIG[page].hash
     setActivePage(page)
     if (window.location.hash !== hash) {
       window.location.hash = hash
     }
+    return true
   }
 
   return (
@@ -362,7 +384,16 @@ export function App() {
           <SigmaPage />
         )}
       </DashboardShell>
+      <EditorAccess />
     </HoverDetailsProvider>
+  )
+}
+
+export function App() {
+  return (
+    <EditorialProvider disabled={isExport}>
+      <PortalApp />
+    </EditorialProvider>
   )
 }
 

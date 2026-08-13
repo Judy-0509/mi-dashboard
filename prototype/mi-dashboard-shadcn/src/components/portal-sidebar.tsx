@@ -104,7 +104,7 @@ const providers: Array<{
 
 type PortalSidebarProps = {
   activePage: PortalPage
-  onNavigate: (page: PortalPage) => void
+  onNavigate: (page: PortalPage) => boolean
 }
 
 export function PortalSidebar({
@@ -152,7 +152,9 @@ export function PortalSidebar({
                       }`}
                       href={href}
                       key={page}
-                      onClick={() => onNavigate(page)}
+                      onClick={(event) => {
+                        if (!onNavigate(page)) event.preventDefault()
+                      }}
                     >
                       {child}
                     </a>

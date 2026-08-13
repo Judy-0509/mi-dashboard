@@ -1,10 +1,12 @@
 import { Download, FileSpreadsheet, MessageSquareText } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button"
+import { EditorSessionControls } from "@/components/editor-access-panel"
 import { Toggle } from "@/components/ui/toggle"
 import pageConfig from "@/data/page-config.json"
 import type { PortalPage } from "@/components/portal-sidebar"
 import { useHoverDetails } from "@/lib/hover-details"
+import { useEditorialSession } from "@/lib/editorial"
 
 declare global {
   interface Window {
@@ -36,6 +38,12 @@ export function pageFromHash(): PortalPage {
 
 export function PageActions({ page }: { page: PortalPage }) {
   const { enabled: hoverDetailsEnabled, onEnabledChange } = useHoverDetails()
+  const {
+    logout,
+    session,
+    sessionLoading,
+    setAccessOpen,
+  } = useEditorialSession()
 
   if (isExport) {
     return null
@@ -46,6 +54,21 @@ export function PageActions({ page }: { page: PortalPage }) {
 
   return (
     <div className="flex items-center gap-2">
+      <EditorSessionControls
+        authenticated={session.authenticated}
+        canChangePassword={session.canChangePassword}
+        editorName={session.editorName}
+        loading={sessionLoading}
+        onLogout={() => {
+          void logout().catch((error: unknown) => {
+            window.alert(
+              error instanceof Error ? error.message : "로그아웃할 수 없습니다.",
+            )
+          })
+        }}
+        onOpen={() => setAccessOpen(true)}
+        setupRequired={session.setupRequired}
+      />
       <Toggle
         aria-label="hover 상세 설명"
         isSelected={hoverDetailsEnabled}
