@@ -1,4 +1,4 @@
-MI Intelligence Portal · localhost package
-Package date: 2026-08-10
+MI Dashboard · localhost/LAN package
+Package date: 2026-08-13
 Source version: shadcn-vite
-Mode: Vite + React + shadcn/ui dashboard and GitHub Pages build
+Mode: Vite + React + shadcn/ui dashboard with local editorial API

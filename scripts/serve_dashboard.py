@@ -33,7 +33,7 @@ def local_ipv4() -> str | None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="MI Intelligence Portal local server")
+    parser = argparse.ArgumentParser(description="MI Dashboard local server")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--open", action="store_true", dest="open_browser")
@@ -69,7 +69,7 @@ def main() -> None:
     local_url = f"http://localhost:{args.port}"
     lan_ip = local_ipv4()
 
-    print("\nMI Intelligence Portal이 실행되었습니다.")
+    print("\nMI Dashboard가 실행되었습니다.")
     print(f"내 PC: {local_url}")
     if lan_ip and args.host == "0.0.0.0":
         print(f"같은 사내망: http://{lan_ip}:{args.port}")

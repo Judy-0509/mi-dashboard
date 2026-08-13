@@ -130,12 +130,14 @@ export function PortalSidebar({
         <div className="px-5 py-7">
           <div>
             <p className="type-eyebrow text-muted-foreground">
-              MI Intelligence
+              Smartphone Market
             </p>
-            <p className="type-card-title mt-1.5 tracking-tight">Portal</p>
+            <p className="type-card-title mt-1.5 tracking-tight">
+              MI Dashboard
+            </p>
           </div>
           <Separator className="my-7 bg-sidebar-border" />
-          <nav aria-label="Research portals" className="space-y-6">
+          <nav aria-label="MI Dashboard sections" className="space-y-6">
             {providers.map(({ label, children }) => (
               <section key={label}>
                 <h2 className="type-section-title">{label}</h2>
