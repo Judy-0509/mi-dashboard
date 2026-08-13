@@ -1,8 +1,8 @@
-# MI Intelligence Portal
+# MI Dashboard
 
-![MI Data Hub — 파란 하늘 아래 책과 데이터가 허브로 모이는 픽셀 아트](docs/assets/mi-data-hub-pixel.png)
+![MI Dashboard — Smartphone Market Intelligence](docs/assets/mi-dashboard-hero.png)
 
-MI Intelligence Portal은 SigmaIntel, Counterpoint, MI TAM, MI Insight, ANI의 스마트폰 시장 리서치 화면을 한곳에서 탐색하는 로컬 데이터 허브입니다. 한 대의 Windows PC가 대시보드와 편집 API를 함께 제공하며, 같은 LAN의 사용자는 브라우저로 조회할 수 있습니다.
+MI Dashboard는 SigmaIntel, Counterpoint, MI TAM, MI Insight, ANI의 스마트폰 시장 리서치 화면을 한곳에서 탐색하는 로컬 데이터 허브입니다. 한 대의 Windows PC가 대시보드와 편집 API를 함께 제공하며, 같은 LAN의 사용자는 브라우저로 조회할 수 있습니다.
 
 ## 빠른 실행 — Windows
 
